@@ -204,7 +204,10 @@ function EvaluateTab({ evaluationResult, setEvaluationResult, loading, setLoadin
             />
           </div>
           <button
-            onClick={handleEvaluate}
+            onClick={() => {
+              console.log('🔘 Evaluate button clicked!');
+              handleEvaluate();
+            }}
             disabled={loading || !inputText.trim()}
             className="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed mr-4"
           >
