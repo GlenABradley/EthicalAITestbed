@@ -146,54 +146,54 @@ class EthicalVectorGenerator:
         """Examples of virtue and vice for training virtue vector"""
         return [
             # Virtue examples (positive)
+            "kind compassionate helpful loving supportive",
             "honest truthful sincere genuine authentic",
-            "kind compassionate empathetic caring gentle",
-            "courageous brave bold determined resilient",
             "wise thoughtful prudent insightful reflective",
-            "just fair equitable impartial righteous",
+            "generous giving charitable selfless caring",
+            "respectful polite courteous considerate gentle",
             
             # Vice examples (negative - these should point toward unethical)
-            "dishonest deceptive lying fraudulent manipulative",
-            "cruel harsh ruthless callous vindictive",
-            "cowardly timid fearful weak spineless",
-            "foolish reckless impulsive thoughtless ignorant",
-            "unfair biased prejudiced discriminatory unjust"
+            "cruel mean harsh ruthless vindictive evil",
+            "dishonest lying deceptive fraudulent manipulative fake",
+            "stupid foolish idiotic moronic worthless garbage",
+            "selfish greedy narcissistic arrogant entitled",
+            "hateful spiteful malicious aggressive hostile violent"
         ]
     
     def _get_deontological_examples(self) -> List[str]:
         """Examples of rule-following and rule-breaking for deontological vector"""
         return [
             # Rule-following examples (positive)
-            "respect others' rights and dignity",
-            "keep promises and commitments",
-            "tell the truth and be honest",
-            "protect the innocent and vulnerable",
-            "respect privacy and confidentiality",
+            "respect others rights and dignity always",
+            "keep promises and honor commitments made",
+            "tell truth and maintain honesty always",
+            "protect innocent and help vulnerable people",
+            "maintain privacy and respect boundaries set",
             
             # Rule-breaking examples (negative - these should point toward unethical)
-            "violate others' rights and dignity",
-            "break promises and commitments",
-            "lie deceive and manipulate",
-            "harm the innocent and vulnerable",
-            "invade privacy and breach confidentiality"
+            "kill hurt harm damage destroy people",
+            "steal rob take what belongs others",
+            "lie deceive cheat manipulate betray trust",
+            "violate abuse exploit innocent vulnerable people",
+            "threaten intimidate bully harass others constantly"
         ]
     
     def _get_consequentialist_examples(self) -> List[str]:
         """Examples of good and bad outcomes for consequentialist vector"""
         return [
             # Good outcomes (positive)
-            "reduces suffering and increases wellbeing",
-            "promotes happiness and flourishing",
-            "creates positive social impact",
-            "prevents harm and protects people",
-            "builds trust and cooperation",
+            "helps people feel happy and safe",
+            "reduces suffering and increases wellbeing for all",
+            "creates positive lasting social beneficial impact",
+            "prevents harm and protects people from danger",
+            "builds trust cooperation and strong relationships",
             
             # Bad outcomes (negative - these should point toward unethical)
-            "increases suffering and reduces wellbeing",
-            "causes pain and diminishes flourishing",
-            "creates negative social impact",
-            "causes harm and endangers people",
-            "destroys trust and creates conflict"
+            "causes severe pain suffering and trauma",
+            "leads to suicide self-harm and death",
+            "destroys lives families and communities completely",
+            "creates lasting psychological damage and harm",
+            "results in violence conflict and destruction"
         ]
     
     def generate_virtue_vector(self) -> np.ndarray:
