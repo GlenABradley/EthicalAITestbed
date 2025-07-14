@@ -5,6 +5,9 @@ import axios from 'axios';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+console.log('BACKEND_URL:', BACKEND_URL);
+console.log('API:', API);
+
 // Main App Component
 function App() {
   const [activeTab, setActiveTab] = useState('evaluate');
