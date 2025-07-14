@@ -134,29 +134,32 @@ function EvaluateTab({ evaluationResult, setEvaluationResult, loading, setLoadin
     console.log('Starting evaluation for text:', inputText);
     
     try {
-      // Set a timeout for the request (30 seconds)
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
-
+      console.log('Making API request to:', `${API}/evaluate`);
+      
       const response = await axios.post(`${API}/evaluate`, {
         text: inputText,
         parameters: parameters
-      }, {
-        signal: controller.signal,
-        timeout: 30000
       });
       
-      clearTimeout(timeoutId);
-      console.log('Evaluation response received:', response.data);
-      setEvaluationResult(response.data);
-      console.log('Evaluation result set');
-    } catch (error) {
-      console.error('Error evaluating text:', error);
-      if (error.name === 'AbortError' || error.code === 'ECONNABORTED') {
-        alert('Evaluation timed out. Please try with shorter text or adjust parameters for better performance.');
+      console.log('Raw response:', response);
+      console.log('Response data:', response.data);
+      console.log('Response status:', response.status);
+      
+      if (response.data && response.data.evaluation) {
+        setEvaluationResult(response.data);
+        console.log('✅ Evaluation result set successfully');
       } else {
-        alert('Error evaluating text. Please try again with shorter text.');
+        console.error('❌ Invalid response format:', response.data);
+        alert('Invalid response format received from server');
       }
+    } catch (error) {
+      console.error('❌ Error evaluating text:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      alert('Error evaluating text: ' + (error.response?.data?.detail || error.message));
     } finally {
       setLoading(false);
       console.log('Loading finished');
