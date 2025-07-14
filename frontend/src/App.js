@@ -200,22 +200,33 @@ function EvaluateTab({ evaluationResult, setEvaluationResult, loading, setLoadin
             {loading ? 'Evaluating...' : 'Evaluate Text'}
           </button>
           <button
-            onClick={async () => {
-              try {
-                console.log('Testing direct evaluation...');
-                const response = await axios.post(`${API}/evaluate`, {
+            onClick={() => {
+              console.log('Simple test clicked');
+              fetch(`${API}/evaluate`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
                   text: "Hello world"
-                });
-                console.log('Direct evaluation response:', response.data);
-                alert('Direct test success: ' + JSON.stringify(response.data.evaluation.overall_ethical));
-              } catch (error) {
-                console.error('Direct test error:', error);
-                alert('Direct test error: ' + error.message);
-              }
+                })
+              })
+              .then(response => {
+                console.log('Fetch response:', response);
+                return response.json();
+              })
+              .then(data => {
+                console.log('Fetch data:', data);
+                alert('Fetch success: ' + JSON.stringify(data.evaluation.overall_ethical));
+              })
+              .catch(error => {
+                console.error('Fetch error:', error);
+                alert('Fetch error: ' + error.message);
+              });
             }}
-            className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 ml-2"
+            className="bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 ml-2"
           >
-            Direct Test
+            Fetch Test
           </button>
         </div>
       </div>
