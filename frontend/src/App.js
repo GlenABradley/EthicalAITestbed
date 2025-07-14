@@ -193,6 +193,7 @@ function EvaluateTab({ evaluationResult, setEvaluationResult, loading, setLoadin
       {/* Results Section */}
       {evaluationResult && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {console.log('Rendering results:', evaluationResult)}
           {/* Evaluation Summary */}
           <div className="bg-white p-6 rounded-lg shadow">
             <h3 className="text-xl font-bold mb-4">Evaluation Summary</h3>
