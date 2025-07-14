@@ -186,9 +186,22 @@ function EvaluateTab({ evaluationResult, setEvaluationResult, loading, setLoadin
           <button
             onClick={handleEvaluate}
             disabled={loading || !inputText.trim()}
-            className="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+            className="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed mr-4"
           >
             {loading ? 'Evaluating...' : 'Evaluate Text'}
+          </button>
+          <button
+            onClick={async () => {
+              try {
+                const response = await axios.get(`${API}/health`);
+                alert('API Health: ' + JSON.stringify(response.data));
+              } catch (error) {
+                alert('API Error: ' + error.message);
+              }
+            }}
+            className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+          >
+            Test API
           </button>
         </div>
       </div>
