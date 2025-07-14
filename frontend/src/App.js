@@ -131,6 +131,8 @@ function EvaluateTab({ evaluationResult, setEvaluationResult, loading, setLoadin
     if (!inputText.trim()) return;
 
     setLoading(true);
+    console.log('Starting evaluation for text:', inputText);
+    
     try {
       // Set a timeout for the request (30 seconds)
       const controller = new AbortController();
@@ -145,7 +147,9 @@ function EvaluateTab({ evaluationResult, setEvaluationResult, loading, setLoadin
       });
       
       clearTimeout(timeoutId);
+      console.log('Evaluation response received:', response.data);
       setEvaluationResult(response.data);
+      console.log('Evaluation result set');
     } catch (error) {
       console.error('Error evaluating text:', error);
       if (error.name === 'AbortError' || error.code === 'ECONNABORTED') {
@@ -155,6 +159,7 @@ function EvaluateTab({ evaluationResult, setEvaluationResult, loading, setLoadin
       }
     } finally {
       setLoading(false);
+      console.log('Loading finished');
     }
   };
 
