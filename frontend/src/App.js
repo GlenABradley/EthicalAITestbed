@@ -190,6 +190,12 @@ function EvaluateTab({ evaluationResult, setEvaluationResult, loading, setLoadin
         </div>
       </div>
 
+      {/* Debug Info */}
+      <div className="bg-gray-100 p-2 text-xs text-gray-600 mt-4">
+        Debug: evaluationResult is {evaluationResult ? 'SET' : 'NULL'} | 
+        Loading: {loading ? 'TRUE' : 'FALSE'}
+      </div>
+
       {/* Results Section */}
       {evaluationResult && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
