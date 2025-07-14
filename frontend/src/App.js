@@ -132,14 +132,27 @@ function EvaluateTab({ evaluationResult, setEvaluationResult, loading, setLoadin
 
     setLoading(true);
     try {
+      // Set a timeout for the request (30 seconds)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
       const response = await axios.post(`${API}/evaluate`, {
         text: inputText,
         parameters: parameters
+      }, {
+        signal: controller.signal,
+        timeout: 30000
       });
+      
+      clearTimeout(timeoutId);
       setEvaluationResult(response.data);
     } catch (error) {
       console.error('Error evaluating text:', error);
-      alert('Error evaluating text. Please try again.');
+      if (error.name === 'AbortError' || error.code === 'ECONNABORTED') {
+        alert('Evaluation timed out. Please try with shorter text or adjust parameters for better performance.');
+      } else {
+        alert('Error evaluating text. Please try again with shorter text.');
+      }
     } finally {
       setLoading(false);
     }
