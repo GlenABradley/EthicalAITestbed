@@ -17,6 +17,11 @@ function App() {
   const [calibrationTests, setCalibrationTests] = useState([]);
   const [performanceMetrics, setPerformanceMetrics] = useState(null);
 
+  // Debug: Watch for evaluationResult state changes
+  useEffect(() => {
+    console.log('🔄 evaluationResult state changed:', evaluationResult);
+  }, [evaluationResult]);
+
   // Load initial parameters and data
   useEffect(() => {
     loadParameters();
