@@ -355,21 +355,40 @@ class EthicalEvaluator:
         return minimal_spans
     
     def evaluate_text(self, text: str) -> EthicalEvaluation:
-        """Evaluate text using the complete mathematical framework"""
+        """Evaluate text using the complete mathematical framework - OPTIMIZED VERSION"""
         start_time = time.time()
         
         # Tokenize input
         tokens = self.tokenize(text)
         
-        # Evaluate all possible spans
-        all_spans = []
+        # Limit tokens for performance (can be adjusted)
+        if len(tokens) > 50:
+            logger.warning(f"Text too long ({len(tokens)} tokens), truncating to 50 tokens for performance")
+            tokens = tokens[:50]
         
+        # Evaluate spans more efficiently - limit combinations
+        all_spans = []
+        max_spans_to_check = 200  # Reasonable limit for real-time use
+        spans_checked = 0
+        
+        # Prioritize shorter spans (more likely to be minimal violations)
         for span_length in range(self.parameters.min_span_length, 
                                 min(self.parameters.max_span_length, len(tokens)) + 1):
+            if spans_checked >= max_spans_to_check:
+                break
+                
             for start in range(len(tokens) - span_length + 1):
+                if spans_checked >= max_spans_to_check:
+                    break
+                    
                 end = start + span_length - 1
                 span = self.evaluate_span(tokens, start, end)
                 all_spans.append(span)
+                spans_checked += 1
+                
+                # Early exit if we find violations (for faster feedback)
+                if span.any_violation and span_length <= 3:
+                    logger.info(f"Early violation found: {span.text}")
         
         # Find minimal unethical spans
         minimal_spans = self.find_minimal_spans(tokens, all_spans)
@@ -378,6 +397,8 @@ class EthicalEvaluator:
         overall_ethical = len(minimal_spans) == 0
         
         processing_time = time.time() - start_time
+        
+        logger.info(f"Evaluated {spans_checked} spans in {processing_time:.3f}s")
         
         return EthicalEvaluation(
             input_text=text,
