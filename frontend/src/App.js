@@ -199,15 +199,20 @@ function EvaluateTab({ evaluationResult, setEvaluationResult, loading, setLoadin
           <button
             onClick={async () => {
               try {
-                const response = await axios.get(`${API}/health`);
-                alert('API Health: ' + JSON.stringify(response.data));
+                console.log('Testing direct evaluation...');
+                const response = await axios.post(`${API}/evaluate`, {
+                  text: "Hello world"
+                });
+                console.log('Direct evaluation response:', response.data);
+                alert('Direct test success: ' + JSON.stringify(response.data.evaluation.overall_ethical));
               } catch (error) {
-                alert('API Error: ' + error.message);
+                console.error('Direct test error:', error);
+                alert('Direct test error: ' + error.message);
               }
             }}
-            className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+            className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 ml-2"
           >
-            Test API
+            Direct Test
           </button>
         </div>
       </div>
