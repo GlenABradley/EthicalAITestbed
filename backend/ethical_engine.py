@@ -29,8 +29,8 @@ class EthicalParameters:
     deontological_weight: float = 1.0
     consequentialist_weight: float = 1.0
     
-    # Span detection parameters
-    max_span_length: int = 10
+    # Span detection parameters (optimized for performance)
+    max_span_length: int = 5  # Reduced from 10 for better performance
     min_span_length: int = 1
     
     # Model parameters
