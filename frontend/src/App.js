@@ -198,7 +198,10 @@ function EvaluateTab({ evaluationResult, setEvaluationResult, loading, setLoadin
             </label>
             <textarea
               value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
+              onChange={(e) => {
+                console.log('📝 Input text changed to:', e.target.value);
+                setInputText(e.target.value);
+              }}
               placeholder="Type your text here..."
               className="w-full h-32 p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
