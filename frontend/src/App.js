@@ -220,7 +220,8 @@ function EvaluateTab({ evaluationResult, setEvaluationResult, loading, setLoadin
       {/* Debug Info */}
       <div className="bg-gray-100 p-2 text-xs text-gray-600 mt-4">
         Debug: evaluationResult is {evaluationResult ? 'SET' : 'NULL'} | 
-        Loading: {loading ? 'TRUE' : 'FALSE'}
+        Loading: {loading ? 'TRUE' : 'FALSE'} |
+        API URL: {API}
       </div>
 
       {/* Results Section */}
