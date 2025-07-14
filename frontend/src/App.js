@@ -249,7 +249,9 @@ function EvaluateTab({ evaluationResult, setEvaluationResult, loading, setLoadin
       <div className="bg-gray-100 p-2 text-xs text-gray-600 mt-4">
         Debug: evaluationResult is {evaluationResult ? 'SET' : 'NULL'} | 
         Loading: {loading ? 'TRUE' : 'FALSE'} |
-        API URL: {API}
+        API URL: {API} |
+        Input Text: "{inputText}" ({inputText?.length || 0} chars) |
+        Button Disabled: {(loading || !inputText.trim()) ? 'TRUE' : 'FALSE'}
       </div>
 
       {/* Results Section */}
