@@ -132,14 +132,19 @@ function EvaluateTab({ evaluationResult, setEvaluationResult, loading, setLoadin
 
     setLoading(true);
     console.log('Starting evaluation for text:', inputText);
+    console.log('Parameters to send:', parameters);
     
     try {
       console.log('Making API request to:', `${API}/evaluate`);
       
-      const response = await axios.post(`${API}/evaluate`, {
+      const requestData = {
         text: inputText,
-        parameters: parameters
-      });
+        parameters: parameters || {}  // Ensure parameters is never undefined
+      };
+      
+      console.log('Request data:', requestData);
+      
+      const response = await axios.post(`${API}/evaluate`, requestData);
       
       console.log('Raw response:', response);
       console.log('Response data:', response.data);
@@ -157,7 +162,8 @@ function EvaluateTab({ evaluationResult, setEvaluationResult, loading, setLoadin
       console.error('Error details:', {
         message: error.message,
         response: error.response?.data,
-        status: error.response?.status
+        status: error.response?.status,
+        stack: error.stack
       });
       alert('Error evaluating text: ' + (error.response?.data?.detail || error.message));
     } finally {
