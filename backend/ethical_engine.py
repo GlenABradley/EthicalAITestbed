@@ -1,0 +1,430 @@
+"""
+Ethical AI Evaluation Engine
+Based on the mathematical framework for multi-perspective ethical text evaluation
+"""
+
+import numpy as np
+import re
+import time
+from typing import List, Dict, Tuple, Optional, Any
+from dataclasses import dataclass, field
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+@dataclass
+class EthicalParameters:
+    """Configuration parameters for ethical evaluation"""
+    # Thresholds for each perspective (τ_P)
+    virtue_threshold: float = 0.3
+    deontological_threshold: float = 0.3
+    consequentialist_threshold: float = 0.3
+    
+    # Vector magnitudes for ethical axes
+    virtue_weight: float = 1.0
+    deontological_weight: float = 1.0
+    consequentialist_weight: float = 1.0
+    
+    # Span detection parameters
+    max_span_length: int = 10
+    min_span_length: int = 1
+    
+    # Model parameters
+    embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert parameters to dictionary for API responses"""
+        return {
+            'virtue_threshold': self.virtue_threshold,
+            'deontological_threshold': self.deontological_threshold,
+            'consequentialist_threshold': self.consequentialist_threshold,
+            'virtue_weight': self.virtue_weight,
+            'deontological_weight': self.deontological_weight,
+            'consequentialist_weight': self.consequentialist_weight,
+            'max_span_length': self.max_span_length,
+            'min_span_length': self.min_span_length,
+            'embedding_model': self.embedding_model
+        }
+
+@dataclass
+class EthicalSpan:
+    """Represents a span of text with ethical evaluation"""
+    start: int
+    end: int
+    text: str
+    virtue_score: float
+    deontological_score: float
+    consequentialist_score: float
+    virtue_violation: bool
+    deontological_violation: bool
+    consequentialist_violation: bool
+    is_minimal: bool = False
+    
+    @property
+    def any_violation(self) -> bool:
+        """Check if any perspective flags this span as unethical"""
+        return self.virtue_violation or self.deontological_violation or self.consequentialist_violation
+    
+    @property
+    def violation_perspectives(self) -> List[str]:
+        """Return list of perspectives that flag this span"""
+        perspectives = []
+        if self.virtue_violation:
+            perspectives.append("virtue")
+        if self.deontological_violation:
+            perspectives.append("deontological")
+        if self.consequentialist_violation:
+            perspectives.append("consequentialist")
+        return perspectives
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert span to dictionary for API responses"""
+        return {
+            'start': self.start,
+            'end': self.end,
+            'text': self.text,
+            'virtue_score': self.virtue_score,
+            'deontological_score': self.deontological_score,
+            'consequentialist_score': self.consequentialist_score,
+            'virtue_violation': self.virtue_violation,
+            'deontological_violation': self.deontological_violation,
+            'consequentialist_violation': self.consequentialist_violation,
+            'any_violation': self.any_violation,
+            'violation_perspectives': self.violation_perspectives,
+            'is_minimal': self.is_minimal
+        }
+
+@dataclass
+class EthicalEvaluation:
+    """Complete ethical evaluation result"""
+    input_text: str
+    tokens: List[str]
+    spans: List[EthicalSpan]
+    minimal_spans: List[EthicalSpan]
+    overall_ethical: bool
+    processing_time: float
+    parameters: EthicalParameters
+    
+    @property
+    def violation_count(self) -> int:
+        """Count of spans with violations"""
+        return len([s for s in self.spans if s.any_violation])
+    
+    @property
+    def minimal_violation_count(self) -> int:
+        """Count of minimal spans with violations"""
+        return len([s for s in self.minimal_spans if s.any_violation])
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert evaluation to dictionary for API responses"""
+        return {
+            'input_text': self.input_text,
+            'tokens': self.tokens,
+            'spans': [s.to_dict() for s in self.spans],
+            'minimal_spans': [s.to_dict() for s in self.minimal_spans],
+            'overall_ethical': self.overall_ethical,
+            'processing_time': self.processing_time,
+            'violation_count': self.violation_count,
+            'minimal_violation_count': self.minimal_violation_count,
+            'parameters': self.parameters.to_dict()
+        }
+
+class EthicalVectorGenerator:
+    """Generates ethical perspective vectors from philosophical principles"""
+    
+    def __init__(self, model: SentenceTransformer):
+        self.model = model
+        self._virtue_vectors = None
+        self._deontological_vectors = None
+        self._consequentialist_vectors = None
+        
+    def _get_virtue_examples(self) -> List[str]:
+        """Examples of virtue and vice for training virtue vector"""
+        return [
+            # Virtue examples (positive)
+            "honest truthful sincere genuine authentic",
+            "kind compassionate empathetic caring gentle",
+            "courageous brave bold determined resilient",
+            "wise thoughtful prudent insightful reflective",
+            "just fair equitable impartial righteous",
+            
+            # Vice examples (negative - these should point toward unethical)
+            "dishonest deceptive lying fraudulent manipulative",
+            "cruel harsh ruthless callous vindictive",
+            "cowardly timid fearful weak spineless",
+            "foolish reckless impulsive thoughtless ignorant",
+            "unfair biased prejudiced discriminatory unjust"
+        ]
+    
+    def _get_deontological_examples(self) -> List[str]:
+        """Examples of rule-following and rule-breaking for deontological vector"""
+        return [
+            # Rule-following examples (positive)
+            "respect others' rights and dignity",
+            "keep promises and commitments",
+            "tell the truth and be honest",
+            "protect the innocent and vulnerable",
+            "respect privacy and confidentiality",
+            
+            # Rule-breaking examples (negative - these should point toward unethical)
+            "violate others' rights and dignity",
+            "break promises and commitments",
+            "lie deceive and manipulate",
+            "harm the innocent and vulnerable",
+            "invade privacy and breach confidentiality"
+        ]
+    
+    def _get_consequentialist_examples(self) -> List[str]:
+        """Examples of good and bad outcomes for consequentialist vector"""
+        return [
+            # Good outcomes (positive)
+            "reduces suffering and increases wellbeing",
+            "promotes happiness and flourishing",
+            "creates positive social impact",
+            "prevents harm and protects people",
+            "builds trust and cooperation",
+            
+            # Bad outcomes (negative - these should point toward unethical)
+            "increases suffering and reduces wellbeing",
+            "causes pain and diminishes flourishing",
+            "creates negative social impact",
+            "causes harm and endangers people",
+            "destroys trust and creates conflict"
+        ]
+    
+    def generate_virtue_vector(self) -> np.ndarray:
+        """Generate virtue ethics perspective vector p_v"""
+        if self._virtue_vectors is None:
+            examples = self._get_virtue_examples()
+            virtue_embeddings = self.model.encode(examples[:5])  # positive examples
+            vice_embeddings = self.model.encode(examples[5:])   # negative examples
+            
+            # Create axis pointing from virtue to vice (higher values = more vice)
+            virtue_center = np.mean(virtue_embeddings, axis=0)
+            vice_center = np.mean(vice_embeddings, axis=0)
+            
+            # Vector pointing toward vice (unethical direction)
+            virtue_vector = vice_center - virtue_center
+            virtue_vector = virtue_vector / np.linalg.norm(virtue_vector)
+            
+            self._virtue_vectors = virtue_vector
+            
+        return self._virtue_vectors
+    
+    def generate_deontological_vector(self) -> np.ndarray:
+        """Generate deontological ethics perspective vector p_d"""
+        if self._deontological_vectors is None:
+            examples = self._get_deontological_examples()
+            rule_following_embeddings = self.model.encode(examples[:5])  # positive examples
+            rule_breaking_embeddings = self.model.encode(examples[5:])  # negative examples
+            
+            # Create axis pointing from rule-following to rule-breaking
+            rule_following_center = np.mean(rule_following_embeddings, axis=0)
+            rule_breaking_center = np.mean(rule_breaking_embeddings, axis=0)
+            
+            # Vector pointing toward rule-breaking (unethical direction)
+            deontological_vector = rule_breaking_center - rule_following_center
+            deontological_vector = deontological_vector / np.linalg.norm(deontological_vector)
+            
+            self._deontological_vectors = deontological_vector
+            
+        return self._deontological_vectors
+    
+    def generate_consequentialist_vector(self) -> np.ndarray:
+        """Generate consequentialist ethics perspective vector p_c"""
+        if self._consequentialist_vectors is None:
+            examples = self._get_consequentialist_examples()
+            good_outcome_embeddings = self.model.encode(examples[:5])  # positive examples
+            bad_outcome_embeddings = self.model.encode(examples[5:])  # negative examples
+            
+            # Create axis pointing from good outcomes to bad outcomes
+            good_outcome_center = np.mean(good_outcome_embeddings, axis=0)
+            bad_outcome_center = np.mean(bad_outcome_embeddings, axis=0)
+            
+            # Vector pointing toward bad outcomes (unethical direction)
+            consequentialist_vector = bad_outcome_center - good_outcome_center
+            consequentialist_vector = consequentialist_vector / np.linalg.norm(consequentialist_vector)
+            
+            self._consequentialist_vectors = consequentialist_vector
+            
+        return self._consequentialist_vectors
+    
+    def get_all_vectors(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Get all three ethical perspective vectors"""
+        return (
+            self.generate_virtue_vector(),
+            self.generate_deontological_vector(),
+            self.generate_consequentialist_vector()
+        )
+
+class EthicalEvaluator:
+    """Main ethical evaluation engine implementing the mathematical framework"""
+    
+    def __init__(self, parameters: EthicalParameters = None):
+        self.parameters = parameters or EthicalParameters()
+        self.model = SentenceTransformer(self.parameters.embedding_model)
+        self.vector_generator = EthicalVectorGenerator(self.model)
+        
+        # Initialize ethical vectors
+        self.p_v, self.p_d, self.p_c = self.vector_generator.get_all_vectors()
+        
+        logger.info(f"Initialized EthicalEvaluator with model: {self.parameters.embedding_model}")
+    
+    def tokenize(self, text: str) -> List[str]:
+        """Tokenize text into words/tokens"""
+        # Simple tokenization - can be enhanced with more sophisticated methods
+        tokens = re.findall(r'\b\w+\b|[^\w\s]', text.lower())
+        return tokens
+    
+    def get_span_embedding(self, tokens: List[str], start: int, end: int) -> np.ndarray:
+        """Get embedding for a span of tokens"""
+        span_text = ' '.join(tokens[start:end+1])
+        return self.model.encode([span_text])[0]
+    
+    def compute_perspective_score(self, embedding: np.ndarray, perspective_vector: np.ndarray) -> float:
+        """Compute s_P(i,j) = x_{i:j} · p_P"""
+        # Normalize embedding to unit length for cosine similarity
+        if np.linalg.norm(embedding) > 0:
+            embedding = embedding / np.linalg.norm(embedding)
+        
+        # Compute dot product (cosine similarity since both are unit vectors)
+        score = np.dot(embedding, perspective_vector)
+        return float(score)
+    
+    def evaluate_span(self, tokens: List[str], start: int, end: int) -> EthicalSpan:
+        """Evaluate a single span of tokens"""
+        span_text = ' '.join(tokens[start:end+1])
+        span_embedding = self.get_span_embedding(tokens, start, end)
+        
+        # Compute scores for each perspective
+        virtue_score = self.compute_perspective_score(span_embedding, self.p_v) * self.parameters.virtue_weight
+        deontological_score = self.compute_perspective_score(span_embedding, self.p_d) * self.parameters.deontological_weight
+        consequentialist_score = self.compute_perspective_score(span_embedding, self.p_c) * self.parameters.consequentialist_weight
+        
+        # Apply thresholds to determine violations
+        virtue_violation = virtue_score > self.parameters.virtue_threshold
+        deontological_violation = deontological_score > self.parameters.deontological_threshold
+        consequentialist_violation = consequentialist_score > self.parameters.consequentialist_threshold
+        
+        return EthicalSpan(
+            start=start,
+            end=end,
+            text=span_text,
+            virtue_score=virtue_score,
+            deontological_score=deontological_score,
+            consequentialist_score=consequentialist_score,
+            virtue_violation=virtue_violation,
+            deontological_violation=deontological_violation,
+            consequentialist_violation=consequentialist_violation
+        )
+    
+    def find_minimal_spans(self, tokens: List[str], all_spans: List[EthicalSpan]) -> List[EthicalSpan]:
+        """Find minimal unethical spans using the algorithm from the framework"""
+        minimal_spans = []
+        flagged_positions = set()
+        
+        # Sort spans by length (smallest first)
+        spans_by_length = sorted(all_spans, key=lambda s: s.end - s.start)
+        
+        for span in spans_by_length:
+            if not span.any_violation:
+                continue
+                
+            # Check if this span overlaps with already flagged positions
+            span_positions = set(range(span.start, span.end + 1))
+            if span_positions.intersection(flagged_positions):
+                continue
+                
+            # Check if any sub-span of this span is already flagged
+            has_flagged_subspan = False
+            for pos in span_positions:
+                if pos in flagged_positions:
+                    has_flagged_subspan = True
+                    break
+            
+            if not has_flagged_subspan:
+                # This is a minimal span
+                span.is_minimal = True
+                minimal_spans.append(span)
+                flagged_positions.update(span_positions)
+        
+        return minimal_spans
+    
+    def evaluate_text(self, text: str) -> EthicalEvaluation:
+        """Evaluate text using the complete mathematical framework"""
+        start_time = time.time()
+        
+        # Tokenize input
+        tokens = self.tokenize(text)
+        
+        # Evaluate all possible spans
+        all_spans = []
+        
+        for span_length in range(self.parameters.min_span_length, 
+                                min(self.parameters.max_span_length, len(tokens)) + 1):
+            for start in range(len(tokens) - span_length + 1):
+                end = start + span_length - 1
+                span = self.evaluate_span(tokens, start, end)
+                all_spans.append(span)
+        
+        # Find minimal unethical spans
+        minimal_spans = self.find_minimal_spans(tokens, all_spans)
+        
+        # Determine overall ethical status
+        overall_ethical = len(minimal_spans) == 0
+        
+        processing_time = time.time() - start_time
+        
+        return EthicalEvaluation(
+            input_text=text,
+            tokens=tokens,
+            spans=all_spans,
+            minimal_spans=minimal_spans,
+            overall_ethical=overall_ethical,
+            processing_time=processing_time,
+            parameters=self.parameters
+        )
+    
+    def update_parameters(self, new_parameters: Dict[str, Any]):
+        """Update evaluation parameters for calibration"""
+        for key, value in new_parameters.items():
+            if hasattr(self.parameters, key):
+                setattr(self.parameters, key, value)
+                logger.info(f"Updated parameter {key} to {value}")
+    
+    def generate_clean_text(self, evaluation: EthicalEvaluation) -> str:
+        """Generate clean text by removing minimal unethical spans"""
+        if not evaluation.minimal_spans:
+            return evaluation.input_text
+        
+        # Sort spans by start position in reverse order to avoid index shifting
+        sorted_spans = sorted(evaluation.minimal_spans, key=lambda s: s.start, reverse=True)
+        
+        tokens = evaluation.tokens.copy()
+        
+        # Remove tokens from minimal spans
+        for span in sorted_spans:
+            del tokens[span.start:span.end + 1]
+        
+        # Reconstruct text
+        return ' '.join(tokens)
+    
+    def generate_explanation(self, evaluation: EthicalEvaluation) -> str:
+        """Generate explanation of what changed and why"""
+        if not evaluation.minimal_spans:
+            return "No ethical violations detected. Text is acceptable as-is."
+        
+        explanations = []
+        
+        for span in evaluation.minimal_spans:
+            perspectives = span.violation_perspectives
+            perspective_str = ', '.join(perspectives)
+            
+            explanation = f"Removed '{span.text}' (positions {span.start}-{span.end}) due to {perspective_str} ethical violations."
+            explanations.append(explanation)
+        
+        return '\n'.join(explanations)
