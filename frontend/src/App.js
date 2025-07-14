@@ -134,35 +134,41 @@ function EvaluateTab({ evaluationResult, setEvaluationResult, loading, setLoadin
     if (!inputText.trim()) return;
 
     setLoading(true);
-    console.log('Starting evaluation for text:', inputText);
-    console.log('Parameters to send:', parameters);
+    console.log('🚀 Starting evaluation for text:', inputText);
     
     try {
-      console.log('Making API request to:', `${API}/evaluate`);
+      console.log('📡 Making API request to:', `${API}/evaluate`);
       
       const requestData = {
         text: inputText,
-        parameters: parameters || {}  // Ensure parameters is never undefined
+        parameters: parameters || {}
       };
       
-      console.log('Request data:', requestData);
+      console.log('📤 Request data:', requestData);
       
       const response = await axios.post(`${API}/evaluate`, requestData);
       
-      console.log('Raw response:', response);
-      console.log('Response data:', response.data);
-      console.log('Response status:', response.status);
+      console.log('📥 Raw response received:', response);
+      console.log('📊 Response status:', response.status);
+      console.log('📋 Response data:', response.data);
+      console.log('🔍 Response data type:', typeof response.data);
+      console.log('🔍 Response data keys:', Object.keys(response.data || {}));
       
-      if (response.data && response.data.evaluation) {
+      if (response.status === 200 && response.data) {
+        console.log('✅ Valid response received, setting evaluation result');
+        console.log('📄 Evaluation data:', response.data.evaluation);
         setEvaluationResult(response.data);
-        console.log('✅ Evaluation result set successfully');
+        console.log('🎯 Evaluation result state should now be set');
       } else {
-        console.error('❌ Invalid response format:', response.data);
-        alert('Invalid response format received from server');
+        console.error('❌ Invalid response:', {
+          status: response.status,
+          data: response.data
+        });
+        alert('Invalid response from server');
       }
     } catch (error) {
-      console.error('❌ Error evaluating text:', error);
-      console.error('Error details:', {
+      console.error('💥 Error during evaluation:', error);
+      console.error('🔍 Error details:', {
         message: error.message,
         response: error.response?.data,
         status: error.response?.status,
@@ -171,7 +177,7 @@ function EvaluateTab({ evaluationResult, setEvaluationResult, loading, setLoadin
       alert('Error evaluating text: ' + (error.response?.data?.detail || error.message));
     } finally {
       setLoading(false);
-      console.log('Loading finished');
+      console.log('🏁 Evaluation process finished');
     }
   };
 
