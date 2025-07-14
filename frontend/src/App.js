@@ -380,8 +380,8 @@ function ParametersTab({ parameters, setParameters, loadParameters }) {
           <h3 className="text-lg font-semibold mb-3">Span Detection Parameters</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
-              { key: 'max_span_length', label: 'Max Span Length', min: 1, max: 20 },
-              { key: 'min_span_length', label: 'Min Span Length', min: 1, max: 10 }
+              { key: 'max_span_length', label: 'Max Span Length', min: 1, max: 10 },
+              { key: 'min_span_length', label: 'Min Span Length', min: 1, max: 5 }
             ].map((param) => (
               <div key={param.key}>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
