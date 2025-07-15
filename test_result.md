@@ -227,7 +227,7 @@ backend:
     working: true
     file: "backend/server.py"
     stuck_count: 0
-    priority: "low"
+    priority: "medium"
     needs_retesting: false
     status_history:
         - working: true
