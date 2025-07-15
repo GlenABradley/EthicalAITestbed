@@ -275,6 +275,12 @@ async def get_calibration_tests():
     """Get all calibration test cases"""
     try:
         tests = await db.calibration_tests.find().to_list(1000)
+        
+        # Convert ObjectId to string for JSON serialization
+        for test in tests:
+            if "_id" in test:
+                test["_id"] = str(test["_id"])
+        
         return {
             "tests": tests,
             "count": len(tests)
