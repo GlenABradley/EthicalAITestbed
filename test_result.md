@@ -181,7 +181,7 @@ backend:
     status_history:
         - working: true
           agent: "testing"
-          comment: "POST /api/calibration-test working correctly. Successfully creates calibration test cases with proper UUID generation."
+          comment: "POST /api/calibration-test working correctly. Successfully creates test cases with proper UUID generation and database storage."
 
   - task: "Calibration System - Run Tests"
     implemented: true
