@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Test the Ethical AI Developer Testbed backend functionality comprehensively"
+user_problem_statement: "Comprehensive project discovery and documentation for the Ethical AI Developer Testbed - a sophisticated multi-perspective ethical text evaluation framework"
 
 backend:
   - task: "Health Check Endpoint"
