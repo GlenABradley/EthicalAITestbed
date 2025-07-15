@@ -250,9 +250,7 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "Database Operations - Evaluations"
-    - "Calibration System - List Tests"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -260,3 +258,5 @@ test_plan:
 agent_communication:
     - agent: "testing"
       message: "Backend testing completed. Core functionality working well. Main issues are MongoDB ObjectId serialization problems affecting database retrieval endpoints. Ethical evaluation engine working correctly after dependency fixes and threshold calibration."
+    - agent: "testing"
+      message: "✅ ALL TARGETED FIXES VERIFIED: 1) Database serialization fixes working - both /api/evaluations and /api/calibration-tests now return data without ObjectId errors. 2) 404 error handling fixed - invalid calibration test IDs now return proper 404 instead of 500. 3) Gentle thresholds (0.25) implemented correctly for production use. 4) Evaluation storage working properly. System is stable and functional. No critical issues remaining."
