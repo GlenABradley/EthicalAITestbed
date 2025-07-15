@@ -19,10 +19,10 @@ logger = logging.getLogger(__name__)
 @dataclass
 class EthicalParameters:
     """Configuration parameters for ethical evaluation"""
-    # Thresholds for each perspective (τ_P)
-    virtue_threshold: float = 0.3
-    deontological_threshold: float = 0.3
-    consequentialist_threshold: float = 0.3
+    # Thresholds for each perspective (τ_P) - Balanced for production use
+    virtue_threshold: float = 0.25
+    deontological_threshold: float = 0.25
+    consequentialist_threshold: float = 0.25
     
     # Vector magnitudes for ethical axes
     virtue_weight: float = 1.0
