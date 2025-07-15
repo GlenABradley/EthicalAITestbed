@@ -152,7 +152,9 @@ async def evaluate_text(request: EthicalEvaluationRequest):
             "timestamp": datetime.utcnow()
         }
         
-        await db.evaluations.insert_one(evaluation_record)
+        # Insert and get the ObjectId for proper serialization
+        insert_result = await db.evaluations.insert_one(evaluation_record)
+        evaluation_record["_id"] = str(insert_result.inserted_id)
         
         return EthicalEvaluationResponse(
             evaluation=result["evaluation"],
