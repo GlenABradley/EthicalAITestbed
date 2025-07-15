@@ -197,15 +197,18 @@ backend:
 
   - task: "Calibration System - List Tests"
     implemented: true
-    working: false
+    working: true
     file: "backend/server.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
           agent: "testing"
           comment: "GET /api/calibration-tests returns HTTP 500, likely same ObjectId serialization issue as evaluations endpoint."
+        - working: true
+          agent: "testing"
+          comment: "✅ FIXED: Database serialization issue resolved. GET /api/calibration-tests now works correctly without ObjectId errors. Successfully retrieved calibration tests from database with proper JSON serialization."
 
   - task: "Performance Metrics"
     implemented: true
