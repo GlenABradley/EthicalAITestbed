@@ -233,6 +233,9 @@ backend:
         - working: true
           agent: "testing"
           comment: "Minor: Error handling mostly working. Handles empty text and invalid JSON appropriately. However, 404 errors for non-existent calibration tests return 500 instead of 404."
+        - working: true
+          agent: "testing"
+          comment: "✅ IMPROVED: 404 error handling fixed. POST /api/run-calibration-test/{invalid_id} now properly returns HTTP 404 instead of 500 for non-existent calibration tests. Error handling for empty text and invalid JSON continues to work correctly."
 
 frontend:
   # Frontend testing not performed as per instructions
