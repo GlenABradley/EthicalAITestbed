@@ -220,7 +220,7 @@ backend:
     status_history:
         - working: true
           agent: "testing"
-          comment: "GET /api/performance-metrics working correctly. Returns processing time statistics and throughput metrics."
+          comment: "GET /api/performance-metrics working correctly. Returns comprehensive metrics including processing times, text lengths, and throughput calculations based on recent evaluations."
 
   - task: "Error Handling"
     implemented: true
