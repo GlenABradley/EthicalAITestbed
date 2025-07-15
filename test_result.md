@@ -115,7 +115,7 @@ backend:
     status_history:
         - working: true
           agent: "testing"
-          comment: "Health check endpoint working correctly. Service reports healthy status and evaluator initialization status."
+          comment: "GET /api/health returns HTTP 200 with proper status, evaluator_initialized, and timestamp fields. Service is healthy and evaluator is properly initialized."
 
   - task: "Parameter Management"
     implemented: true
