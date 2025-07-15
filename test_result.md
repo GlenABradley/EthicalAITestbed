@@ -193,7 +193,7 @@ backend:
     status_history:
         - working: true
           agent: "testing"
-          comment: "POST /api/run-calibration-test/{test_id} working correctly. Executes calibration tests and compares expected vs actual results."
+          comment: "POST /api/run-calibration-test/{test_id} working correctly. Executes calibration tests and updates database with results including pass/fail status."
 
   - task: "Calibration System - List Tests"
     implemented: true
