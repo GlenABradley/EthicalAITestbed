@@ -266,6 +266,9 @@ async def run_calibration_test(test_id: str):
             "result": result
         }
         
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 404) as-is
+        raise
     except Exception as e:
         logger.error(f"Error running calibration test: {e}")
         raise HTTPException(status_code=500, detail=str(e))
