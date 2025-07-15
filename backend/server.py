@@ -289,6 +289,12 @@ async def get_evaluations(limit: int = 100):
     """Get recent evaluations"""
     try:
         evaluations = await db.evaluations.find().sort("timestamp", -1).limit(limit).to_list(limit)
+        
+        # Convert ObjectId to string for JSON serialization
+        for evaluation in evaluations:
+            if "_id" in evaluation:
+                evaluation["_id"] = str(evaluation["_id"])
+        
         return {
             "evaluations": evaluations,
             "count": len(evaluations)
