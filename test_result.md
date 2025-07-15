@@ -127,7 +127,7 @@ backend:
     status_history:
         - working: true
           agent: "testing"
-          comment: "Both GET /api/parameters and POST /api/update-parameters working correctly. Parameter updates are persisted and verified."
+          comment: "Both GET /api/parameters and POST /api/update-parameters working correctly. Parameters retrieved and updated successfully with proper validation and response format."
 
   - task: "Core Ethical Evaluation Engine"
     implemented: true
