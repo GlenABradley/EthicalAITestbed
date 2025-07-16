@@ -313,59 +313,81 @@ class LearningLayer:
         if self.collection is None:
             return
         
-        entry = LearningEntry(
-            evaluation_id=evaluation_id,
-            text_pattern=self.extract_text_pattern(text),
-            ambiguity_score=ambiguity_score,
-            original_thresholds=original_thresholds,
-            adjusted_thresholds=adjusted_thresholds
-        )
-        
-        self.collection.insert_one(entry.to_dict())
-        logger.info(f"Recorded learning entry for evaluation {evaluation_id}")
+        try:
+            entry = LearningEntry(
+                evaluation_id=evaluation_id,
+                text_pattern=self.extract_text_pattern(text),
+                ambiguity_score=ambiguity_score,
+                original_thresholds=original_thresholds,
+                adjusted_thresholds=adjusted_thresholds
+            )
+            
+            # Use sync insertion since this is called from sync context
+            import asyncio
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # If we're in an async context, we can't use sync operations
+                logger.warning("Cannot record learning entry in async context")
+                return
+            
+            self.collection.insert_one(entry.to_dict())
+            logger.info(f"Recorded learning entry for evaluation {evaluation_id}")
+        except Exception as e:
+            logger.error(f"Error recording learning entry: {e}")
     
     def record_dopamine_feedback(self, evaluation_id: str, feedback_score: float, user_comment: str = ""):
         """Record dopamine hit (positive feedback) for learning"""
         if self.collection is None:
             return
         
-        result = self.collection.update_one(
-            {'evaluation_id': evaluation_id},
-            {
-                '$inc': {
-                    'feedback_count': 1,
-                    'feedback_score': feedback_score
-                },
-                '$push': {
-                    'feedback_history': {
-                        'score': feedback_score,
-                        'comment': user_comment,
-                        'timestamp': datetime.now()
+        try:
+            result = self.collection.update_one(
+                {'evaluation_id': evaluation_id},
+                {
+                    '$inc': {
+                        'feedback_count': 1,
+                        'feedback_score': feedback_score
+                    },
+                    '$push': {
+                        'feedback_history': {
+                            'score': feedback_score,
+                            'comment': user_comment,
+                            'timestamp': datetime.now()
+                        }
                     }
                 }
-            }
-        )
-        
-        if result.modified_count > 0:
-            logger.info(f"Recorded dopamine feedback {feedback_score} for evaluation {evaluation_id}")
-        else:
-            logger.warning(f"No learning entry found for evaluation {evaluation_id}")
+            )
+            
+            if result.modified_count > 0:
+                logger.info(f"Recorded dopamine feedback {feedback_score} for evaluation {evaluation_id}")
+            else:
+                logger.warning(f"No learning entry found for evaluation {evaluation_id}")
+        except Exception as e:
+            logger.error(f"Error recording dopamine feedback: {e}")
     
     def get_learning_stats(self) -> Dict[str, Any]:
         """Get statistics about learning progress"""
         if self.collection is None:
             return {"error": "No learning collection available"}
         
-        total_entries = self.collection.count_documents({})
-        avg_feedback = list(self.collection.aggregate([
-            {'$group': {'_id': None, 'avg_feedback': {'$avg': '$feedback_score'}}}
-        ]))
-        
-        return {
-            'total_learning_entries': total_entries,
-            'average_feedback_score': avg_feedback[0]['avg_feedback'] if avg_feedback else 0,
-            'learning_active': total_entries > 0
-        }
+        try:
+            total_entries = self.collection.count_documents({})
+            avg_feedback = list(self.collection.aggregate([
+                {'$group': {'_id': None, 'avg_feedback': {'$avg': '$feedback_score'}}}
+            ]))
+            
+            return {
+                'total_learning_entries': total_entries,
+                'average_feedback_score': avg_feedback[0]['avg_feedback'] if avg_feedback else 0.0,
+                'learning_active': total_entries > 0
+            }
+        except Exception as e:
+            logger.error(f"Error getting learning stats: {e}")
+            return {
+                'total_learning_entries': 0,
+                'average_feedback_score': 0.0,
+                'learning_active': False
+            }
 
 class EthicalVectorGenerator:
     """Generates ethical perspective vectors from philosophical principles"""
