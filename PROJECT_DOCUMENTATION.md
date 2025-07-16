@@ -136,7 +136,7 @@ The **Ethical AI Developer Testbed** is a sophisticated, research-grade web appl
 
 ### Base URL
 ```
-Production: https://148a5d6f-12b3-4cd1-a22c-07c2118f9374.preview.emergentagent.com/api
+Production: https://a9223ff6-af23-449d-810a-32aa23631884.preview.emergentagent.com/api
 Development: http://localhost:8001/api
 ```
 
