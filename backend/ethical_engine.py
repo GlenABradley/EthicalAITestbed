@@ -61,7 +61,15 @@ class EthicalParameters:
             'consequentialist_weight': self.consequentialist_weight,
             'max_span_length': self.max_span_length,
             'min_span_length': self.min_span_length,
-            'embedding_model': self.embedding_model
+            'embedding_model': self.embedding_model,
+            'enable_dynamic_scaling': self.enable_dynamic_scaling,
+            'enable_cascade_filtering': self.enable_cascade_filtering,
+            'enable_learning_mode': self.enable_learning_mode,
+            'exponential_scaling': self.exponential_scaling,
+            'cascade_high_threshold': self.cascade_high_threshold,
+            'cascade_low_threshold': self.cascade_low_threshold,
+            'learning_weight': self.learning_weight,
+            'min_learning_samples': self.min_learning_samples
         }
 
 @dataclass
