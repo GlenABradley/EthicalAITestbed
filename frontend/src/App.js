@@ -512,29 +512,6 @@ function App() {
                       </div>
                     )}
                   </div>
-                              <div className="flex space-x-4">
-                                <span className={`px-2 py-1 rounded text-xs ${
-                                  span.virtue_violation ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                                }`}>
-                                  Virtue: {span.virtue_score?.toFixed(3)}
-                                </span>
-                                <span className={`px-2 py-1 rounded text-xs ${
-                                  span.deontological_violation ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                                }`}>
-                                  Deontological: {span.deontological_score?.toFixed(3)}
-                                </span>
-                                <span className={`px-2 py-1 rounded text-xs ${
-                                  span.consequentialist_violation ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                                }`}>
-                                  Consequentialist: {span.consequentialist_score?.toFixed(3)}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
 
                   {/* Explanation */}
                   <div className="bg-white p-6 rounded-lg shadow lg:col-span-2">
