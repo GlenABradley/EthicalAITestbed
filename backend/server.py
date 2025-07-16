@@ -437,13 +437,15 @@ async def get_dynamic_scaling_details(evaluation_id: str):
     """Get detailed information about dynamic scaling for a specific evaluation"""
     try:
         # Look up evaluation in database
-        evaluation_doc = await db.evaluations.find_one({"evaluation_id": evaluation_id})
+        evaluation_doc = await db.evaluations.find_one({"id": evaluation_id})
         
         if not evaluation_doc:
             raise HTTPException(status_code=404, detail="Evaluation not found")
         
-        # Extract dynamic scaling information
-        dynamic_scaling = evaluation_doc.get('dynamic_scaling', {})
+        # Extract dynamic scaling information from the result
+        result = evaluation_doc.get('result', {})
+        evaluation_data = result.get('evaluation', {})
+        dynamic_scaling = evaluation_data.get('dynamic_scaling', {})
         
         return {
             "evaluation_id": evaluation_id,
