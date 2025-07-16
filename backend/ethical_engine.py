@@ -584,9 +584,14 @@ class EthicalEvaluator:
         return tokens
     
     def get_span_embedding(self, tokens: List[str], start: int, end: int) -> np.ndarray:
-        """Get embedding for a span of tokens"""
+        """Get embedding for a span of tokens with caching"""
         span_text = ' '.join(tokens[start:end+1])
-        return self.model.encode([span_text])[0]
+        
+        # Use cache for efficiency
+        if span_text not in self.embedding_cache:
+            self.embedding_cache[span_text] = self.model.encode([span_text])[0]
+        
+        return self.embedding_cache[span_text]
     
     def compute_perspective_score(self, embedding: np.ndarray, perspective_vector: np.ndarray) -> float:
         """Compute s_P(i,j) = x_{i:j} · p_P"""
@@ -598,10 +603,18 @@ class EthicalEvaluator:
         score = np.dot(embedding, perspective_vector)
         return float(score)
     
-    def evaluate_span(self, tokens: List[str], start: int, end: int) -> EthicalSpan:
-        """Evaluate a single span of tokens"""
+    def evaluate_span(self, tokens: List[str], start: int, end: int, 
+                     adjusted_thresholds: Dict[str, float] = None) -> EthicalSpan:
+        """Evaluate a single span of tokens with dynamic thresholds"""
         span_text = ' '.join(tokens[start:end+1])
         span_embedding = self.get_span_embedding(tokens, start, end)
+        
+        # Use adjusted thresholds if provided, otherwise use parameters
+        thresholds = adjusted_thresholds or {
+            'virtue_threshold': self.parameters.virtue_threshold,
+            'deontological_threshold': self.parameters.deontological_threshold,
+            'consequentialist_threshold': self.parameters.consequentialist_threshold
+        }
         
         # Compute scores for each perspective
         virtue_score = self.compute_perspective_score(span_embedding, self.p_v) * self.parameters.virtue_weight
@@ -609,9 +622,9 @@ class EthicalEvaluator:
         consequentialist_score = self.compute_perspective_score(span_embedding, self.p_c) * self.parameters.consequentialist_weight
         
         # Apply thresholds to determine violations
-        virtue_violation = virtue_score > self.parameters.virtue_threshold
-        deontological_violation = deontological_score > self.parameters.deontological_threshold
-        consequentialist_violation = consequentialist_score > self.parameters.consequentialist_threshold
+        virtue_violation = virtue_score > thresholds['virtue_threshold']
+        deontological_violation = deontological_score > thresholds['deontological_threshold']
+        consequentialist_violation = consequentialist_score > thresholds['consequentialist_threshold']
         
         return EthicalSpan(
             start=start,
