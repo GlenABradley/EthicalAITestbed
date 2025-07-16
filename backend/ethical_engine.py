@@ -181,6 +181,8 @@ class EthicalEvaluation:
     overall_ethical: bool
     processing_time: float
     parameters: EthicalParameters
+    dynamic_scaling_result: Optional[DynamicScalingResult] = None
+    evaluation_id: str = field(default_factory=lambda: f"eval_{int(time.time() * 1000)}")
     
     @property
     def violation_count(self) -> int:
@@ -192,18 +194,177 @@ class EthicalEvaluation:
         """Count of minimal spans with violations"""
         return len([s for s in self.minimal_spans if s.any_violation])
     
+    @property
+    def all_spans_with_scores(self) -> List[Dict[str, Any]]:
+        """All spans with their scores for detailed analysis"""
+        return [s.to_dict() for s in self.spans]
+    
     def to_dict(self) -> Dict[str, Any]:
         """Convert evaluation to dictionary for API responses"""
-        return {
+        result = {
+            'evaluation_id': self.evaluation_id,
             'input_text': self.input_text,
             'tokens': self.tokens,
             'spans': [s.to_dict() for s in self.spans],
             'minimal_spans': [s.to_dict() for s in self.minimal_spans],
+            'all_spans_with_scores': self.all_spans_with_scores,
             'overall_ethical': self.overall_ethical,
             'processing_time': self.processing_time,
             'violation_count': self.violation_count,
             'minimal_violation_count': self.minimal_violation_count,
             'parameters': self.parameters.to_dict()
+        }
+        
+        if self.dynamic_scaling_result:
+            result['dynamic_scaling'] = {
+                'used_dynamic_scaling': self.dynamic_scaling_result.used_dynamic_scaling,
+                'used_cascade_filtering': self.dynamic_scaling_result.used_cascade_filtering,
+                'ambiguity_score': self.dynamic_scaling_result.ambiguity_score,
+                'original_thresholds': self.dynamic_scaling_result.original_thresholds,
+                'adjusted_thresholds': self.dynamic_scaling_result.adjusted_thresholds,
+                'processing_stages': self.dynamic_scaling_result.processing_stages,
+                'cascade_result': self.dynamic_scaling_result.cascade_result
+            }
+        
+        return result
+
+class LearningLayer:
+    """Learning system for threshold optimization with dopamine feedback"""
+    
+    def __init__(self, db_collection):
+        self.collection = db_collection
+        self.cache = {}  # In-memory cache for frequently accessed patterns
+        
+    def extract_text_pattern(self, text: str) -> str:
+        """Extract pattern from text for similarity matching"""
+        # Simple pattern: word count, avg word length, presence of negative words
+        words = text.lower().split()
+        word_count = len(words)
+        avg_word_length = np.mean([len(w) for w in words]) if words else 0
+        
+        negative_words = ['hate', 'stupid', 'kill', 'die', 'evil', 'bad', 'terrible', 'awful']
+        negative_count = sum(1 for word in words if word in negative_words)
+        
+        return f"wc:{word_count},awl:{avg_word_length:.1f},neg:{negative_count}"
+    
+    def calculate_ambiguity_score(self, virtue_score: float, deontological_score: float, 
+                                 consequentialist_score: float, parameters: EthicalParameters) -> float:
+        """Calculate ethical ambiguity based on proximity to thresholds"""
+        # Distance from each threshold
+        virtue_distance = abs(virtue_score - parameters.virtue_threshold)
+        deontological_distance = abs(deontological_score - parameters.deontological_threshold)
+        consequentialist_distance = abs(consequentialist_score - parameters.consequentialist_threshold)
+        
+        # Overall ambiguity (closer to thresholds = more ambiguous)
+        min_distance = min(virtue_distance, deontological_distance, consequentialist_distance)
+        ambiguity = max(0.0, 1.0 - (min_distance * 4))  # Scale to 0-1 range
+        
+        return ambiguity
+    
+    def suggest_threshold_adjustments(self, text: str, ambiguity_score: float, 
+                                    current_thresholds: Dict[str, float]) -> Dict[str, float]:
+        """Suggest threshold adjustments based on learned patterns"""
+        if not self.collection:
+            return self.default_dynamic_adjustment(ambiguity_score, current_thresholds)
+        
+        pattern = self.extract_text_pattern(text)
+        
+        # Look for similar patterns in learning data
+        similar_entries = list(self.collection.find({
+            'text_pattern': pattern,
+            'feedback_score': {'$gt': 0.5}  # Only consider positive feedback
+        }).sort('feedback_score', -1).limit(10))
+        
+        if len(similar_entries) >= 3:  # Enough data for learning
+            # Weight by feedback score
+            total_weight = sum(entry['feedback_score'] for entry in similar_entries)
+            
+            adjusted_thresholds = {}
+            for threshold_name in ['virtue_threshold', 'deontological_threshold', 'consequentialist_threshold']:
+                weighted_sum = sum(entry['adjusted_thresholds'][threshold_name] * entry['feedback_score'] 
+                                 for entry in similar_entries)
+                adjusted_thresholds[threshold_name] = weighted_sum / total_weight
+            
+            logger.info(f"Using learned adjustments for pattern {pattern}")
+            return adjusted_thresholds
+        
+        # Fall back to default dynamic adjustment
+        return self.default_dynamic_adjustment(ambiguity_score, current_thresholds)
+    
+    def default_dynamic_adjustment(self, ambiguity_score: float, current_thresholds: Dict[str, float]) -> Dict[str, float]:
+        """Default dynamic adjustment based on ambiguity score"""
+        # Higher ambiguity = lower thresholds (more sensitive)
+        if ambiguity_score > 0.7:  # High ambiguity
+            adjustment_factor = 0.8
+        elif ambiguity_score > 0.4:  # Medium ambiguity
+            adjustment_factor = 0.9
+        else:  # Low ambiguity
+            adjustment_factor = 1.1
+        
+        return {
+            'virtue_threshold': max(0.01, min(0.5, current_thresholds['virtue_threshold'] * adjustment_factor)),
+            'deontological_threshold': max(0.01, min(0.5, current_thresholds['deontological_threshold'] * adjustment_factor)),
+            'consequentialist_threshold': max(0.01, min(0.5, current_thresholds['consequentialist_threshold'] * adjustment_factor))
+        }
+    
+    def record_learning_entry(self, evaluation_id: str, text: str, ambiguity_score: float,
+                            original_thresholds: Dict[str, float], adjusted_thresholds: Dict[str, float]):
+        """Record a learning entry for future training"""
+        if not self.collection:
+            return
+        
+        entry = LearningEntry(
+            evaluation_id=evaluation_id,
+            text_pattern=self.extract_text_pattern(text),
+            ambiguity_score=ambiguity_score,
+            original_thresholds=original_thresholds,
+            adjusted_thresholds=adjusted_thresholds
+        )
+        
+        self.collection.insert_one(entry.to_dict())
+        logger.info(f"Recorded learning entry for evaluation {evaluation_id}")
+    
+    def record_dopamine_feedback(self, evaluation_id: str, feedback_score: float, user_comment: str = ""):
+        """Record dopamine hit (positive feedback) for learning"""
+        if not self.collection:
+            return
+        
+        result = self.collection.update_one(
+            {'evaluation_id': evaluation_id},
+            {
+                '$inc': {
+                    'feedback_count': 1,
+                    'feedback_score': feedback_score
+                },
+                '$push': {
+                    'feedback_history': {
+                        'score': feedback_score,
+                        'comment': user_comment,
+                        'timestamp': datetime.now()
+                    }
+                }
+            }
+        )
+        
+        if result.modified_count > 0:
+            logger.info(f"Recorded dopamine feedback {feedback_score} for evaluation {evaluation_id}")
+        else:
+            logger.warning(f"No learning entry found for evaluation {evaluation_id}")
+    
+    def get_learning_stats(self) -> Dict[str, Any]:
+        """Get statistics about learning progress"""
+        if not self.collection:
+            return {"error": "No learning collection available"}
+        
+        total_entries = self.collection.count_documents({})
+        avg_feedback = list(self.collection.aggregate([
+            {'$group': {'_id': None, 'avg_feedback': {'$avg': '$feedback_score'}}}
+        ]))
+        
+        return {
+            'total_learning_entries': total_entries,
+            'average_feedback_score': avg_feedback[0]['avg_feedback'] if avg_feedback else 0,
+            'learning_active': total_entries > 0
         }
 
 class EthicalVectorGenerator:
