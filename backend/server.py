@@ -363,6 +363,103 @@ async def get_performance_metrics():
         logger.error(f"Error getting performance metrics: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.post("/feedback")
+async def submit_feedback(request: FeedbackRequest):
+    """Submit dopamine feedback for learning system"""
+    try:
+        global evaluator
+        if evaluator is None:
+            initialize_evaluator()
+        
+        # Record feedback through learning layer
+        evaluator.learning_layer.record_dopamine_feedback(
+            evaluation_id=request.evaluation_id,
+            feedback_score=request.feedback_score,
+            user_comment=request.user_comment
+        )
+        
+        return {
+            "message": "Feedback recorded successfully",
+            "evaluation_id": request.evaluation_id,
+            "feedback_score": request.feedback_score
+        }
+        
+    except Exception as e:
+        logger.error(f"Error recording feedback: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/learning-stats", response_model=LearningStatsResponse)
+async def get_learning_stats():
+    """Get learning system statistics"""
+    try:
+        global evaluator
+        if evaluator is None:
+            initialize_evaluator()
+        
+        stats = evaluator.learning_layer.get_learning_stats()
+        
+        return LearningStatsResponse(
+            total_learning_entries=stats.get('total_learning_entries', 0),
+            average_feedback_score=stats.get('average_feedback_score', 0.0),
+            learning_active=stats.get('learning_active', False)
+        )
+        
+    except Exception as e:
+        logger.error(f"Error getting learning stats: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/threshold-scaling")
+async def test_threshold_scaling(request: ThresholdScalingRequest):
+    """Test threshold scaling conversion (exponential vs linear)"""
+    try:
+        from ethical_engine import exponential_threshold_scaling, linear_threshold_scaling
+        
+        if request.use_exponential:
+            scaled_value = exponential_threshold_scaling(request.slider_value)
+            scaling_type = "exponential"
+        else:
+            scaled_value = linear_threshold_scaling(request.slider_value)
+            scaling_type = "linear"
+        
+        return {
+            "slider_value": request.slider_value,
+            "scaled_threshold": scaled_value,
+            "scaling_type": scaling_type,
+            "formula": "e^(4*x) - 1 / (e^4 - 1) * 0.3" if request.use_exponential else "x"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error testing threshold scaling: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/dynamic-scaling-test/{evaluation_id}")
+async def get_dynamic_scaling_details(evaluation_id: str):
+    """Get detailed information about dynamic scaling for a specific evaluation"""
+    try:
+        # Look up evaluation in database
+        evaluation_doc = await db.evaluations.find_one({"evaluation_id": evaluation_id})
+        
+        if not evaluation_doc:
+            raise HTTPException(status_code=404, detail="Evaluation not found")
+        
+        # Extract dynamic scaling information
+        dynamic_scaling = evaluation_doc.get('dynamic_scaling', {})
+        
+        return {
+            "evaluation_id": evaluation_id,
+            "dynamic_scaling_enabled": dynamic_scaling.get('used_dynamic_scaling', False),
+            "cascade_filtering_enabled": dynamic_scaling.get('used_cascade_filtering', False),
+            "ambiguity_score": dynamic_scaling.get('ambiguity_score', 0.0),
+            "original_thresholds": dynamic_scaling.get('original_thresholds', {}),
+            "adjusted_thresholds": dynamic_scaling.get('adjusted_thresholds', {}),
+            "processing_stages": dynamic_scaling.get('processing_stages', []),
+            "cascade_result": dynamic_scaling.get('cascade_result', None)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting dynamic scaling details: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Include the router in the main app
 app.include_router(api_router)
 
