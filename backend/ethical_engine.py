@@ -674,6 +674,30 @@ class EthicalEvaluator:
         """Evaluate text using the complete mathematical framework with dynamic scaling"""
         start_time = time.time()
         
+        # Handle empty or whitespace-only text
+        if not text or not text.strip():
+            return EthicalEvaluation(
+                input_text=text,
+                tokens=[],
+                spans=[],
+                minimal_spans=[],
+                overall_ethical=True,  # Empty text is considered ethical
+                processing_time=time.time() - start_time,
+                parameters=self.parameters,
+                dynamic_scaling_result=DynamicScalingResult(
+                    used_dynamic_scaling=False,
+                    used_cascade_filtering=False,
+                    ambiguity_score=0.0,
+                    original_thresholds={
+                        'virtue_threshold': self.parameters.virtue_threshold,
+                        'deontological_threshold': self.parameters.deontological_threshold,
+                        'consequentialist_threshold': self.parameters.consequentialist_threshold
+                    },
+                    adjusted_thresholds={},
+                    processing_stages=['empty_text_handling']
+                )
+            )
+        
         # Initialize dynamic scaling result
         dynamic_result = DynamicScalingResult(
             used_dynamic_scaling=self.parameters.enable_dynamic_scaling,
