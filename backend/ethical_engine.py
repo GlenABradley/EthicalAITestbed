@@ -671,8 +671,70 @@ class EthicalEvaluator:
         return minimal_spans
     
     def evaluate_text(self, text: str) -> EthicalEvaluation:
-        """Evaluate text using the complete mathematical framework - OPTIMIZED VERSION"""
+        """Evaluate text using the complete mathematical framework with dynamic scaling"""
         start_time = time.time()
+        
+        # Initialize dynamic scaling result
+        dynamic_result = DynamicScalingResult(
+            used_dynamic_scaling=self.parameters.enable_dynamic_scaling,
+            used_cascade_filtering=self.parameters.enable_cascade_filtering,
+            ambiguity_score=0.0,
+            original_thresholds={
+                'virtue_threshold': self.parameters.virtue_threshold,
+                'deontological_threshold': self.parameters.deontological_threshold,
+                'consequentialist_threshold': self.parameters.consequentialist_threshold
+            },
+            adjusted_thresholds={},
+            processing_stages=[]
+        )
+        
+        # Stage 1: Fast cascade filtering (if enabled)
+        cascade_result = None
+        ambiguity_score = 0.0
+        
+        if self.parameters.enable_cascade_filtering:
+            dynamic_result.processing_stages.append("cascade_filtering")
+            cascade_result, ambiguity_score = self.fast_cascade_evaluation(text)
+            dynamic_result.ambiguity_score = ambiguity_score
+            
+            if cascade_result is not None:
+                dynamic_result.cascade_result = "ethical" if cascade_result else "unethical"
+                dynamic_result.processing_stages.append("cascade_decision")
+                
+                # Quick return for obvious cases
+                tokens = self.tokenize(text)
+                processing_time = time.time() - start_time
+                
+                return EthicalEvaluation(
+                    input_text=text,
+                    tokens=tokens,
+                    spans=[],  # No detailed span analysis for cascade decisions
+                    minimal_spans=[],
+                    overall_ethical=cascade_result,
+                    processing_time=processing_time,
+                    parameters=self.parameters,
+                    dynamic_scaling_result=dynamic_result
+                )
+        
+        # Stage 2: Dynamic scaling (if enabled)
+        adjusted_thresholds = None
+        if self.parameters.enable_dynamic_scaling:
+            dynamic_result.processing_stages.append("dynamic_scaling")
+            adjusted_thresholds = self.apply_dynamic_scaling(text, ambiguity_score)
+            dynamic_result.adjusted_thresholds = adjusted_thresholds
+            
+            # Record learning entry if learning is enabled
+            if self.parameters.enable_learning_mode:
+                self.learning_layer.record_learning_entry(
+                    evaluation_id=f"eval_{int(time.time() * 1000)}",
+                    text=text,
+                    ambiguity_score=ambiguity_score,
+                    original_thresholds=dynamic_result.original_thresholds,
+                    adjusted_thresholds=adjusted_thresholds
+                )
+        
+        # Stage 3: Detailed evaluation
+        dynamic_result.processing_stages.append("detailed_evaluation")
         
         # Tokenize input
         tokens = self.tokenize(text)
@@ -682,7 +744,7 @@ class EthicalEvaluator:
             logger.warning(f"Text too long ({len(tokens)} tokens), truncating to 50 tokens for performance")
             tokens = tokens[:50]
         
-        # Evaluate spans more efficiently - limit combinations
+        # Evaluate spans with dynamic thresholds
         all_spans = []
         max_spans_to_check = 200  # Reasonable limit for real-time use
         spans_checked = 0
@@ -698,7 +760,7 @@ class EthicalEvaluator:
                     break
                     
                 end = start + span_length - 1
-                span = self.evaluate_span(tokens, start, end)
+                span = self.evaluate_span(tokens, start, end, adjusted_thresholds)
                 all_spans.append(span)
                 spans_checked += 1
                 
@@ -714,7 +776,7 @@ class EthicalEvaluator:
         
         processing_time = time.time() - start_time
         
-        logger.info(f"Evaluated {spans_checked} spans in {processing_time:.3f}s")
+        logger.info(f"Evaluated {spans_checked} spans in {processing_time:.3f}s with dynamic scaling")
         
         return EthicalEvaluation(
             input_text=text,
@@ -723,7 +785,8 @@ class EthicalEvaluator:
             minimal_spans=minimal_spans,
             overall_ethical=overall_ethical,
             processing_time=processing_time,
-            parameters=self.parameters
+            parameters=self.parameters,
+            dynamic_scaling_result=dynamic_result
         )
     
     def update_parameters(self, new_parameters: Dict[str, Any]):
