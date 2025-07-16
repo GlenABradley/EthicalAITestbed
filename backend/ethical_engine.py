@@ -228,6 +228,40 @@ class EthicalEvaluation:
         
         return result
 
+async def create_learning_entry_async(db_collection, evaluation_id: str, text: str, 
+                                    ambiguity_score: float, original_thresholds: Dict[str, float], 
+                                    adjusted_thresholds: Dict[str, float]):
+    """Create learning entry asynchronously for API use"""
+    try:
+        # Extract pattern from text
+        words = text.lower().split()
+        word_count = len(words)
+        avg_word_length = sum(len(w) for w in words) / len(words) if words else 0
+        
+        negative_words = ['hate', 'stupid', 'kill', 'die', 'evil', 'bad', 'terrible', 'awful']
+        negative_count = sum(1 for word in words if word in negative_words)
+        
+        text_pattern = f"wc:{word_count},awl:{avg_word_length:.1f},neg:{negative_count}"
+        
+        entry = {
+            'evaluation_id': evaluation_id,
+            'text_pattern': text_pattern,
+            'ambiguity_score': ambiguity_score,
+            'original_thresholds': original_thresholds,
+            'adjusted_thresholds': adjusted_thresholds,
+            'feedback_score': 0.0,
+            'feedback_count': 0,
+            'created_at': datetime.now()
+        }
+        
+        await db_collection.insert_one(entry)
+        logger.info(f"Created learning entry for evaluation {evaluation_id}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error creating learning entry: {e}")
+        return False
+
 class LearningLayer:
     """Learning system for threshold optimization with dopamine feedback"""
     
