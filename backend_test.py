@@ -667,6 +667,532 @@ class BackendTester:
         except Exception as e:
             self.log_result("Edge Case - Empty/Whitespace", False, f"Error: {str(e)}")
     
+    # NEW DYNAMIC SCALING AND LEARNING TESTS
+    
+    def test_threshold_scaling_exponential(self):
+        """Test POST /api/threshold-scaling with exponential scaling"""
+        try:
+            test_cases = [
+                {"slider_value": 0.0, "use_exponential": True},
+                {"slider_value": 0.5, "use_exponential": True},
+                {"slider_value": 1.0, "use_exponential": True}
+            ]
+            
+            for test_case in test_cases:
+                response = requests.post(
+                    f"{API_BASE}/threshold-scaling",
+                    json=test_case,
+                    timeout=10
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    required_fields = ['slider_value', 'scaled_threshold', 'scaling_type', 'formula']
+                    
+                    if all(field in data for field in required_fields):
+                        slider_val = data['slider_value']
+                        scaled_val = data['scaled_threshold']
+                        scaling_type = data['scaling_type']
+                        
+                        if scaling_type == "exponential" and 0.0 <= scaled_val <= 0.3:
+                            self.log_result(
+                                f"Threshold Scaling Exponential (slider={slider_val})", 
+                                True, 
+                                f"Exponential scaling working: {slider_val} -> {scaled_val:.4f}"
+                            )
+                        else:
+                            self.log_result(
+                                f"Threshold Scaling Exponential (slider={slider_val})", 
+                                False, 
+                                f"Invalid scaling result: {data}"
+                            )
+                    else:
+                        self.log_result("Threshold Scaling Exponential", False, "Missing required fields", data)
+                else:
+                    self.log_result("Threshold Scaling Exponential", False, f"HTTP {response.status_code}", {"response": response.text})
+                    
+        except Exception as e:
+            self.log_result("Threshold Scaling Exponential", False, f"Connection error: {str(e)}")
+    
+    def test_threshold_scaling_linear(self):
+        """Test POST /api/threshold-scaling with linear scaling"""
+        try:
+            test_cases = [
+                {"slider_value": 0.0, "use_exponential": False},
+                {"slider_value": 0.5, "use_exponential": False},
+                {"slider_value": 1.0, "use_exponential": False}
+            ]
+            
+            for test_case in test_cases:
+                response = requests.post(
+                    f"{API_BASE}/threshold-scaling",
+                    json=test_case,
+                    timeout=10
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    slider_val = data.get('slider_value', 0)
+                    scaled_val = data.get('scaled_threshold', 0)
+                    scaling_type = data.get('scaling_type', '')
+                    
+                    if scaling_type == "linear" and abs(scaled_val - slider_val) < 0.001:
+                        self.log_result(
+                            f"Threshold Scaling Linear (slider={slider_val})", 
+                            True, 
+                            f"Linear scaling working: {slider_val} -> {scaled_val}"
+                        )
+                    else:
+                        self.log_result(
+                            f"Threshold Scaling Linear (slider={slider_val})", 
+                            False, 
+                            f"Linear scaling failed: expected {slider_val}, got {scaled_val}"
+                        )
+                else:
+                    self.log_result("Threshold Scaling Linear", False, f"HTTP {response.status_code}")
+                    
+        except Exception as e:
+            self.log_result("Threshold Scaling Linear", False, f"Connection error: {str(e)}")
+    
+    def test_learning_stats_initial(self):
+        """Test GET /api/learning-stats endpoint"""
+        try:
+            response = requests.get(f"{API_BASE}/learning-stats", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['total_learning_entries', 'average_feedback_score', 'learning_active']
+                
+                if all(field in data for field in required_fields):
+                    total_entries = data['total_learning_entries']
+                    avg_feedback = data['average_feedback_score']
+                    learning_active = data['learning_active']
+                    
+                    self.log_result(
+                        "Learning Stats", 
+                        True, 
+                        f"Learning stats retrieved: {total_entries} entries, avg feedback: {avg_feedback:.3f}, active: {learning_active}"
+                    )
+                    return data
+                else:
+                    self.log_result("Learning Stats", False, "Missing required fields", data)
+            else:
+                self.log_result("Learning Stats", False, f"HTTP {response.status_code}", {"response": response.text})
+                
+        except Exception as e:
+            self.log_result("Learning Stats", False, f"Connection error: {str(e)}")
+        
+        return None
+    
+    def test_dynamic_scaling_enabled_evaluation(self):
+        """Test evaluation with dynamic scaling enabled"""
+        try:
+            # Enable dynamic scaling parameters
+            dynamic_params = {
+                "enable_dynamic_scaling": True,
+                "enable_cascade_filtering": True,
+                "enable_learning_mode": True,
+                "exponential_scaling": True,
+                "cascade_high_threshold": 0.5,
+                "cascade_low_threshold": 0.2
+            }
+            
+            # Update parameters first
+            param_response = requests.post(
+                f"{API_BASE}/update-parameters",
+                json={"parameters": dynamic_params},
+                timeout=10
+            )
+            
+            if param_response.status_code != 200:
+                self.log_result("Dynamic Scaling Setup", False, f"Failed to update parameters: HTTP {param_response.status_code}")
+                return None
+            
+            # Test evaluation with dynamic scaling
+            test_text = "This is a moderately ambiguous text that might trigger dynamic scaling"
+            
+            response = requests.post(
+                f"{API_BASE}/evaluate",
+                json={"text": test_text},
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                evaluation = data.get('evaluation', {})
+                
+                # Check for dynamic scaling information
+                if 'dynamic_scaling' in evaluation:
+                    dynamic_info = evaluation['dynamic_scaling']
+                    used_dynamic = dynamic_info.get('used_dynamic_scaling', False)
+                    used_cascade = dynamic_info.get('used_cascade_filtering', False)
+                    ambiguity_score = dynamic_info.get('ambiguity_score', 0.0)
+                    
+                    self.log_result(
+                        "Dynamic Scaling Enabled Evaluation", 
+                        True, 
+                        f"Dynamic scaling: {used_dynamic}, cascade: {used_cascade}, ambiguity: {ambiguity_score:.3f}"
+                    )
+                    return evaluation.get('evaluation_id')
+                else:
+                    self.log_result("Dynamic Scaling Enabled Evaluation", False, "No dynamic scaling information in response")
+            else:
+                self.log_result("Dynamic Scaling Enabled Evaluation", False, f"HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_result("Dynamic Scaling Enabled Evaluation", False, f"Connection error: {str(e)}")
+        
+        return None
+    
+    def test_dynamic_scaling_disabled_evaluation(self):
+        """Test evaluation with dynamic scaling disabled"""
+        try:
+            # Disable dynamic scaling parameters
+            static_params = {
+                "enable_dynamic_scaling": False,
+                "enable_cascade_filtering": False,
+                "enable_learning_mode": False
+            }
+            
+            # Update parameters first
+            param_response = requests.post(
+                f"{API_BASE}/update-parameters",
+                json={"parameters": static_params},
+                timeout=10
+            )
+            
+            if param_response.status_code != 200:
+                self.log_result("Static Scaling Setup", False, f"Failed to update parameters: HTTP {param_response.status_code}")
+                return
+            
+            # Test evaluation without dynamic scaling
+            test_text = "This is the same moderately ambiguous text for comparison"
+            
+            response = requests.post(
+                f"{API_BASE}/evaluate",
+                json={"text": test_text},
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                evaluation = data.get('evaluation', {})
+                
+                # Check that dynamic scaling is disabled
+                if 'dynamic_scaling' in evaluation:
+                    dynamic_info = evaluation['dynamic_scaling']
+                    used_dynamic = dynamic_info.get('used_dynamic_scaling', True)  # Should be False
+                    used_cascade = dynamic_info.get('used_cascade_filtering', True)  # Should be False
+                    
+                    if not used_dynamic and not used_cascade:
+                        self.log_result(
+                            "Dynamic Scaling Disabled Evaluation", 
+                            True, 
+                            "Dynamic scaling properly disabled"
+                        )
+                    else:
+                        self.log_result(
+                            "Dynamic Scaling Disabled Evaluation", 
+                            False, 
+                            f"Dynamic scaling not properly disabled: dynamic={used_dynamic}, cascade={used_cascade}"
+                        )
+                else:
+                    self.log_result("Dynamic Scaling Disabled Evaluation", True, "No dynamic scaling information (expected when disabled)")
+            else:
+                self.log_result("Dynamic Scaling Disabled Evaluation", False, f"HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_result("Dynamic Scaling Disabled Evaluation", False, f"Connection error: {str(e)}")
+    
+    def test_feedback_submission(self):
+        """Test POST /api/feedback endpoint"""
+        try:
+            # First, create an evaluation to get an evaluation_id
+            eval_response = requests.post(
+                f"{API_BASE}/evaluate",
+                json={"text": "Test text for feedback submission"},
+                timeout=30
+            )
+            
+            if eval_response.status_code != 200:
+                self.log_result("Feedback Setup", False, "Failed to create evaluation for feedback test")
+                return
+            
+            eval_data = eval_response.json()
+            evaluation_id = eval_data.get('evaluation', {}).get('evaluation_id')
+            
+            if not evaluation_id:
+                self.log_result("Feedback Setup", False, "No evaluation_id in response")
+                return
+            
+            # Test feedback submission
+            feedback_cases = [
+                {"evaluation_id": evaluation_id, "feedback_score": 0.8, "user_comment": "Good result"},
+                {"evaluation_id": evaluation_id, "feedback_score": 0.2, "user_comment": "Poor result"},
+                {"evaluation_id": evaluation_id, "feedback_score": 1.0, "user_comment": "Perfect"}
+            ]
+            
+            for feedback in feedback_cases:
+                response = requests.post(
+                    f"{API_BASE}/feedback",
+                    json=feedback,
+                    timeout=10
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if 'message' in data and 'evaluation_id' in data:
+                        score = feedback['feedback_score']
+                        self.log_result(
+                            f"Feedback Submission (score={score})", 
+                            True, 
+                            f"Feedback recorded successfully: {data['message']}"
+                        )
+                    else:
+                        self.log_result(f"Feedback Submission (score={score})", False, "Invalid response format", data)
+                else:
+                    self.log_result(f"Feedback Submission", False, f"HTTP {response.status_code}")
+                    
+        except Exception as e:
+            self.log_result("Feedback Submission", False, f"Connection error: {str(e)}")
+    
+    def test_feedback_validation(self):
+        """Test feedback endpoint validation"""
+        try:
+            # Test invalid feedback scores
+            invalid_cases = [
+                {"evaluation_id": "test", "feedback_score": -0.1},  # Below 0
+                {"evaluation_id": "test", "feedback_score": 1.1},   # Above 1
+                {"evaluation_id": "", "feedback_score": 0.5},       # Empty evaluation_id
+                {"feedback_score": 0.5}                             # Missing evaluation_id
+            ]
+            
+            for i, invalid_case in enumerate(invalid_cases):
+                response = requests.post(
+                    f"{API_BASE}/feedback",
+                    json=invalid_case,
+                    timeout=10
+                )
+                
+                if response.status_code in [400, 422]:
+                    self.log_result(f"Feedback Validation {i+1}", True, f"Properly rejected invalid input (HTTP {response.status_code})")
+                else:
+                    self.log_result(f"Feedback Validation {i+1}", False, f"Should have rejected invalid input: HTTP {response.status_code}")
+                    
+        except Exception as e:
+            self.log_result("Feedback Validation", False, f"Connection error: {str(e)}")
+    
+    def test_dynamic_scaling_details(self):
+        """Test GET /api/dynamic-scaling-test/{evaluation_id} endpoint"""
+        try:
+            # First, create an evaluation with dynamic scaling enabled
+            dynamic_params = {
+                "enable_dynamic_scaling": True,
+                "enable_cascade_filtering": True
+            }
+            
+            requests.post(f"{API_BASE}/update-parameters", json={"parameters": dynamic_params}, timeout=10)
+            
+            eval_response = requests.post(
+                f"{API_BASE}/evaluate",
+                json={"text": "This text should trigger dynamic scaling analysis"},
+                timeout=30
+            )
+            
+            if eval_response.status_code != 200:
+                self.log_result("Dynamic Scaling Details Setup", False, "Failed to create evaluation")
+                return
+            
+            eval_data = eval_response.json()
+            evaluation_id = eval_data.get('evaluation', {}).get('evaluation_id')
+            
+            if not evaluation_id:
+                self.log_result("Dynamic Scaling Details Setup", False, "No evaluation_id in response")
+                return
+            
+            # Test dynamic scaling details endpoint
+            response = requests.get(f"{API_BASE}/dynamic-scaling-test/{evaluation_id}", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['evaluation_id', 'dynamic_scaling_enabled', 'cascade_filtering_enabled', 'ambiguity_score']
+                
+                if all(field in data for field in required_fields):
+                    self.log_result(
+                        "Dynamic Scaling Details", 
+                        True, 
+                        f"Retrieved scaling details for {evaluation_id}: ambiguity={data.get('ambiguity_score', 0):.3f}"
+                    )
+                else:
+                    self.log_result("Dynamic Scaling Details", False, "Missing required fields", data)
+            elif response.status_code == 404:
+                self.log_result("Dynamic Scaling Details", False, "Evaluation not found in database")
+            else:
+                self.log_result("Dynamic Scaling Details", False, f"HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_result("Dynamic Scaling Details", False, f"Connection error: {str(e)}")
+    
+    def test_learning_stats_after_feedback(self):
+        """Test learning stats after submitting feedback"""
+        try:
+            # Get initial stats
+            initial_response = requests.get(f"{API_BASE}/learning-stats", timeout=10)
+            initial_stats = initial_response.json() if initial_response.status_code == 200 else {}
+            initial_entries = initial_stats.get('total_learning_entries', 0)
+            
+            # Create evaluation and submit feedback
+            eval_response = requests.post(
+                f"{API_BASE}/evaluate",
+                json={"text": "Test for learning stats update"},
+                timeout=30
+            )
+            
+            if eval_response.status_code == 200:
+                eval_data = eval_response.json()
+                evaluation_id = eval_data.get('evaluation', {}).get('evaluation_id')
+                
+                if evaluation_id:
+                    # Submit feedback
+                    feedback_response = requests.post(
+                        f"{API_BASE}/feedback",
+                        json={"evaluation_id": evaluation_id, "feedback_score": 0.9},
+                        timeout=10
+                    )
+                    
+                    if feedback_response.status_code == 200:
+                        # Check updated stats
+                        time.sleep(1)  # Brief delay for database update
+                        updated_response = requests.get(f"{API_BASE}/learning-stats", timeout=10)
+                        
+                        if updated_response.status_code == 200:
+                            updated_stats = updated_response.json()
+                            updated_entries = updated_stats.get('total_learning_entries', 0)
+                            avg_feedback = updated_stats.get('average_feedback_score', 0)
+                            
+                            if updated_entries >= initial_entries:
+                                self.log_result(
+                                    "Learning Stats After Feedback", 
+                                    True, 
+                                    f"Stats updated: {updated_entries} entries, avg feedback: {avg_feedback:.3f}"
+                                )
+                            else:
+                                self.log_result("Learning Stats After Feedback", False, "Learning entries did not increase")
+                        else:
+                            self.log_result("Learning Stats After Feedback", False, "Failed to get updated stats")
+                    else:
+                        self.log_result("Learning Stats After Feedback", False, "Failed to submit feedback")
+                else:
+                    self.log_result("Learning Stats After Feedback", False, "No evaluation_id")
+            else:
+                self.log_result("Learning Stats After Feedback", False, "Failed to create evaluation")
+                
+        except Exception as e:
+            self.log_result("Learning Stats After Feedback", False, f"Connection error: {str(e)}")
+    
+    def test_cascade_filtering_obvious_cases(self):
+        """Test cascade filtering with obviously ethical and unethical text"""
+        try:
+            # Enable cascade filtering
+            cascade_params = {
+                "enable_cascade_filtering": True,
+                "cascade_high_threshold": 0.5,
+                "cascade_low_threshold": 0.2
+            }
+            
+            requests.post(f"{API_BASE}/update-parameters", json={"parameters": cascade_params}, timeout=10)
+            
+            test_cases = [
+                ("I love helping people and being kind", "Obviously ethical"),
+                ("You are stupid worthless garbage and should die", "Obviously unethical"),
+                ("The weather is nice today", "Neutral/ethical")
+            ]
+            
+            for text, description in test_cases:
+                response = requests.post(
+                    f"{API_BASE}/evaluate",
+                    json={"text": text},
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    evaluation = data.get('evaluation', {})
+                    dynamic_info = evaluation.get('dynamic_scaling', {})
+                    
+                    cascade_result = dynamic_info.get('cascade_result')
+                    processing_stages = dynamic_info.get('processing_stages', [])
+                    
+                    if cascade_result is not None:
+                        self.log_result(
+                            f"Cascade Filtering - {description}", 
+                            True, 
+                            f"Cascade decision: {cascade_result}, stages: {processing_stages}"
+                        )
+                    else:
+                        self.log_result(
+                            f"Cascade Filtering - {description}", 
+                            True, 
+                            f"Proceeded to detailed evaluation, stages: {processing_stages}"
+                        )
+                else:
+                    self.log_result(f"Cascade Filtering - {description}", False, f"HTTP {response.status_code}")
+                    
+        except Exception as e:
+            self.log_result("Cascade Filtering", False, f"Connection error: {str(e)}")
+    
+    def test_exponential_vs_linear_scaling_comparison(self):
+        """Compare exponential vs linear threshold scaling"""
+        try:
+            test_values = [0.1, 0.3, 0.5, 0.7, 0.9]
+            
+            for slider_value in test_values:
+                # Test exponential
+                exp_response = requests.post(
+                    f"{API_BASE}/threshold-scaling",
+                    json={"slider_value": slider_value, "use_exponential": True},
+                    timeout=10
+                )
+                
+                # Test linear
+                lin_response = requests.post(
+                    f"{API_BASE}/threshold-scaling",
+                    json={"slider_value": slider_value, "use_exponential": False},
+                    timeout=10
+                )
+                
+                if exp_response.status_code == 200 and lin_response.status_code == 200:
+                    exp_data = exp_response.json()
+                    lin_data = lin_response.json()
+                    
+                    exp_scaled = exp_data.get('scaled_threshold', 0)
+                    lin_scaled = lin_data.get('scaled_threshold', 0)
+                    
+                    # For low values, exponential should be lower than linear
+                    # For high values, exponential should be higher than linear
+                    if slider_value < 0.5:
+                        comparison_valid = exp_scaled <= lin_scaled
+                    else:
+                        comparison_valid = exp_scaled >= lin_scaled or abs(exp_scaled - lin_scaled) < 0.01
+                    
+                    if comparison_valid:
+                        self.log_result(
+                            f"Scaling Comparison (slider={slider_value})", 
+                            True, 
+                            f"Exponential: {exp_scaled:.4f}, Linear: {lin_scaled:.4f}"
+                        )
+                    else:
+                        self.log_result(
+                            f"Scaling Comparison (slider={slider_value})", 
+                            False, 
+                            f"Unexpected scaling relationship: exp={exp_scaled:.4f}, lin={lin_scaled:.4f}"
+                        )
+                else:
+                    self.log_result(f"Scaling Comparison (slider={slider_value})", False, "Failed to get scaling responses")
+                    
+        except Exception as e:
+            self.log_result("Scaling Comparison", False, f"Connection error: {str(e)}")
+    
     def run_all_tests(self):
         """Run all backend tests"""
         print(f"🚀 Starting comprehensive backend testing for: {API_BASE}")
