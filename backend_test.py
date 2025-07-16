@@ -696,6 +696,23 @@ class BackendTester:
         # Error handling
         self.test_error_handling()
         
+        # STRESS TESTING AND EDGE CASES
+        print("\n" + "=" * 80)
+        print("🔥 STARTING STRESS TESTING AND EDGE CASE ANALYSIS")
+        print("=" * 80)
+        
+        # Stress tests
+        self.test_stress_large_text()
+        self.test_stress_very_large_text()
+        self.test_stress_concurrent_requests()
+        self.test_stress_extreme_parameters()
+        self.test_stress_malformed_requests()
+        self.test_stress_unicode_and_special_chars()
+        self.test_stress_database_limits()
+        
+        # Edge cases
+        self.test_edge_case_empty_and_whitespace()
+        
         # Summary
         print("\n" + "=" * 80)
         print("🏁 TESTING COMPLETE")
