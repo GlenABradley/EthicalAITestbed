@@ -554,24 +554,39 @@ class EthicalEvaluator:
             full_embedding = full_embedding / np.linalg.norm(full_embedding)
         
         # Quick dot product against all three vectors
-        virtue_score = np.dot(full_embedding, self.p_v)
-        deontological_score = np.dot(full_embedding, self.p_d)
-        consequentialist_score = np.dot(full_embedding, self.p_c)
+        virtue_score = np.dot(full_embedding, self.p_v) * self.parameters.virtue_weight
+        deontological_score = np.dot(full_embedding, self.p_d) * self.parameters.deontological_weight
+        consequentialist_score = np.dot(full_embedding, self.p_c) * self.parameters.consequentialist_weight
         
         # Calculate ambiguity for potential Stage 2
         ambiguity = self.learning_layer.calculate_ambiguity_score(
             virtue_score, deontological_score, consequentialist_score, self.parameters
         )
         
-        # Check for obvious ethical cases
-        if max(virtue_score, deontological_score, consequentialist_score) < self.parameters.cascade_low_threshold:
+        # Check for obvious ethical cases (all scores well below low threshold)
+        max_score = max(virtue_score, deontological_score, consequentialist_score)
+        if max_score < self.parameters.cascade_low_threshold:
+            logger.info(f"Cascade: Clearly ethical - max score {max_score:.3f} < {self.parameters.cascade_low_threshold}")
             return True, ambiguity  # Clearly ethical - fast path
         
-        # Check for obvious unethical cases
-        if min(virtue_score, deontological_score, consequentialist_score) > self.parameters.cascade_high_threshold:
+        # Check for obvious unethical cases (any score well above high threshold)
+        if max_score > self.parameters.cascade_high_threshold:
+            logger.info(f"Cascade: Clearly unethical - max score {max_score:.3f} > {self.parameters.cascade_high_threshold}")
             return False, ambiguity  # Clearly unethical - fast path
         
+        # Check for strong unethical indicators (multiple perspectives flagged)
+        violations = [
+            virtue_score > self.parameters.virtue_threshold,
+            deontological_score > self.parameters.deontological_threshold,
+            consequentialist_score > self.parameters.consequentialist_threshold
+        ]
+        
+        if sum(violations) >= 2:  # Two or more perspectives flag it as unethical
+            logger.info(f"Cascade: Multiple violations detected - {sum(violations)}/3 perspectives flagged")
+            return False, ambiguity  # Multiple violations - likely unethical
+        
         # Ambiguous case - proceed to detailed evaluation
+        logger.info(f"Cascade: Ambiguous case - proceeding to detailed evaluation (ambiguity: {ambiguity:.3f})")
         return None, ambiguity
     
     def apply_dynamic_scaling(self, text: str, ambiguity_score: float) -> Dict[str, float]:
