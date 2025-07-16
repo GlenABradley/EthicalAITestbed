@@ -353,7 +353,7 @@ class LearningLayer:
     
     def get_learning_stats(self) -> Dict[str, Any]:
         """Get statistics about learning progress"""
-        if not self.collection:
+        if self.collection is None:
             return {"error": "No learning collection available"}
         
         total_entries = self.collection.count_documents({})
