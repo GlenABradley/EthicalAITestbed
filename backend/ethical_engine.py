@@ -157,18 +157,18 @@ class EthicalSpan:
     def to_dict(self) -> Dict[str, Any]:
         """Convert span to dictionary for API responses"""
         return {
-            'start': self.start,
-            'end': self.end,
-            'text': self.text,
-            'virtue_score': self.virtue_score,
-            'deontological_score': self.deontological_score,
-            'consequentialist_score': self.consequentialist_score,
-            'virtue_violation': self.virtue_violation,
-            'deontological_violation': self.deontological_violation,
-            'consequentialist_violation': self.consequentialist_violation,
-            'any_violation': self.any_violation,
+            'start': int(self.start),
+            'end': int(self.end),
+            'text': str(self.text),
+            'virtue_score': float(self.virtue_score),
+            'deontological_score': float(self.deontological_score),
+            'consequentialist_score': float(self.consequentialist_score),
+            'virtue_violation': bool(self.virtue_violation),
+            'deontological_violation': bool(self.deontological_violation),
+            'consequentialist_violation': bool(self.consequentialist_violation),
+            'any_violation': bool(self.any_violation),
             'violation_perspectives': self.violation_perspectives,
-            'is_minimal': self.is_minimal
+            'is_minimal': bool(self.is_minimal)
         }
 
 @dataclass
