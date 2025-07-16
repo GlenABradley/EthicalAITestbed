@@ -36,6 +36,20 @@ class EthicalParameters:
     # Model parameters
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     
+    # Dynamic scaling parameters
+    enable_dynamic_scaling: bool = False
+    enable_cascade_filtering: bool = False
+    enable_learning_mode: bool = False
+    exponential_scaling: bool = True
+    
+    # Cascade filtering thresholds
+    cascade_high_threshold: float = 0.5
+    cascade_low_threshold: float = 0.2
+    
+    # Learning parameters
+    learning_weight: float = 0.3
+    min_learning_samples: int = 5
+    
     def to_dict(self) -> Dict[str, Any]:
         """Convert parameters to dictionary for API responses"""
         return {
