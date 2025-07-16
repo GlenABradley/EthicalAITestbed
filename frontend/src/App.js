@@ -594,6 +594,114 @@ function App() {
                     ))}
                   </div>
                 </div>
+                
+                {/* Dynamic Scaling Controls */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">Dynamic Scaling & Learning</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={parameters.enable_dynamic_scaling || false}
+                          onChange={(e) => updateParameter('enable_dynamic_scaling', e.target.checked)}
+                          className="rounded"
+                        />
+                        <span className="text-sm">Enable Dynamic Scaling</span>
+                      </label>
+                      
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={parameters.enable_cascade_filtering || false}
+                          onChange={(e) => updateParameter('enable_cascade_filtering', e.target.checked)}
+                          className="rounded"
+                        />
+                        <span className="text-sm">Enable Cascade Filtering</span>
+                      </label>
+                      
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={parameters.enable_learning_mode || false}
+                          onChange={(e) => updateParameter('enable_learning_mode', e.target.checked)}
+                          className="rounded"
+                        />
+                        <span className="text-sm">Enable Learning Mode</span>
+                      </label>
+                      
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={parameters.exponential_scaling || false}
+                          onChange={(e) => updateParameter('exponential_scaling', e.target.checked)}
+                          className="rounded"
+                        />
+                        <span className="text-sm">Exponential Threshold Scaling</span>
+                      </label>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Cascade High Threshold
+                        </label>
+                        <input
+                          type="range"
+                          min="0.3"
+                          max="1.0"
+                          step="0.05"
+                          value={parameters.cascade_high_threshold || 0.5}
+                          onChange={(e) => updateParameter('cascade_high_threshold', e.target.value)}
+                          className="w-full"
+                        />
+                        <div className="flex justify-between text-sm text-gray-500">
+                          <span>0.3</span>
+                          <span className="font-mono">{(parameters.cascade_high_threshold || 0.5).toFixed(3)}</span>
+                          <span>1.0</span>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Cascade Low Threshold
+                        </label>
+                        <input
+                          type="range"
+                          min="0.0"
+                          max="0.5"
+                          step="0.05"
+                          value={parameters.cascade_low_threshold || 0.2}
+                          onChange={(e) => updateParameter('cascade_low_threshold', e.target.value)}
+                          className="w-full"
+                        />
+                        <div className="flex justify-between text-sm text-gray-500">
+                          <span>0.0</span>
+                          <span className="font-mono">{(parameters.cascade_low_threshold || 0.2).toFixed(3)}</span>
+                          <span>0.5</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Learning System Status */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">Learning System Status</h3>
+                  <div className="bg-blue-50 p-4 rounded-md">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <strong>Total Learning Entries:</strong> {learningStats.total_learning_entries || 0}
+                      </div>
+                      <div>
+                        <strong>Average Feedback Score:</strong> {learningStats.average_feedback_score?.toFixed(3) || 0}
+                      </div>
+                      <div>
+                        <strong>Learning Active:</strong> {learningStats.learning_active ? 'Yes' : 'No'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
