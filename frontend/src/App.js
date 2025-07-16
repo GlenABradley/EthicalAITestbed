@@ -302,22 +302,216 @@ function App() {
                     </div>
                   </div>
 
-                  {/* Violations */}
-                  {evaluationResult.evaluation?.minimal_spans?.length > 0 && (
-                    <div className="bg-white p-6 rounded-lg shadow lg:col-span-2">
-                      <h3 className="text-xl font-bold mb-4">Detected Violations</h3>
+                  {/* Violations and Analysis Tabs */}
+                  <div className="bg-white p-6 rounded-lg shadow lg:col-span-2">
+                    <h3 className="text-xl font-bold mb-4">Detailed Analysis</h3>
+                    
+                    {/* Tab Navigation */}
+                    <div className="flex space-x-4 mb-6 border-b">
+                      <button
+                        onClick={() => setActiveResultTab('violations')}
+                        className={`px-4 py-2 -mb-px font-medium transition-colors ${
+                          activeResultTab === 'violations'
+                            ? 'border-b-2 border-blue-500 text-blue-600'
+                            : 'text-gray-600 hover:text-gray-800'
+                        }`}
+                      >
+                        Violations ({evaluationResult.evaluation?.minimal_violation_count || 0})
+                      </button>
+                      <button
+                        onClick={() => setActiveResultTab('allSpans')}
+                        className={`px-4 py-2 -mb-px font-medium transition-colors ${
+                          activeResultTab === 'allSpans'
+                            ? 'border-b-2 border-blue-500 text-blue-600'
+                            : 'text-gray-600 hover:text-gray-800'
+                        }`}
+                      >
+                        All Spans ({evaluationResult.evaluation?.spans?.length || 0})
+                      </button>
+                      <button
+                        onClick={() => setActiveResultTab('learning')}
+                        className={`px-4 py-2 -mb-px font-medium transition-colors ${
+                          activeResultTab === 'learning'
+                            ? 'border-b-2 border-blue-500 text-blue-600'
+                            : 'text-gray-600 hover:text-gray-800'
+                        }`}
+                      >
+                        Learning & Feedback
+                      </button>
+                      <button
+                        onClick={() => setActiveResultTab('dynamic')}
+                        className={`px-4 py-2 -mb-px font-medium transition-colors ${
+                          activeResultTab === 'dynamic'
+                            ? 'border-b-2 border-blue-500 text-blue-600'
+                            : 'text-gray-600 hover:text-gray-800'
+                        }`}
+                      >
+                        Dynamic Scaling
+                      </button>
+                    </div>
+
+                    {/* Tab Content */}
+                    {activeResultTab === 'violations' && (
                       <div className="space-y-3">
-                        {evaluationResult.evaluation.minimal_spans.map((span, index) => (
-                          <div key={index} className="border border-red-200 rounded-md p-4">
-                            <div className="flex justify-between items-start mb-2">
-                              <span className="font-mono bg-red-100 text-red-800 px-2 py-1 rounded">
-                                "{span.text}"
-                              </span>
-                              <span className="text-sm text-gray-500">
-                                Positions {span.start}-{span.end}
-                              </span>
+                        {evaluationResult.evaluation?.minimal_spans?.length > 0 ? (
+                          evaluationResult.evaluation.minimal_spans.map((span, index) => (
+                            <div key={index} className="border border-red-200 rounded-md p-4">
+                              <div className="flex justify-between items-start mb-2">
+                                <span className="font-mono bg-red-100 text-red-800 px-2 py-1 rounded">
+                                  "{span.text}"
+                                </span>
+                                <span className="text-sm text-gray-500">
+                                  Positions {span.start}-{span.end}
+                                </span>
+                              </div>
+                              <div className="text-sm space-y-1">
+                                <div>Virtue: {span.virtue_score?.toFixed(3)} {span.virtue_violation ? '❌' : '✅'}</div>
+                                <div>Deontological: {span.deontological_score?.toFixed(3)} {span.deontological_violation ? '❌' : '✅'}</div>
+                                <div>Consequentialist: {span.consequentialist_score?.toFixed(3)} {span.consequentialist_violation ? '❌' : '✅'}</div>
+                              </div>
                             </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-8 text-gray-500">
+                            No violations detected in this text.
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {activeResultTab === 'allSpans' && (
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {evaluationResult.evaluation?.spans?.length > 0 ? (
+                          evaluationResult.evaluation.spans.map((span, index) => (
+                            <div key={index} className={`border rounded-md p-4 ${
+                              span.any_violation ? 'border-red-200 bg-red-50' : 'border-gray-200'
+                            }`}>
+                              <div className="flex justify-between items-start mb-2">
+                                <span className={`font-mono px-2 py-1 rounded ${
+                                  span.any_violation 
+                                    ? 'bg-red-100 text-red-800' 
+                                    : 'bg-gray-100 text-gray-800'
+                                }`}>
+                                  "{span.text}"
+                                </span>
+                                <span className="text-sm text-gray-500">
+                                  Positions {span.start}-{span.end}
+                                </span>
+                              </div>
+                              <div className="text-sm grid grid-cols-3 gap-4">
+                                <div>
+                                  <strong>Virtue:</strong> {span.virtue_score?.toFixed(3)} 
+                                  {span.virtue_violation ? ' ❌' : ' ✅'}
+                                </div>
+                                <div>
+                                  <strong>Deontological:</strong> {span.deontological_score?.toFixed(3)} 
+                                  {span.deontological_violation ? ' ❌' : ' ✅'}
+                                </div>
+                                <div>
+                                  <strong>Consequentialist:</strong> {span.consequentialist_score?.toFixed(3)} 
+                                  {span.consequentialist_violation ? ' ❌' : ' ✅'}
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-8 text-gray-500">
+                            No spans to display.
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {activeResultTab === 'learning' && (
+                      <div className="space-y-4">
+                        <div className="bg-blue-50 p-4 rounded-md">
+                          <h4 className="font-semibold text-blue-800 mb-2">Learning System Status</h4>
+                          <div className="text-sm space-y-1">
+                            <div>Total Learning Entries: {learningStats.total_learning_entries || 0}</div>
+                            <div>Average Feedback Score: {learningStats.average_feedback_score?.toFixed(3) || 0}</div>
+                            <div>Learning Active: {learningStats.learning_active ? 'Yes' : 'No'}</div>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-gray-50 p-4 rounded-md">
+                          <h4 className="font-semibold text-gray-800 mb-3">Provide Feedback (Dopamine System)</h4>
+                          <div className="flex space-x-2 mb-3">
+                            <button
+                              onClick={() => submitFeedback(evaluationResult.evaluation?.evaluation_id, 1.0, 'Perfect result')}
+                              className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                            >
+                              Perfect (1.0)
+                            </button>
+                            <button
+                              onClick={() => submitFeedback(evaluationResult.evaluation?.evaluation_id, 0.8, 'Good result')}
+                              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                            >
+                              Good (0.8)
+                            </button>
+                            <button
+                              onClick={() => submitFeedback(evaluationResult.evaluation?.evaluation_id, 0.5, 'Okay result')}
+                              className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                            >
+                              Okay (0.5)
+                            </button>
+                            <button
+                              onClick={() => submitFeedback(evaluationResult.evaluation?.evaluation_id, 0.2, 'Poor result')}
+                              className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                            >
+                              Poor (0.2)
+                            </button>
+                          </div>
+                          {feedbackMessage && (
+                            <div className="text-sm text-blue-600 mt-2">{feedbackMessage}</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeResultTab === 'dynamic' && (
+                      <div className="space-y-4">
+                        <div className="bg-purple-50 p-4 rounded-md">
+                          <h4 className="font-semibold text-purple-800 mb-2">Dynamic Scaling Information</h4>
+                          {evaluationResult.evaluation?.dynamic_scaling ? (
                             <div className="text-sm space-y-1">
+                              <div>Dynamic Scaling Used: {evaluationResult.evaluation.dynamic_scaling.used_dynamic_scaling ? 'Yes' : 'No'}</div>
+                              <div>Cascade Filtering Used: {evaluationResult.evaluation.dynamic_scaling.used_cascade_filtering ? 'Yes' : 'No'}</div>
+                              <div>Ambiguity Score: {evaluationResult.evaluation.dynamic_scaling.ambiguity_score?.toFixed(3) || 'N/A'}</div>
+                              <div>Processing Stages: {evaluationResult.evaluation.dynamic_scaling.processing_stages?.join(', ') || 'None'}</div>
+                              {evaluationResult.evaluation.dynamic_scaling.cascade_result && (
+                                <div>Cascade Result: {evaluationResult.evaluation.dynamic_scaling.cascade_result}</div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="text-sm text-gray-600">Dynamic scaling information not available for this evaluation.</div>
+                          )}
+                        </div>
+                        
+                        <div className="bg-gray-50 p-4 rounded-md">
+                          <h4 className="font-semibold text-gray-800 mb-3">Threshold Scaling Test</h4>
+                          <div className="flex space-x-2 mb-3">
+                            <input
+                              type="range"
+                              min="0"
+                              max="1"
+                              step="0.1"
+                              onChange={(e) => testThresholdScaling(parseFloat(e.target.value))}
+                              className="flex-1"
+                            />
+                            <span className="text-sm w-16">Test Slider</span>
+                          </div>
+                          {thresholdScalingTest.slider_value !== undefined && (
+                            <div className="text-sm space-y-1">
+                              <div>Slider Value: {thresholdScalingTest.slider_value}</div>
+                              <div>Scaled Threshold: {thresholdScalingTest.scaled_threshold?.toFixed(4)}</div>
+                              <div>Scaling Type: {thresholdScalingTest.scaling_type}</div>
+                              <div>Formula: {thresholdScalingTest.formula}</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                               <div className="flex space-x-4">
                                 <span className={`px-2 py-1 rounded text-xs ${
                                   span.virtue_violation ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
