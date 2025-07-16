@@ -601,7 +601,7 @@ class EthicalEvaluator:
         
         # Compute dot product (cosine similarity since both are unit vectors)
         score = np.dot(embedding, perspective_vector)
-        return float(score)
+        return float(score)  # Convert to Python float for JSON serialization
     
     def evaluate_span(self, tokens: List[str], start: int, end: int, 
                      adjusted_thresholds: Dict[str, float] = None) -> EthicalSpan:
