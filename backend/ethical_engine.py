@@ -498,15 +498,84 @@ class EthicalVectorGenerator:
 class EthicalEvaluator:
     """Main ethical evaluation engine implementing the mathematical framework"""
     
-    def __init__(self, parameters: EthicalParameters = None):
+    def __init__(self, parameters: EthicalParameters = None, db_collection=None):
         self.parameters = parameters or EthicalParameters()
         self.model = SentenceTransformer(self.parameters.embedding_model)
         self.vector_generator = EthicalVectorGenerator(self.model)
+        self.learning_layer = LearningLayer(db_collection)
         
         # Initialize ethical vectors
         self.p_v, self.p_d, self.p_c = self.vector_generator.get_all_vectors()
         
+        # Embedding cache for efficiency
+        self.embedding_cache = {}
+        
         logger.info(f"Initialized EthicalEvaluator with model: {self.parameters.embedding_model}")
+    
+    def apply_threshold_scaling(self, slider_value: float) -> float:
+        """Apply exponential or linear scaling to threshold values"""
+        if self.parameters.exponential_scaling:
+            return exponential_threshold_scaling(slider_value)
+        else:
+            return linear_threshold_scaling(slider_value)
+    
+    def fast_cascade_evaluation(self, text: str) -> Tuple[Optional[bool], float]:
+        """Stage 1: Fast cascade filtering for obvious cases"""
+        if not self.parameters.enable_cascade_filtering:
+            return None, 0.0
+        
+        # Use full text embedding for quick evaluation
+        full_embedding = self.model.encode([text])[0]
+        
+        # Normalize embedding
+        if np.linalg.norm(full_embedding) > 0:
+            full_embedding = full_embedding / np.linalg.norm(full_embedding)
+        
+        # Quick dot product against all three vectors
+        virtue_score = np.dot(full_embedding, self.p_v)
+        deontological_score = np.dot(full_embedding, self.p_d)
+        consequentialist_score = np.dot(full_embedding, self.p_c)
+        
+        # Calculate ambiguity for potential Stage 2
+        ambiguity = self.learning_layer.calculate_ambiguity_score(
+            virtue_score, deontological_score, consequentialist_score, self.parameters
+        )
+        
+        # Check for obvious ethical cases
+        if max(virtue_score, deontological_score, consequentialist_score) < self.parameters.cascade_low_threshold:
+            return True, ambiguity  # Clearly ethical - fast path
+        
+        # Check for obvious unethical cases
+        if min(virtue_score, deontological_score, consequentialist_score) > self.parameters.cascade_high_threshold:
+            return False, ambiguity  # Clearly unethical - fast path
+        
+        # Ambiguous case - proceed to detailed evaluation
+        return None, ambiguity
+    
+    def apply_dynamic_scaling(self, text: str, ambiguity_score: float) -> Dict[str, float]:
+        """Stage 2: Apply dynamic scaling based on vector distances"""
+        if not self.parameters.enable_dynamic_scaling:
+            return {
+                'virtue_threshold': self.parameters.virtue_threshold,
+                'deontological_threshold': self.parameters.deontological_threshold,
+                'consequentialist_threshold': self.parameters.consequentialist_threshold
+            }
+        
+        current_thresholds = {
+            'virtue_threshold': self.parameters.virtue_threshold,
+            'deontological_threshold': self.parameters.deontological_threshold,
+            'consequentialist_threshold': self.parameters.consequentialist_threshold
+        }
+        
+        # Get suggestions from learning layer
+        adjusted_thresholds = self.learning_layer.suggest_threshold_adjustments(
+            text, ambiguity_score, current_thresholds
+        )
+        
+        logger.info(f"Dynamic scaling: ambiguity={ambiguity_score:.3f}, "
+                   f"original={current_thresholds}, adjusted={adjusted_thresholds}")
+        
+        return adjusted_thresholds
     
     def tokenize(self, text: str) -> List[str]:
         """Tokenize text into words/tokens"""
