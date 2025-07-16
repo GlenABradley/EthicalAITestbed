@@ -409,9 +409,9 @@ frontend:
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 2
+  test_sequence: 3
   run_ui: false
-  project_status: "production_ready"
+  project_status: "critical_issues_found"
   documentation_complete: true
 
 test_plan:
