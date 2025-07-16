@@ -14,11 +14,27 @@ function App() {
   const [evaluationResult, setEvaluationResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [parameters, setParameters] = useState({});
-
-  // Load initial parameters
+  
+  // New state for learning system
+  const [learningStats, setLearningStats] = useState({});
+  const [activeResultTab, setActiveResultTab] = useState('violations');
+  const [feedbackMessage, setFeedbackMessage] = useState('');
+  const [thresholdScalingTest, setThresholdScalingTest] = useState({});
+  
+  // Load initial parameters and learning stats
   useEffect(() => {
     loadParameters();
+    loadLearningStats();
   }, []);
+  
+  const loadLearningStats = async () => {
+    try {
+      const response = await axios.get(`${API}/learning-stats`);
+      setLearningStats(response.data);
+    } catch (error) {
+      console.error('Error loading learning stats:', error);
+    }
+  };
 
   const loadParameters = async () => {
     try {
