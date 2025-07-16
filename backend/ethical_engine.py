@@ -770,15 +770,18 @@ class EthicalEvaluator:
             dynamic_result.adjusted_thresholds = adjusted_thresholds
             
             # Record learning entry if learning is enabled
-            # TODO: Fix async/sync compatibility for learning entries
-            # if self.parameters.enable_learning_mode:
-            #     self.learning_layer.record_learning_entry(
-            #         evaluation_id=f"eval_{int(time.time() * 1000)}",
-            #         text=text,
-            #         ambiguity_score=ambiguity_score,
-            #         original_thresholds=dynamic_result.original_thresholds,
-            #         adjusted_thresholds=adjusted_thresholds
-            #     )
+            if self.parameters.enable_learning_mode:
+                try:
+                    self.learning_layer.record_learning_entry(
+                        evaluation_id=f"eval_{int(time.time() * 1000)}",
+                        text=text,
+                        ambiguity_score=ambiguity_score,
+                        original_thresholds=dynamic_result.original_thresholds,
+                        adjusted_thresholds=adjusted_thresholds
+                    )
+                except Exception as e:
+                    logger.error(f"Error recording learning entry: {e}")
+                    # Continue with evaluation even if learning fails
         
         # Stage 3: Detailed evaluation
         dynamic_result.processing_stages.append("detailed_evaluation")
