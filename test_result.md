@@ -415,11 +415,17 @@ metadata:
   documentation_complete: true
 
 test_plan:
-  current_focus: []
-  stuck_tasks: []
+  current_focus:
+    - "Learning System - Entry Creation"
+    - "Learning System - Feedback Integration"
+    - "Dynamic Scaling Details Endpoint"
+    - "Threshold Sensitivity Analysis"
+  stuck_tasks:
+    - "Learning System - Entry Creation"
+    - "Threshold Sensitivity Analysis"
   test_all: false
   test_priority: "high_first"
-  final_status: "all_tests_passed"
+  final_status: "critical_issues_found"
 
 agent_communication:
     - agent: "testing"
