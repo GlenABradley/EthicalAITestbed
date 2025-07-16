@@ -269,24 +269,27 @@ class LearningLayer:
         
         pattern = self.extract_text_pattern(text)
         
-        # Look for similar patterns in learning data
-        similar_entries = list(self.collection.find({
-            'text_pattern': pattern,
-            'feedback_score': {'$gt': 0.5}  # Only consider positive feedback
-        }).sort('feedback_score', -1).limit(10))
-        
-        if len(similar_entries) >= 3:  # Enough data for learning
-            # Weight by feedback score
-            total_weight = sum(entry['feedback_score'] for entry in similar_entries)
+        try:
+            # Use sync operations for now - async will be handled at API level
+            similar_entries = list(self.collection.find({
+                'text_pattern': pattern,
+                'feedback_score': {'$gt': 0.5}  # Only consider positive feedback
+            }).sort('feedback_score', -1).limit(10))
             
-            adjusted_thresholds = {}
-            for threshold_name in ['virtue_threshold', 'deontological_threshold', 'consequentialist_threshold']:
-                weighted_sum = sum(entry['adjusted_thresholds'][threshold_name] * entry['feedback_score'] 
-                                 for entry in similar_entries)
-                adjusted_thresholds[threshold_name] = weighted_sum / total_weight
-            
-            logger.info(f"Using learned adjustments for pattern {pattern}")
-            return adjusted_thresholds
+            if len(similar_entries) >= 3:  # Enough data for learning
+                # Weight by feedback score
+                total_weight = sum(entry['feedback_score'] for entry in similar_entries)
+                
+                adjusted_thresholds = {}
+                for threshold_name in ['virtue_threshold', 'deontological_threshold', 'consequentialist_threshold']:
+                    weighted_sum = sum(entry['adjusted_thresholds'][threshold_name] * entry['feedback_score'] 
+                                     for entry in similar_entries)
+                    adjusted_thresholds[threshold_name] = weighted_sum / total_weight
+                
+                logger.info(f"Using learned adjustments for pattern {pattern}")
+                return adjusted_thresholds
+        except Exception as e:
+            logger.error(f"Error in learning lookup: {e}")
         
         # Fall back to default dynamic adjustment
         return self.default_dynamic_adjustment(ambiguity_score, current_thresholds)
