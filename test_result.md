@@ -227,6 +227,9 @@ backend:
         - working: true
           agent: "testing"
           comment: "GET /api/performance-metrics working correctly. Returns comprehensive metrics including processing times, text lengths, and throughput calculations based on recent evaluations."
+        - working: true
+          agent: "testing"
+          comment: "⚠️ PERFORMANCE CONCERN IDENTIFIED: During stress testing, average processing times are 50-70 seconds per evaluation (measured 52.89s average across 27 evaluations). This represents a significant performance bottleneck that could impact scalability. Endpoint functionality is working correctly, but processing speed may need optimization for production use. Concurrent requests work but are limited by individual processing time."
 
   - task: "Error Handling"
     implemented: true
