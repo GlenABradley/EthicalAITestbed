@@ -424,6 +424,249 @@ class BackendTester:
         except Exception as e:
             self.log_result("Error Handling", False, f"Error during error handling tests: {str(e)}")
     
+    def test_stress_large_text(self):
+        """Test with extremely large text input to find breaking points"""
+        try:
+            # Test with 10KB text
+            large_text = "This is a test sentence. " * 400  # ~10KB
+            
+            response = requests.post(
+                f"{API_BASE}/evaluate",
+                json={"text": large_text},
+                timeout=60
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                processing_time = data.get('evaluation', {}).get('processing_time', 0)
+                self.log_result("Stress Test - Large Text (10KB)", True, f"Processed large text successfully in {processing_time:.2f}s")
+            else:
+                self.log_result("Stress Test - Large Text (10KB)", False, f"Failed with HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_result("Stress Test - Large Text (10KB)", False, f"Error: {str(e)}")
+    
+    def test_stress_very_large_text(self):
+        """Test with very large text input (100KB) to find memory limits"""
+        try:
+            # Test with 100KB text
+            very_large_text = "This is a test sentence with some potentially problematic content like hate and anger. " * 1000  # ~100KB
+            
+            response = requests.post(
+                f"{API_BASE}/evaluate",
+                json={"text": very_large_text},
+                timeout=120
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                processing_time = data.get('evaluation', {}).get('processing_time', 0)
+                self.log_result("Stress Test - Very Large Text (100KB)", True, f"Processed very large text successfully in {processing_time:.2f}s")
+            elif response.status_code == 413:
+                self.log_result("Stress Test - Very Large Text (100KB)", True, "Properly rejected oversized request (413)")
+            else:
+                self.log_result("Stress Test - Very Large Text (100KB)", False, f"Failed with HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_result("Stress Test - Very Large Text (100KB)", False, f"Error: {str(e)}")
+    
+    def test_stress_concurrent_requests(self):
+        """Test concurrent requests to find race conditions"""
+        import threading
+        import time
+        
+        results = []
+        errors = []
+        
+        def make_request(thread_id):
+            try:
+                response = requests.post(
+                    f"{API_BASE}/evaluate",
+                    json={"text": f"Concurrent test request {thread_id} with some content"},
+                    timeout=30
+                )
+                results.append((thread_id, response.status_code))
+            except Exception as e:
+                errors.append((thread_id, str(e)))
+        
+        try:
+            # Launch 10 concurrent requests
+            threads = []
+            for i in range(10):
+                thread = threading.Thread(target=make_request, args=(i,))
+                threads.append(thread)
+                thread.start()
+            
+            # Wait for all threads to complete
+            for thread in threads:
+                thread.join()
+            
+            success_count = sum(1 for _, status in results if status == 200)
+            
+            if success_count >= 8:  # Allow some failures due to concurrency
+                self.log_result("Stress Test - Concurrent Requests", True, f"{success_count}/10 requests succeeded")
+            else:
+                self.log_result("Stress Test - Concurrent Requests", False, f"Only {success_count}/10 requests succeeded. Errors: {errors}")
+                
+        except Exception as e:
+            self.log_result("Stress Test - Concurrent Requests", False, f"Error: {str(e)}")
+    
+    def test_stress_extreme_parameters(self):
+        """Test with extreme parameter values"""
+        try:
+            # Test with extreme threshold values
+            extreme_params = {
+                "virtue_threshold": 0.0,
+                "deontological_threshold": 1.0,
+                "consequentialist_threshold": 0.5
+            }
+            
+            response = requests.post(
+                f"{API_BASE}/update-parameters",
+                json={"parameters": extreme_params},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                # Test evaluation with extreme parameters
+                eval_response = requests.post(
+                    f"{API_BASE}/evaluate",
+                    json={"text": "This is a test with extreme parameters"},
+                    timeout=30
+                )
+                
+                if eval_response.status_code == 200:
+                    self.log_result("Stress Test - Extreme Parameters", True, "System handled extreme parameter values")
+                else:
+                    self.log_result("Stress Test - Extreme Parameters", False, f"Evaluation failed with extreme params: HTTP {eval_response.status_code}")
+            else:
+                self.log_result("Stress Test - Extreme Parameters", False, f"Parameter update failed: HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_result("Stress Test - Extreme Parameters", False, f"Error: {str(e)}")
+    
+    def test_stress_malformed_requests(self):
+        """Test with various malformed requests"""
+        try:
+            # Test with missing required fields
+            response = requests.post(f"{API_BASE}/evaluate", json={}, timeout=10)
+            if response.status_code in [400, 422]:
+                self.log_result("Stress Test - Missing Fields", True, f"Properly rejected missing fields (HTTP {response.status_code})")
+            else:
+                self.log_result("Stress Test - Missing Fields", False, f"Unexpected response: HTTP {response.status_code}")
+            
+            # Test with wrong data types
+            response = requests.post(f"{API_BASE}/evaluate", json={"text": 123}, timeout=10)
+            if response.status_code in [400, 422]:
+                self.log_result("Stress Test - Wrong Data Types", True, f"Properly rejected wrong data types (HTTP {response.status_code})")
+            else:
+                self.log_result("Stress Test - Wrong Data Types", False, f"Unexpected response: HTTP {response.status_code}")
+            
+            # Test with null values
+            response = requests.post(f"{API_BASE}/evaluate", json={"text": None}, timeout=10)
+            if response.status_code in [400, 422]:
+                self.log_result("Stress Test - Null Values", True, f"Properly rejected null values (HTTP {response.status_code})")
+            else:
+                self.log_result("Stress Test - Null Values", False, f"Unexpected response: HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_result("Stress Test - Malformed Requests", False, f"Error: {str(e)}")
+    
+    def test_stress_unicode_and_special_chars(self):
+        """Test with unicode and special characters"""
+        try:
+            # Test with unicode characters
+            unicode_text = "Testing with émojis 🚀 and spëcial chäractërs ñ 中文 العربية русский"
+            
+            response = requests.post(
+                f"{API_BASE}/evaluate",
+                json={"text": unicode_text},
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                self.log_result("Stress Test - Unicode Characters", True, "Successfully processed unicode characters")
+            else:
+                self.log_result("Stress Test - Unicode Characters", False, f"Failed with unicode: HTTP {response.status_code}")
+            
+            # Test with special characters and escape sequences
+            special_text = "Testing with \n\t\r special chars and \"quotes\" and 'apostrophes' and \\backslashes"
+            
+            response = requests.post(
+                f"{API_BASE}/evaluate",
+                json={"text": special_text},
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                self.log_result("Stress Test - Special Characters", True, "Successfully processed special characters")
+            else:
+                self.log_result("Stress Test - Special Characters", False, f"Failed with special chars: HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_result("Stress Test - Unicode/Special Chars", False, f"Error: {str(e)}")
+    
+    def test_stress_database_limits(self):
+        """Test database operation limits"""
+        try:
+            # Test retrieving large number of evaluations
+            response = requests.get(f"{API_BASE}/evaluations?limit=1000", timeout=30)
+            
+            if response.status_code == 200:
+                data = response.json()
+                count = data.get('count', 0)
+                self.log_result("Stress Test - Large DB Query", True, f"Retrieved {count} evaluations successfully")
+            else:
+                self.log_result("Stress Test - Large DB Query", False, f"Failed: HTTP {response.status_code}")
+            
+            # Test creating many calibration tests rapidly
+            success_count = 0
+            for i in range(5):
+                response = requests.post(
+                    f"{API_BASE}/calibration-test",
+                    json={
+                        "text": f"Rapid test creation {i}",
+                        "expected_result": "ethical"
+                    },
+                    timeout=10
+                )
+                if response.status_code == 200:
+                    success_count += 1
+            
+            if success_count >= 4:
+                self.log_result("Stress Test - Rapid DB Writes", True, f"{success_count}/5 rapid writes succeeded")
+            else:
+                self.log_result("Stress Test - Rapid DB Writes", False, f"Only {success_count}/5 rapid writes succeeded")
+                
+        except Exception as e:
+            self.log_result("Stress Test - Database Limits", False, f"Error: {str(e)}")
+    
+    def test_edge_case_empty_and_whitespace(self):
+        """Test edge cases with empty and whitespace-only content"""
+        try:
+            test_cases = [
+                ("", "Empty string"),
+                ("   ", "Whitespace only"),
+                ("\n\t\r", "Newlines and tabs only"),
+                (".", "Single character"),
+                ("a", "Single letter")
+            ]
+            
+            for text, description in test_cases:
+                response = requests.post(
+                    f"{API_BASE}/evaluate",
+                    json={"text": text},
+                    timeout=10
+                )
+                
+                if response.status_code in [200, 400, 422]:
+                    self.log_result(f"Edge Case - {description}", True, f"Handled appropriately (HTTP {response.status_code})")
+                else:
+                    self.log_result(f"Edge Case - {description}", False, f"Unexpected response: HTTP {response.status_code}")
+                    
+        except Exception as e:
+            self.log_result("Edge Case - Empty/Whitespace", False, f"Error: {str(e)}")
+    
     def run_all_tests(self):
         """Run all backend tests"""
         print(f"🚀 Starting comprehensive backend testing for: {API_BASE}")
