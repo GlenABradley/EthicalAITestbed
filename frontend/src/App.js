@@ -105,6 +105,52 @@ function App() {
     .catch(error => console.error('Parameter update error:', error));
   };
 
+  // New functions for learning system
+  const submitFeedback = (evaluationId, feedbackScore, userComment = '') => {
+    fetch(`${API}/feedback`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        evaluation_id: evaluationId,
+        feedback_score: feedbackScore,
+        user_comment: userComment
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('Feedback submitted:', data);
+      setFeedbackMessage(`✅ Feedback recorded (score: ${feedbackScore})`);
+      loadLearningStats(); // Refresh stats
+      setTimeout(() => setFeedbackMessage(''), 3000);
+    })
+    .catch(error => {
+      console.error('Feedback error:', error);
+      setFeedbackMessage(`❌ Error: ${error.message}`);
+      setTimeout(() => setFeedbackMessage(''), 3000);
+    });
+  };
+
+  const testThresholdScaling = (sliderValue, useExponential = true) => {
+    fetch(`${API}/threshold-scaling`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        slider_value: sliderValue,
+        use_exponential: useExponential
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('Threshold scaling test:', data);
+      setThresholdScalingTest(data);
+    })
+    .catch(error => console.error('Threshold scaling test error:', error));
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="container mx-auto px-4 py-8">
