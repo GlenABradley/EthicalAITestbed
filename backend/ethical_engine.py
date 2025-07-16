@@ -8,6 +8,7 @@ import re
 import time
 from typing import List, Dict, Tuple, Optional, Any
 from dataclasses import dataclass, field
+from datetime import datetime
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 import logging
@@ -15,6 +16,56 @@ import logging
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+def exponential_threshold_scaling(slider_value: float) -> float:
+    """Convert 0-1 slider to exponential threshold with granularity at low end"""
+    if slider_value <= 0:
+        return 0.0
+    if slider_value >= 1:
+        return 0.3
+    
+    # e^(4*x) - 1 gives us range 0-0.3 with most resolution at bottom
+    return (np.exp(4 * slider_value) - 1) / (np.exp(4) - 1) * 0.3
+
+def linear_threshold_scaling(slider_value: float) -> float:
+    """Convert 0-1 slider to linear threshold (original behavior)"""
+    return slider_value
+
+@dataclass
+class LearningEntry:
+    """Entry for learning system with dopamine feedback"""
+    evaluation_id: str
+    text_pattern: str
+    ambiguity_score: float
+    original_thresholds: Dict[str, float]
+    adjusted_thresholds: Dict[str, float]
+    feedback_score: float = 0.0
+    feedback_count: int = 0
+    created_at: datetime = field(default_factory=datetime.now)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for MongoDB storage"""
+        return {
+            'evaluation_id': self.evaluation_id,
+            'text_pattern': self.text_pattern,
+            'ambiguity_score': self.ambiguity_score,
+            'original_thresholds': self.original_thresholds,
+            'adjusted_thresholds': self.adjusted_thresholds,
+            'feedback_score': self.feedback_score,
+            'feedback_count': self.feedback_count,
+            'created_at': self.created_at
+        }
+
+@dataclass
+class DynamicScalingResult:
+    """Result of dynamic scaling process"""
+    used_dynamic_scaling: bool
+    used_cascade_filtering: bool
+    ambiguity_score: float
+    original_thresholds: Dict[str, float]
+    adjusted_thresholds: Dict[str, float]
+    processing_stages: List[str]
+    cascade_result: Optional[str] = None  # "ethical", "unethical", or None
 
 @dataclass
 class EthicalParameters:
