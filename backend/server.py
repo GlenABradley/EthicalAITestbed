@@ -75,11 +75,13 @@ class CalibrationTestCreate(BaseModel):
     expected_result: str
 
 def initialize_evaluator():
-    """Initialize the ethical evaluator"""
+    """Initialize the ethical evaluator with learning layer"""
     global evaluator
     try:
-        evaluator = EthicalEvaluator()
-        logger.info("Ethical evaluator initialized successfully")
+        # Get learning collection from database
+        learning_collection = db.learning_data
+        evaluator = EthicalEvaluator(db_collection=learning_collection)
+        logger.info("Ethical evaluator initialized successfully with learning layer")
     except Exception as e:
         logger.error(f"Failed to initialize ethical evaluator: {e}")
         raise
