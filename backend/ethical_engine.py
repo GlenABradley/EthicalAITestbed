@@ -747,15 +747,27 @@ class EthicalEvaluator:
             adjusted_thresholds = self.apply_dynamic_scaling(text, ambiguity_score)
             dynamic_result.adjusted_thresholds = adjusted_thresholds
             
-            # Record learning entry if learning is enabled
-            if self.parameters.enable_learning_mode:
-                self.learning_layer.record_learning_entry(
+        # Record learning entry if learning is enabled
+        if self.parameters.enable_learning_mode and adjusted_thresholds:
+            try:
+                # Use async insert for learning entry
+                import asyncio
+                loop = asyncio.get_event_loop()
+                
+                entry = LearningEntry(
                     evaluation_id=f"eval_{int(time.time() * 1000)}",
-                    text=text,
+                    text_pattern=self.learning_layer.extract_text_pattern(text),
                     ambiguity_score=ambiguity_score,
                     original_thresholds=dynamic_result.original_thresholds,
                     adjusted_thresholds=adjusted_thresholds
                 )
+                
+                # Schedule async insert
+                if self.learning_layer.collection:
+                    asyncio.create_task(self.learning_layer.collection.insert_one(entry.to_dict()))
+                    logger.info(f"Scheduled learning entry for evaluation {entry.evaluation_id}")
+            except Exception as e:
+                logger.warning(f"Failed to record learning entry: {e}")
         
         # Stage 3: Detailed evaluation
         dynamic_result.processing_stages.append("detailed_evaluation")
