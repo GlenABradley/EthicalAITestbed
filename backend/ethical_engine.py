@@ -310,7 +310,7 @@ class LearningLayer:
     def record_learning_entry(self, evaluation_id: str, text: str, ambiguity_score: float,
                             original_thresholds: Dict[str, float], adjusted_thresholds: Dict[str, float]):
         """Record a learning entry for future training"""
-        if not self.collection:
+        if self.collection is None:
             return
         
         entry = LearningEntry(
