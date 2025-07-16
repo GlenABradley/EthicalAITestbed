@@ -1222,6 +1222,30 @@ class BackendTester:
         # Error handling
         self.test_error_handling()
         
+        # NEW DYNAMIC SCALING AND LEARNING TESTS
+        print("\n" + "=" * 80)
+        print("🧠 TESTING NEW DYNAMIC SCALING AND LEARNING FEATURES")
+        print("=" * 80)
+        
+        # Threshold scaling tests
+        self.test_threshold_scaling_exponential()
+        self.test_threshold_scaling_linear()
+        self.test_exponential_vs_linear_scaling_comparison()
+        
+        # Learning system tests
+        self.test_learning_stats_initial()
+        self.test_feedback_submission()
+        self.test_feedback_validation()
+        self.test_learning_stats_after_feedback()
+        
+        # Dynamic scaling evaluation tests
+        self.test_dynamic_scaling_enabled_evaluation()
+        self.test_dynamic_scaling_disabled_evaluation()
+        self.test_dynamic_scaling_details()
+        
+        # Cascade filtering tests
+        self.test_cascade_filtering_obvious_cases()
+        
         # STRESS TESTING AND EDGE CASES
         print("\n" + "=" * 80)
         print("🔥 STARTING STRESS TESTING AND EDGE CASE ANALYSIS")
