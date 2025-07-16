@@ -371,15 +371,35 @@ async def submit_feedback(request: FeedbackRequest):
         if evaluator is None:
             initialize_evaluator()
         
-        # Record feedback through learning layer
-        evaluator.learning_layer.record_dopamine_feedback(
-            evaluation_id=request.evaluation_id,
-            feedback_score=request.feedback_score,
-            user_comment=request.user_comment
+        # Record feedback directly in database to avoid sync/async issues
+        learning_collection = db.learning_data
+        
+        result = await learning_collection.update_one(
+            {'evaluation_id': request.evaluation_id},
+            {
+                '$inc': {
+                    'feedback_count': 1,
+                    'feedback_score': request.feedback_score
+                },
+                '$push': {
+                    'feedback_history': {
+                        'score': request.feedback_score,
+                        'comment': request.user_comment,
+                        'timestamp': datetime.utcnow()
+                    }
+                }
+            }
         )
         
+        if result.modified_count > 0:
+            logger.info(f"Recorded dopamine feedback {request.feedback_score} for evaluation {request.evaluation_id}")
+            message = "Feedback recorded successfully"
+        else:
+            logger.warning(f"No learning entry found for evaluation {request.evaluation_id}")
+            message = "No learning entry found for this evaluation"
+        
         return {
-            "message": "Feedback recorded successfully",
+            "message": message,
             "evaluation_id": request.evaluation_id,
             "feedback_score": request.feedback_score
         }
