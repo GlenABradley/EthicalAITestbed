@@ -74,6 +74,20 @@ class CalibrationTestCreate(BaseModel):
     text: str
     expected_result: str
 
+class FeedbackRequest(BaseModel):
+    evaluation_id: str
+    feedback_score: float = Field(ge=0.0, le=1.0, description="Dopamine feedback score (0.0-1.0)")
+    user_comment: Optional[str] = ""
+
+class ThresholdScalingRequest(BaseModel):
+    slider_value: float = Field(ge=0.0, le=1.0, description="Slider value (0.0-1.0)")
+    use_exponential: bool = True
+
+class LearningStatsResponse(BaseModel):
+    total_learning_entries: int
+    average_feedback_score: float
+    learning_active: bool
+
 def initialize_evaluator():
     """Initialize the ethical evaluator with learning layer"""
     global evaluator
