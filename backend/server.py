@@ -396,12 +396,26 @@ async def get_learning_stats():
         if evaluator is None:
             initialize_evaluator()
         
-        stats = evaluator.learning_layer.get_learning_stats()
+        # Get stats directly from database to avoid sync/async issues
+        learning_collection = db.learning_data
+        
+        total_entries = await learning_collection.count_documents({})
+        
+        # Use async aggregation
+        avg_feedback_cursor = learning_collection.aggregate([
+            {'$group': {'_id': None, 'avg_feedback': {'$avg': '$feedback_score'}}}
+        ])
+        
+        avg_feedback_result = []
+        async for doc in avg_feedback_cursor:
+            avg_feedback_result.append(doc)
+        
+        avg_feedback_score = avg_feedback_result[0]['avg_feedback'] if avg_feedback_result else 0.0
         
         return LearningStatsResponse(
-            total_learning_entries=stats.get('total_learning_entries', 0),
-            average_feedback_score=stats.get('average_feedback_score', 0.0),
-            learning_active=stats.get('learning_active', False)
+            total_learning_entries=total_entries,
+            average_feedback_score=avg_feedback_score,
+            learning_active=total_entries > 0
         )
         
     except Exception as e:
