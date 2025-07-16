@@ -264,7 +264,7 @@ class LearningLayer:
     def suggest_threshold_adjustments(self, text: str, ambiguity_score: float, 
                                     current_thresholds: Dict[str, float]) -> Dict[str, float]:
         """Suggest threshold adjustments based on learned patterns"""
-        if not self.collection:
+        if self.collection is None:
             return self.default_dynamic_adjustment(ambiguity_score, current_thresholds)
         
         pattern = self.extract_text_pattern(text)
