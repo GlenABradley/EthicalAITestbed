@@ -246,6 +246,105 @@ backend:
           agent: "testing"
           comment: "✅ IMPROVED: 404 error handling fixed. POST /api/run-calibration-test/{invalid_id} now properly returns HTTP 404 instead of 500 for non-existent calibration tests. Error handling for empty text and invalid JSON continues to work correctly."
 
+  - task: "Dynamic Scaling - Threshold Scaling"
+    implemented: true
+    working: true
+    file: "backend/ethical_engine.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ WORKING: Exponential and linear threshold scaling functions working correctly. POST /api/threshold-scaling endpoint properly converts slider values (0-1) to thresholds. Exponential scaling provides better granularity at 0-0.3 range as designed. Mathematical formulas implemented correctly: exponential uses e^(4*x)-1/(e^4-1)*0.3, linear uses direct mapping."
+
+  - task: "Dynamic Scaling - Cascade Filtering"
+    implemented: true
+    working: true
+    file: "backend/ethical_engine.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ WORKING: Cascade filtering correctly identifies obviously ethical and unethical text. 'I love helping people' -> ethical, 'I hate you and want to kill you' -> unethical. Ambiguity scoring and cascade decision logic functioning properly. Processing stages tracked correctly."
+
+  - task: "Dynamic Scaling - Parameter Toggle"
+    implemented: true
+    working: true
+    file: "backend/ethical_engine.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ WORKING: Dynamic scaling features can be enabled/disabled via parameters. enable_dynamic_scaling, enable_cascade_filtering, enable_learning_mode flags work correctly. System properly switches between static and dynamic evaluation modes."
+
+  - task: "Learning System - Entry Creation"
+    implemented: true
+    working: false
+    file: "backend/ethical_engine.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "❌ CRITICAL ISSUE: Learning entries not created during evaluation despite enable_learning_mode=true. Root cause: ethical_engine.py line 328-331 prevents learning entry recording in async context. FastAPI runs in async event loop, but learning layer uses sync MongoDB operations. record_learning_entry() returns early with warning 'Cannot record learning entry in async context'. This breaks the entire learning system."
+
+  - task: "Learning System - Feedback Integration"
+    implemented: true
+    working: false
+    file: "backend/server.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "❌ DEPENDENT FAILURE: POST /api/feedback endpoint accepts feedback but returns 'No learning entry found for this evaluation' because learning entries are never created (see Learning System - Entry Creation issue). Feedback mechanism works but has no data to update."
+
+  - task: "Learning System - Stats Retrieval"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ WORKING: GET /api/learning-stats endpoint functions correctly, returns total_learning_entries=0, average_feedback_score=0.0, learning_active=false. Endpoint works but shows no data due to learning entry creation issue."
+
+  - task: "Dynamic Scaling Details Endpoint"
+    implemented: true
+    working: false
+    file: "backend/server.py"
+    stuck_count: 1
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "❌ DATABASE ID MISMATCH: GET /api/dynamic-scaling-test/{evaluation_id} returns 500 error 'Evaluation not found'. Root cause: evaluation storage uses UUID 'id' field but ethical engine returns timestamp-based 'evaluation_id' (eval_timestamp format). Endpoint queries db.evaluations.find_one({'id': evaluation_id}) but evaluation_id doesn't match stored UUID. Need to align ID systems or modify lookup logic."
+
+  - task: "Threshold Sensitivity Analysis"
+    implemented: true
+    working: false
+    file: "backend/ethical_engine.py"
+    stuck_count: 2
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "⚠️ THRESHOLD SENSITIVITY CONCERN: During comprehensive testing, problematic text 'You are stupid and worthless' was evaluated as ethical with 0 violations using current thresholds (0.4/0.35/0.45). This suggests thresholds may be too high for production use. However, mathematical framework is working correctly - when extreme parameters (0.0/1.0/0.5) were tested, the same text was properly flagged as unethical. Core functionality confirmed working, but threshold calibration may need adjustment for desired sensitivity."
+        - working: false
+          agent: "testing"
+          comment: "❌ DEEPER ISSUE CONFIRMED: Even with very low thresholds (0.15 for all perspectives), 'You are stupid and worthless' still evaluates as ethical with 0 violations. This suggests the issue is not just threshold calibration but potentially in the scoring algorithm, embedding generation, or ethical vector computation. The mathematical framework may not be detecting negative sentiment properly."
+
 frontend:
   - task: "Text Evaluation Interface"
     implemented: true
