@@ -202,28 +202,28 @@ class EthicalEvaluation:
     def to_dict(self) -> Dict[str, Any]:
         """Convert evaluation to dictionary for API responses"""
         result = {
-            'evaluation_id': self.evaluation_id,
-            'input_text': self.input_text,
-            'tokens': self.tokens,
+            'evaluation_id': str(self.evaluation_id),
+            'input_text': str(self.input_text),
+            'tokens': [str(token) for token in self.tokens],
             'spans': [s.to_dict() for s in self.spans],
             'minimal_spans': [s.to_dict() for s in self.minimal_spans],
             'all_spans_with_scores': self.all_spans_with_scores,
-            'overall_ethical': self.overall_ethical,
-            'processing_time': self.processing_time,
-            'violation_count': self.violation_count,
-            'minimal_violation_count': self.minimal_violation_count,
+            'overall_ethical': bool(self.overall_ethical),
+            'processing_time': float(self.processing_time),
+            'violation_count': int(self.violation_count),
+            'minimal_violation_count': int(self.minimal_violation_count),
             'parameters': self.parameters.to_dict()
         }
         
         if self.dynamic_scaling_result:
             result['dynamic_scaling'] = {
-                'used_dynamic_scaling': self.dynamic_scaling_result.used_dynamic_scaling,
-                'used_cascade_filtering': self.dynamic_scaling_result.used_cascade_filtering,
-                'ambiguity_score': self.dynamic_scaling_result.ambiguity_score,
-                'original_thresholds': self.dynamic_scaling_result.original_thresholds,
-                'adjusted_thresholds': self.dynamic_scaling_result.adjusted_thresholds,
-                'processing_stages': self.dynamic_scaling_result.processing_stages,
-                'cascade_result': self.dynamic_scaling_result.cascade_result
+                'used_dynamic_scaling': bool(self.dynamic_scaling_result.used_dynamic_scaling),
+                'used_cascade_filtering': bool(self.dynamic_scaling_result.used_cascade_filtering),
+                'ambiguity_score': float(self.dynamic_scaling_result.ambiguity_score),
+                'original_thresholds': {k: float(v) for k, v in self.dynamic_scaling_result.original_thresholds.items()},
+                'adjusted_thresholds': {k: float(v) for k, v in self.dynamic_scaling_result.adjusted_thresholds.items()},
+                'processing_stages': [str(stage) for stage in self.dynamic_scaling_result.processing_stages],
+                'cascade_result': str(self.dynamic_scaling_result.cascade_result) if self.dynamic_scaling_result.cascade_result else None
             }
         
         return result
