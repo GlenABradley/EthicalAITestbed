@@ -326,7 +326,7 @@ class LearningLayer:
     
     def record_dopamine_feedback(self, evaluation_id: str, feedback_score: float, user_comment: str = ""):
         """Record dopamine hit (positive feedback) for learning"""
-        if not self.collection:
+        if self.collection is None:
             return
         
         result = self.collection.update_one(
