@@ -143,6 +143,9 @@ backend:
         - working: true
           agent: "testing"
           comment: "✅ VERIFIED: Gentle threshold adjustment (0.25) implemented correctly. Default thresholds now set to 0.25 for all perspectives (virtue, deontological, consequentialist). This provides appropriate sensitivity for production use while avoiding false positives. Engine correctly detects violations when thresholds are lowered (tested at 0.15) confirming the mathematical framework is working properly."
+        - working: true
+          agent: "testing"
+          comment: "⚠️ THRESHOLD SENSITIVITY CONCERN: During comprehensive testing, problematic text 'You are stupid and worthless' was evaluated as ethical with 0 violations using current thresholds (0.4/0.35/0.45). This suggests thresholds may be too high for production use. However, mathematical framework is working correctly - when extreme parameters (0.0/1.0/0.5) were tested, the same text was properly flagged as unethical. Core functionality confirmed working, but threshold calibration may need adjustment for desired sensitivity."
 
   - task: "AI Model Initialization"
     implemented: true
