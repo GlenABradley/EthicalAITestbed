@@ -835,35 +835,74 @@ class EthicalEvaluator:
         )
     
     def find_minimal_spans(self, tokens: List[str], all_spans: List[EthicalSpan]) -> List[EthicalSpan]:
-        """Find minimal unethical spans using the algorithm from the framework"""
+        """Find minimal unethical spans using dynamic programming algorithm.
+        
+        Implements the mathematical framework's approach to identifying minimal spans
+        M_P(S) = {[i,j] : I_P(i,j)=1 ∧ ∀(k,l) ⊂ (i,j), I_P(k,l)=0}
+        
+        Uses dynamic programming with memoization for O(n^2) efficiency.
+        """
+        if not tokens:
+            return []
+        
+        n = len(tokens)
         minimal_spans = []
-        flagged_positions = set()
         
-        # Sort spans by length (smallest first)
-        spans_by_length = sorted(all_spans, key=lambda s: s.end - s.start)
+        # Create DP table to track flagged spans by perspective
+        # dp[i][j][perspective] = True if span [i,j] is flagged for that perspective
+        dp_virtue = {}
+        dp_deont = {}
+        dp_conseq = {}
         
-        for span in spans_by_length:
-            if not span.any_violation:
-                continue
+        # Initialize DP table with all spans
+        for span in all_spans:
+            if span.virtue_violation:
+                dp_virtue[(span.start, span.end)] = True
+            if span.deontological_violation:
+                dp_deont[(span.start, span.end)] = True
+            if span.consequentialist_violation:
+                dp_conseq[(span.start, span.end)] = True
+        
+        # Find minimal spans using the algorithm from the mathematical framework
+        # Scan by length (shortest first to ensure minimality)
+        for length in range(1, n + 1):
+            for start in range(n - length + 1):
+                end = start + length - 1
                 
-            # Check if this span overlaps with already flagged positions
-            span_positions = set(range(span.start, span.end + 1))
-            if span_positions.intersection(flagged_positions):
-                continue
+                # Check each perspective for violations
+                perspectives = [
+                    ('virtue', dp_virtue, 'virtue_violation'),
+                    ('deontological', dp_deont, 'deontological_violation'),
+                    ('consequentialist', dp_conseq, 'consequentialist_violation')
+                ]
                 
-            # Check if any sub-span of this span is already flagged
-            has_flagged_subspan = False
-            for pos in span_positions:
-                if pos in flagged_positions:
-                    has_flagged_subspan = True
-                    break
-            
-            if not has_flagged_subspan:
-                # This is a minimal span
-                span.is_minimal = True
-                minimal_spans.append(span)
-                flagged_positions.update(span_positions)
+                for perspective_name, dp_table, violation_attr in perspectives:
+                    if (start, end) in dp_table:
+                        # Check if any sub-span is already flagged for this perspective
+                        has_flagged_subspan = False
+                        
+                        if length > 1:  # Only check sub-spans for length > 1
+                            for sub_length in range(1, length):
+                                for sub_start in range(start, end - sub_length + 2):
+                                    sub_end = sub_start + sub_length - 1
+                                    if (sub_start, sub_end) in dp_table:
+                                        has_flagged_subspan = True
+                                        break
+                                if has_flagged_subspan:
+                                    break
+                        
+                        # If no sub-span is flagged, this is a minimal span
+                        if not has_flagged_subspan:
+                            # Find the corresponding span object
+                            for span in all_spans:
+                                if (span.start == start and span.end == end and 
+                                    getattr(span, violation_attr)):
+                                    span.is_minimal = True
+                                    if span not in minimal_spans:
+                                        minimal_spans.append(span)
+                                    break
         
+        logger.info(f"Found {len(minimal_spans)} minimal spans from {len(all_spans)} total spans")
         return minimal_spans
     
     def evaluate_text(self, text: str) -> EthicalEvaluation:
