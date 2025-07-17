@@ -488,8 +488,8 @@ async def test_threshold_scaling(request: ThresholdScalingRequest):
 async def get_dynamic_scaling_details(evaluation_id: str):
     """Get detailed information about dynamic scaling for a specific evaluation"""
     try:
-        # Look up evaluation in database
-        evaluation_doc = await db.evaluations.find_one({"id": evaluation_id})
+        # Look up evaluation in database using evaluation_id
+        evaluation_doc = await db.evaluations.find_one({"evaluation_id": evaluation_id})
         
         if not evaluation_doc:
             raise HTTPException(status_code=404, detail="Evaluation not found")
