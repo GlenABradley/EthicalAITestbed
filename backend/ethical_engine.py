@@ -477,132 +477,196 @@ class LearningLayer:
             }
 
 class EthicalVectorGenerator:
-    """Generates ethical perspective vectors from philosophical principles"""
+    """Generates orthogonal ethical perspective vectors using mathematical framework.
+    
+    Implements the mathematical framework for multi-perspective ethical evaluation
+    with orthonormal basis vectors p_v, p_d, p_c that are enforced to be orthogonal
+    using Gram-Schmidt orthogonalization.
+    
+    Mathematical Foundation:
+    - Each perspective vector points toward increasing violation
+    - Orthogonality ensures independence: p_i · p_j = δ_ij
+    - Contrastive learning approach with virtue-vice, rule-compliance, outcome pairs
+    - Vectors are normalized to unit length for consistent projections
+    """
     
     def __init__(self, model: SentenceTransformer):
         self.model = model
-        self._virtue_vectors = None
-        self._deontological_vectors = None
-        self._consequentialist_vectors = None
+        self._orthogonal_vectors = None
         
-    def _get_virtue_examples(self) -> List[str]:
-        """Examples of virtue and vice for training virtue vector"""
-        return [
-            # Virtue examples (positive)
-            "kind compassionate helpful loving supportive",
-            "honest truthful sincere genuine authentic",
-            "wise thoughtful prudent insightful reflective",
-            "generous giving charitable selfless caring",
-            "respectful polite courteous considerate gentle",
-            
-            # Vice examples (negative - these should point toward unethical)
-            "cruel mean harsh ruthless vindictive evil hate",
-            "dishonest lying deceptive fraudulent manipulative fake",
-            "stupid foolish idiotic moronic worthless garbage die",
-            "selfish greedy narcissistic arrogant entitled",
-            "hateful spiteful malicious aggressive hostile violent kill"
+    def _get_virtue_examples(self) -> Tuple[List[str], List[str]]:
+        """Enhanced virtue-vice pairs for contrastive learning"""
+        virtue_examples = [
+            "compassionate empathetic kind-hearted benevolent caring nurturing",
+            "honest truthful sincere authentic genuine transparent ethical",
+            "wise thoughtful prudent insightful reflective conscientious deliberate",
+            "generous giving charitable magnanimous selfless altruistic helpful",
+            "respectful courteous considerate gentle dignified honorable noble",
+            "courageous brave resilient determined persevering steadfast",
+            "just fair equitable impartial balanced reasonable moral",
+            "humble modest unassuming gracious accepting teachable",
+            "patient tolerant understanding forgiving merciful peaceful",
+            "responsible accountable reliable trustworthy dependable loyal"
         ]
-    
-    def _get_deontological_examples(self) -> List[str]:
-        """Examples of rule-following and rule-breaking for deontological vector"""
-        return [
-            # Rule-following examples (positive)
-            "respect others rights and dignity always",
-            "keep promises and honor commitments made",
-            "tell truth and maintain honesty always",
-            "protect innocent and help vulnerable people",
-            "maintain privacy and respect boundaries set",
-            
-            # Rule-breaking examples (negative - these should point toward unethical)
-            "kill hurt harm damage destroy people violently",
-            "steal rob take what belongs others forcefully",
-            "lie deceive cheat manipulate betray trust hate",
-            "violate abuse exploit innocent vulnerable people",
-            "threaten intimidate bully harass others constantly kill"
+        
+        vice_examples = [
+            "cruel heartless ruthless vindictive malicious sadistic vicious",
+            "dishonest deceptive fraudulent manipulative lying treacherous fake",
+            "foolish reckless impulsive thoughtless careless negligent stupid",
+            "selfish greedy narcissistic arrogant entitled egotistical stingy",
+            "disrespectful rude contemptuous insulting degrading demeaning hostile",
+            "cowardly fearful weak spineless timid defeated surrendering",
+            "unjust unfair biased prejudiced discriminatory oppressive tyrannical",
+            "arrogant prideful boastful conceited vain superiority condescending",
+            "impatient intolerant angry hateful vindictive unforgiving violent",
+            "irresponsible unreliable untrustworthy betraying abandoning disloyal"
         ]
+        
+        return virtue_examples, vice_examples
     
-    def _get_consequentialist_examples(self) -> List[str]:
-        """Examples of good and bad outcomes for consequentialist vector"""
-        return [
-            # Good outcomes (positive)
-            "helps people feel happy and safe",
-            "reduces suffering and increases wellbeing for all",
-            "creates positive lasting social beneficial impact",
-            "prevents harm and protects people from danger",
-            "builds trust cooperation and strong relationships",
-            
-            # Bad outcomes (negative - these should point toward unethical)
-            "causes severe pain suffering and trauma hate",
-            "leads to suicide self-harm and death kill",
-            "destroys lives families and communities completely",
-            "creates lasting psychological damage and harm",
-            "results in violence conflict and destruction kill"
+    def _get_deontological_examples(self) -> Tuple[List[str], List[str]]:
+        """Enhanced rule-following vs rule-breaking pairs for deontological ethics"""
+        rule_following_examples = [
+            "respect human rights dignity autonomy consent boundaries always",
+            "keep promises commitments obligations duties responsibilities faithfully",
+            "tell truth maintain honesty transparency integrity consistently",
+            "protect innocent vulnerable children elderly disabled people",
+            "maintain confidentiality privacy respect personal information",
+            "follow laws rules regulations procedures protocols properly",
+            "treat everyone equally fairly without discrimination prejudice",
+            "respect property ownership rights intellectual creative works",
+            "honor agreements contracts treaties commitments made explicitly",
+            "preserve life protect safety prevent harm injury"
         ]
+        
+        rule_breaking_examples = [
+            "violate human rights abuse exploit manipulate control others",
+            "break promises abandon commitments neglect duties responsibilities",
+            "lie deceive mislead withhold truth manipulate information",
+            "harm innocent exploit vulnerable abuse children elderly",
+            "invade privacy steal personal information breach confidentiality",
+            "break laws ignore rules violate regulations circumvent procedures",
+            "discriminate prejudice favor unfairly treat unequally",
+            "steal property plagiarize violate intellectual property rights",
+            "breach agreements break contracts violate treaties commitments",
+            "threaten life endanger safety cause harm injury"
+        ]
+        
+        return rule_following_examples, rule_breaking_examples
     
-    def generate_virtue_vector(self) -> np.ndarray:
-        """Generate virtue ethics perspective vector p_v"""
-        if self._virtue_vectors is None:
-            examples = self._get_virtue_examples()
-            virtue_embeddings = self.model.encode(examples[:5])  # positive examples
-            vice_embeddings = self.model.encode(examples[5:])   # negative examples
-            
-            # Create axis pointing from virtue to vice (higher values = more vice)
-            virtue_center = np.mean(virtue_embeddings, axis=0)
-            vice_center = np.mean(vice_embeddings, axis=0)
-            
-            # Vector pointing toward vice (unethical direction)
-            virtue_vector = vice_center - virtue_center
-            virtue_vector = virtue_vector / np.linalg.norm(virtue_vector)
-            
-            self._virtue_vectors = virtue_vector
-            
-        return self._virtue_vectors
+    def _get_consequentialist_examples(self) -> Tuple[List[str], List[str]]:
+        """Enhanced good vs bad outcome pairs for consequentialist ethics"""
+        good_outcome_examples = [
+            "increases happiness wellbeing flourishing prosperity for everyone",
+            "reduces suffering pain trauma distress promotes healing recovery",
+            "creates positive lasting beneficial social community impact",
+            "prevents harm danger protects people from injury",
+            "builds trust cooperation collaboration mutual understanding",
+            "promotes education knowledge learning growth development",
+            "enhances freedom autonomy choice self-determination empowerment",
+            "improves health wellness physical mental emotional stability",
+            "strengthens relationships bonds connections community solidarity",
+            "advances justice equality fairness opportunities for all"
+        ]
+        
+        bad_outcome_examples = [
+            "causes severe pain suffering trauma depression anxiety distress",
+            "leads to suicide self-harm death destruction devastation",
+            "destroys lives families communities relationships permanently",
+            "creates lasting psychological emotional physical damage harm",
+            "results in violence conflict war destruction chaos",
+            "promotes ignorance misinformation confusion deception lies",
+            "restricts freedom limits choices oppresses enslaves controls",
+            "damages health causes illness disease disability deterioration",
+            "breaks relationships destroys trust creates isolation loneliness",
+            "perpetuates injustice inequality discrimination systematic oppression"
+        ]
+        
+        return good_outcome_examples, bad_outcome_examples
     
-    def generate_deontological_vector(self) -> np.ndarray:
-        """Generate deontological ethics perspective vector p_d"""
-        if self._deontological_vectors is None:
-            examples = self._get_deontological_examples()
-            rule_following_embeddings = self.model.encode(examples[:5])  # positive examples
-            rule_breaking_embeddings = self.model.encode(examples[5:])  # negative examples
+    def _gram_schmidt_orthogonalization(self, vectors: List[np.ndarray]) -> List[np.ndarray]:
+        """Apply Gram-Schmidt orthogonalization to ensure orthogonal basis vectors.
+        
+        Ensures p_i · p_j = δ_ij (Kronecker delta) for independence.
+        """
+        if len(vectors) == 0:
+            return []
+        
+        # Start with first vector normalized
+        orthogonal_vectors = [vectors[0] / np.linalg.norm(vectors[0])]
+        
+        for i in range(1, len(vectors)):
+            # Start with current vector
+            current_vector = vectors[i].copy()
             
-            # Create axis pointing from rule-following to rule-breaking
-            rule_following_center = np.mean(rule_following_embeddings, axis=0)
-            rule_breaking_center = np.mean(rule_breaking_embeddings, axis=0)
+            # Subtract projections onto all previous orthogonal vectors
+            for j in range(len(orthogonal_vectors)):
+                projection = np.dot(current_vector, orthogonal_vectors[j]) * orthogonal_vectors[j]
+                current_vector -= projection
             
-            # Vector pointing toward rule-breaking (unethical direction)
-            deontological_vector = rule_breaking_center - rule_following_center
-            deontological_vector = deontological_vector / np.linalg.norm(deontological_vector)
-            
-            self._deontological_vectors = deontological_vector
-            
-        return self._deontological_vectors
+            # Normalize the orthogonalized vector
+            if np.linalg.norm(current_vector) > 1e-10:  # Avoid division by zero
+                orthogonal_vectors.append(current_vector / np.linalg.norm(current_vector))
+            else:
+                logger.warning(f"Vector {i} became zero during orthogonalization")
+                # Create a random orthogonal vector if needed
+                random_vector = np.random.randn(vectors[0].shape[0])
+                for j in range(len(orthogonal_vectors)):
+                    projection = np.dot(random_vector, orthogonal_vectors[j]) * orthogonal_vectors[j]
+                    random_vector -= projection
+                orthogonal_vectors.append(random_vector / np.linalg.norm(random_vector))
+        
+        return orthogonal_vectors
     
-    def generate_consequentialist_vector(self) -> np.ndarray:
-        """Generate consequentialist ethics perspective vector p_c"""
-        if self._consequentialist_vectors is None:
-            examples = self._get_consequentialist_examples()
-            good_outcome_embeddings = self.model.encode(examples[:5])  # positive examples
-            bad_outcome_embeddings = self.model.encode(examples[5:])  # negative examples
+    def generate_orthogonal_vectors(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Generate orthogonal ethical perspective vectors using mathematical framework"""
+        if self._orthogonal_vectors is None:
+            logger.info("Generating orthogonal ethical vectors using mathematical framework")
             
-            # Create axis pointing from good outcomes to bad outcomes
-            good_outcome_center = np.mean(good_outcome_embeddings, axis=0)
-            bad_outcome_center = np.mean(bad_outcome_embeddings, axis=0)
+            # Generate raw vectors using contrastive learning approach
+            virtue_pos, virtue_neg = self._get_virtue_examples()
+            deont_pos, deont_neg = self._get_deontological_examples()
+            conseq_pos, conseq_neg = self._get_consequentialist_examples()
             
-            # Vector pointing toward bad outcomes (unethical direction)
-            consequentialist_vector = bad_outcome_center - good_outcome_center
-            consequentialist_vector = consequentialist_vector / np.linalg.norm(consequentialist_vector)
+            # Compute embeddings for positive and negative examples
+            virtue_pos_emb = self.model.encode(virtue_pos)
+            virtue_neg_emb = self.model.encode(virtue_neg)
+            deont_pos_emb = self.model.encode(deont_pos)
+            deont_neg_emb = self.model.encode(deont_neg)
+            conseq_pos_emb = self.model.encode(conseq_pos)
+            conseq_neg_emb = self.model.encode(conseq_neg)
             
-            self._consequentialist_vectors = consequentialist_vector
+            # Create direction vectors pointing toward violations
+            virtue_center_pos = np.mean(virtue_pos_emb, axis=0)
+            virtue_center_neg = np.mean(virtue_neg_emb, axis=0)
+            virtue_vector = virtue_center_neg - virtue_center_pos
             
-        return self._consequentialist_vectors
+            deont_center_pos = np.mean(deont_pos_emb, axis=0)
+            deont_center_neg = np.mean(deont_neg_emb, axis=0)
+            deont_vector = deont_center_neg - deont_center_pos
+            
+            conseq_center_pos = np.mean(conseq_pos_emb, axis=0)
+            conseq_center_neg = np.mean(conseq_neg_emb, axis=0)
+            conseq_vector = conseq_center_neg - conseq_center_pos
+            
+            # Apply Gram-Schmidt orthogonalization
+            raw_vectors = [virtue_vector, deont_vector, conseq_vector]
+            orthogonal_vectors = self._gram_schmidt_orthogonalization(raw_vectors)
+            
+            # Verify orthogonality
+            for i in range(len(orthogonal_vectors)):
+                for j in range(i + 1, len(orthogonal_vectors)):
+                    dot_product = np.dot(orthogonal_vectors[i], orthogonal_vectors[j])
+                    logger.info(f"Orthogonality check: p_{i} · p_{j} = {dot_product:.6f}")
+            
+            self._orthogonal_vectors = tuple(orthogonal_vectors)
+            logger.info("Successfully generated orthogonal ethical vectors")
+            
+        return self._orthogonal_vectors
     
     def get_all_vectors(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Get all three ethical perspective vectors"""
-        return (
-            self.generate_virtue_vector(),
-            self.generate_deontological_vector(),
-            self.generate_consequentialist_vector()
-        )
+        """Get all three orthogonal ethical perspective vectors"""
+        return self.generate_orthogonal_vectors()
 
 class EthicalEvaluator:
     """Main ethical evaluation engine implementing the mathematical framework"""
