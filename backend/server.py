@@ -13,7 +13,7 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 
 # Import our ethical evaluation engine
-from ethical_engine import EthicalEvaluator, EthicalParameters, EthicalEvaluation
+from ethical_engine import EthicalEvaluator, EthicalParameters, EthicalEvaluation, create_learning_entry_async
 
 # Load environment variables
 ROOT_DIR = Path(__file__).parent
