@@ -14,7 +14,7 @@ Key Features:
 - Real-time performance monitoring
 
 Author: AI Developer Testbed Team
-Version: Production Release 1.0
+Version: 1.0 - Production Release
 """
 
 from fastapi import FastAPI, APIRouter, HTTPException
