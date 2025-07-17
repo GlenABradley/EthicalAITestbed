@@ -1,0 +1,355 @@
+# File: /app/frontend/src/App.js
+import React, { useState, useEffect } from 'react';
+import './App.css';
+import axios from 'axios';
+
+// Backend API endpoint from environment variables
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
+
+/**
+ * Main Application Component - Ethical AI Developer Testbed
+ * 
+ * This is the main React component that provides:
+ * - Multi-perspective ethical text evaluation
+ * - Dynamic scaling and learning system integration
+ * - Comprehensive parameter calibration interface
+ * - Real-time feedback system for continuous improvement
+ */
+function App() {
+  const [activeTab, setActiveTab] = useState('evaluate');
+  const [inputText, setInputText] = useState('');
+  const [evaluationResult, setEvaluationResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [parameters, setParameters] = useState({});
+  const [activeResultTab, setActiveResultTab] = useState('violations');
+  const [learningStats, setLearningStats] = useState({
+    total_learning_entries: 0,
+    average_feedback_score: 0,
+    learning_active: false
+  });
+  const [feedbackMessage, setFeedbackMessage] = useState('');
+  const [thresholdScalingTest, setThresholdScalingTest] = useState({});
+
+  // Load parameters on component mount
+  useEffect(() => {
+    fetchParameters();
+    fetchLearningStats();
+  }, []);
+
+  const fetchParameters = async () => {
+    try {
+      const response = await fetch(`${API}/parameters`);
+      const data = await response.json();
+      setParameters(data.parameters);
+    } catch (error) {
+      console.error('Error fetching parameters:', error);
+    }
+  };
+
+  const fetchLearningStats = async () => {
+    try {
+      const response = await fetch(`${API}/learning-stats`);
+      const data = await response.json();
+      setLearningStats(data);
+    } catch (error) {
+      console.error('Error fetching learning stats:', error);
+    }
+  };
+
+  const handleEvaluate = async () => {
+    if (!inputText.trim()) return;
+    
+    setLoading(true);
+    try {
+      const response = await fetch(`${API}/evaluate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: inputText,
+          parameters: parameters
+        })
+      });
+      
+      const data = await response.json();
+      setEvaluationResult(data);
+      setActiveResultTab('violations');
+      
+      // Refresh learning stats if learning mode is enabled
+      if (parameters.enable_learning_mode) {
+        setTimeout(fetchLearningStats, 1000);
+      }
+    } catch (error) {
+      console.error('Error evaluating text:', error);
+      alert('Error evaluating text. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateParameter = (key, value) => {
+    const newValue = typeof value === 'string' && !isNaN(value) ? parseFloat(value) : value;
+    const newParams = { ...parameters, [key]: newValue };
+    setParameters(newParams);
+    
+    // Send to backend
+    fetch(`${API}/update-parameters`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ parameters: newParams })
+    })
+    .then(response => response.json())
+    .then(data => {
+      // Parameters updated successfully
+    })
+    .catch(error => console.error('Parameter update error:', error));
+  };
+
+  // New functions for learning system
+  const submitFeedback = (evaluationId, feedbackScore, userComment = '') => {
+    fetch(`${API}/feedback`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        evaluation_id: evaluationId,
+        feedback_score: feedbackScore,
+        user_comment: userComment
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      setFeedbackMessage(`Feedback submitted: ${data.message}`);
+      setTimeout(() => setFeedbackMessage(''), 3000);
+      fetchLearningStats(); // Refresh stats
+    })
+    .catch(error => {
+      console.error('Error submitting feedback:', error);
+      setFeedbackMessage('Error submitting feedback');
+    });
+  };
+
+  const testThresholdScaling = (sliderValue) => {
+    fetch(`${API}/threshold-scaling`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        slider_value: sliderValue,
+        use_exponential: parameters.exponential_scaling || false
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      setThresholdScalingTest(data);
+    })
+    .catch(error => console.error('Error testing threshold scaling:', error));
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            Ethical AI Developer Testbed
+          </h1>
+          <p className="text-gray-600">
+            Multi-Perspective Ethical Text Evaluation Framework
+          </p>
+        </div>
+
+        {/* Navigation */}
+        <div className="mb-8">
+          <nav className="flex justify-center space-x-4">
+            <button
+              onClick={() => setActiveTab('evaluate')}
+              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                activeTab === 'evaluate' 
+                  ? 'bg-blue-500 text-white'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Evaluate Text
+            </button>
+            <button
+              onClick={() => setActiveTab('parameters')}
+              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                activeTab === 'parameters' 
+                  ? 'bg-blue-500 text-white'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Parameter Tuning
+            </button>
+          </nav>
+        </div>
+
+        {/* Tab Content */}
+        <div className="max-w-6xl mx-auto">
+          {activeTab === 'evaluate' && (
+            <div className="space-y-6">
+              {/* Input Section */}
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h2 className="text-2xl font-bold mb-4">Text Evaluation</h2>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Enter text to evaluate:
+                    </label>
+                    <textarea
+                      value={inputText}
+                      onChange={(e) => setInputText(e.target.value)}
+                      placeholder="Type your text here..."
+                      className="w-full h-32 p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div className="flex space-x-4">
+                    <button
+                      onClick={handleEvaluate}
+                      disabled={loading || !inputText.trim()}
+                      className="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    >
+                      {loading ? 'Evaluating...' : 'Evaluate Text'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        fetch(`${API}/health`)
+                          .then(r => r.json())
+                          .then(d => alert('API Health: ' + JSON.stringify(d)))
+                          .catch(e => alert('Error: ' + e.message));
+                      }}
+                      className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+                    >
+                      Test API
+                    </button>
+                    <button
+                      onClick={() => {
+                        const testText = inputText || 'test message';
+                        
+                        fetch(`${API}/evaluate`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ text: testText })
+                        })
+                        .then(r => r.json())
+                        .then(d => {
+                          alert('Evaluation result: ' + (d.evaluation?.overall_ethical ? 'Ethical' : 'Unethical'));
+                          setEvaluationResult(d);
+                        })
+                        .catch(e => alert('Error: ' + e.message));
+                      }}
+                      className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
+                    >
+                      Direct Test
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Results Section */}
+              {evaluationResult && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Evaluation Summary */}
+                  <div className="bg-white p-6 rounded-lg shadow">
+                    <h3 className="text-xl font-bold mb-4">Evaluation Summary</h3>
+                    <div className="space-y-3">
+                      <div className={`p-3 rounded-md ${
+                        evaluationResult.evaluation?.overall_ethical 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        Status: {evaluationResult.evaluation?.overall_ethical ? 'Ethical' : 'Unethical'}
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>Processing Time: {evaluationResult.evaluation?.processing_time?.toFixed(3)}s</div>
+                        <div>Violations Found: {evaluationResult.evaluation?.minimal_violation_count || 0}</div>
+                        <div>Original Length: {evaluationResult.delta_summary?.original_length || 0}</div>
+                        <div>Clean Length: {evaluationResult.delta_summary?.clean_length || 0}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Clean Text */}
+                  <div className="bg-white p-6 rounded-lg shadow">
+                    <h3 className="text-xl font-bold mb-4">Clean Text</h3>
+                    <div className="bg-gray-50 p-4 rounded-md">
+                      <p className="text-gray-700">{evaluationResult.clean_text}</p>
+                    </div>
+                  </div>
+
+                  {/* Violations and Analysis Tabs */}
+                  <div className="bg-white p-6 rounded-lg shadow lg:col-span-2">
+                    <h3 className="text-xl font-bold mb-4">Detailed Analysis</h3>
+                    
+                    {/* Tab Navigation */}
+                    <div className="flex space-x-4 mb-6 border-b">
+                      <button
+                        onClick={() => setActiveResultTab('violations')}
+                        className={`px-4 py-2 -mb-px font-medium transition-colors ${
+                          activeResultTab === 'violations'
+                            ? 'border-b-2 border-blue-500 text-blue-600'
+                            : 'text-gray-600 hover:text-gray-800'
+                        }`}
+                      >
+                        Violations ({evaluationResult.evaluation?.minimal_violation_count || 0})
+                      </button>
+                      <button
+                        onClick={() => setActiveResultTab('allSpans')}
+                        className={`px-4 py-2 -mb-px font-medium transition-colors ${
+                          activeResultTab === 'allSpans'
+                            ? 'border-b-2 border-blue-500 text-blue-600'
+                            : 'text-gray-600 hover:text-gray-800'
+                        }`}
+                      >
+                        All Spans ({evaluationResult.evaluation?.spans?.length || 0})
+                      </button>
+                      <button
+                        onClick={() => setActiveResultTab('learning')}
+                        className={`px-4 py-2 -mb-px font-medium transition-colors ${
+                          activeResultTab === 'learning'
+                            ? 'border-b-2 border-blue-500 text-blue-600'
+                            : 'text-gray-600 hover:text-gray-800'
+                        }`}
+                      >
+                        Learning & Feedback
+                      </button>
+                      <button
+                        onClick={() => setActiveResultTab('dynamic')}
+                        className={`px-4 py-2 -mb-px font-medium transition-colors ${
+                          activeResultTab === 'dynamic'
+                            ? 'border-b-2 border-blue-500 text-blue-600'
+                            : 'text-gray-600 hover:text-gray-800'
+                        }`}
+                      >
+                        Dynamic Scaling
+                      </button>
+                    </div>
+
+                    {/* Tab Content continues... */}
+                    {/* This file is truncated for Grok to show the structure */}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'parameters' && (
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h2 className="text-2xl font-bold mb-4">Parameter Calibration</h2>
+              {/* Parameter controls would be here... */}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default App;
