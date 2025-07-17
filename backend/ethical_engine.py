@@ -446,11 +446,11 @@ class EthicalVectorGenerator:
             "respectful polite courteous considerate gentle",
             
             # Vice examples (negative - these should point toward unethical)
-            "cruel mean harsh ruthless vindictive evil",
+            "cruel mean harsh ruthless vindictive evil hate",
             "dishonest lying deceptive fraudulent manipulative fake",
-            "stupid foolish idiotic moronic worthless garbage",
+            "stupid foolish idiotic moronic worthless garbage die",
             "selfish greedy narcissistic arrogant entitled",
-            "hateful spiteful malicious aggressive hostile violent"
+            "hateful spiteful malicious aggressive hostile violent kill"
         ]
     
     def _get_deontological_examples(self) -> List[str]:
@@ -464,11 +464,11 @@ class EthicalVectorGenerator:
             "maintain privacy and respect boundaries set",
             
             # Rule-breaking examples (negative - these should point toward unethical)
-            "kill hurt harm damage destroy people",
-            "steal rob take what belongs others",
-            "lie deceive cheat manipulate betray trust",
+            "kill hurt harm damage destroy people violently",
+            "steal rob take what belongs others forcefully",
+            "lie deceive cheat manipulate betray trust hate",
             "violate abuse exploit innocent vulnerable people",
-            "threaten intimidate bully harass others constantly"
+            "threaten intimidate bully harass others constantly kill"
         ]
     
     def _get_consequentialist_examples(self) -> List[str]:
@@ -482,11 +482,11 @@ class EthicalVectorGenerator:
             "builds trust cooperation and strong relationships",
             
             # Bad outcomes (negative - these should point toward unethical)
-            "causes severe pain suffering and trauma",
-            "leads to suicide self-harm and death",
+            "causes severe pain suffering and trauma hate",
+            "leads to suicide self-harm and death kill",
             "destroys lives families and communities completely",
             "creates lasting psychological damage and harm",
-            "results in violence conflict and destruction"
+            "results in violence conflict and destruction kill"
         ]
     
     def generate_virtue_vector(self) -> np.ndarray:
