@@ -662,17 +662,17 @@ function App() {
                         </label>
                         <input
                           type="range"
-                          min="0.3"
-                          max="1.0"
-                          step="0.05"
-                          value={parameters.cascade_high_threshold || 0.5}
+                          min="0.15"
+                          max="0.5"
+                          step="0.01"
+                          value={parameters.cascade_high_threshold || 0.25}
                           onChange={(e) => updateParameter('cascade_high_threshold', e.target.value)}
                           className="w-full"
                         />
                         <div className="flex justify-between text-sm text-gray-500">
-                          <span>0.3</span>
-                          <span className="font-mono">{(parameters.cascade_high_threshold || 0.5).toFixed(3)}</span>
-                          <span>1.0</span>
+                          <span>0.15</span>
+                          <span className="font-mono">{(parameters.cascade_high_threshold || 0.25).toFixed(3)}</span>
+                          <span>0.5</span>
                         </div>
                       </div>
                       
@@ -683,16 +683,16 @@ function App() {
                         <input
                           type="range"
                           min="0.0"
-                          max="0.5"
-                          step="0.05"
-                          value={parameters.cascade_low_threshold || 0.2}
+                          max="0.2"
+                          step="0.01"
+                          value={parameters.cascade_low_threshold || 0.08}
                           onChange={(e) => updateParameter('cascade_low_threshold', e.target.value)}
                           className="w-full"
                         />
                         <div className="flex justify-between text-sm text-gray-500">
                           <span>0.0</span>
-                          <span className="font-mono">{(parameters.cascade_low_threshold || 0.2).toFixed(3)}</span>
-                          <span>0.5</span>
+                          <span className="font-mono">{(parameters.cascade_low_threshold || 0.08).toFixed(3)}</span>
+                          <span>0.2</span>
                         </div>
                       </div>
                     </div>
