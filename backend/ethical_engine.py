@@ -498,91 +498,100 @@ class EthicalVectorGenerator:
         self._orthogonal_vectors = None
         
     def _get_virtue_examples(self) -> Tuple[List[str], List[str]]:
-        """Enhanced virtue-vice pairs for contrastive learning"""
+        """Virtue-based examples derived from Core Axiom: Maximize human autonomy within objective empirical truth"""
+        
+        # Positive examples: Autonomy-enhancing behaviors aligned with truth
         virtue_examples = [
-            "compassionate empathetic kind-hearted benevolent caring nurturing",
-            "honest truthful sincere authentic genuine transparent ethical",
-            "wise thoughtful prudent insightful reflective conscientious deliberate",
-            "generous giving charitable magnanimous selfless altruistic helpful",
-            "respectful courteous considerate gentle dignified honorable noble",
-            "courageous brave resilient determined persevering steadfast",
-            "just fair equitable impartial balanced reasonable moral",
-            "humble modest unassuming gracious accepting teachable",
-            "patient tolerant understanding forgiving merciful peaceful",
-            "responsible accountable reliable trustworthy dependable loyal"
+            "voluntary informed consent respects individual choice and dignity",
+            "transparent reasoning enables independent decision-making and rationality",
+            "balanced factual information supports cognitive autonomy without manipulation",
+            "diverse perspectives foster unbiased social engagement and growth",
+            "sustainable practices preserve future sovereignty and long-term wellbeing",
+            "accurate evidence-based claims minimize misinformation and speculation",
+            "respectful physical boundaries honor bodily autonomy and consent",
+            "empowering education enhances reasoning independence and critical thinking",
+            "fair equitable treatment prevents discrimination and bias distortion",
+            "accountable attribution enables traceable decision-making and responsibility"
         ]
         
+        # Negative examples: Autonomy-eroding behaviors that violate truth prerequisite
         vice_examples = [
-            "cruel heartless ruthless vindictive malicious sadistic vicious",
-            "dishonest deceptive fraudulent manipulative lying treacherous fake",
-            "foolish reckless impulsive thoughtless careless negligent stupid",
-            "selfish greedy narcissistic arrogant entitled egotistical stingy",
-            "disrespectful rude contemptuous insulting degrading demeaning hostile",
-            "cowardly fearful weak spineless timid defeated surrendering",
-            "unjust unfair biased prejudiced discriminatory oppressive tyrannical",
-            "arrogant prideful boastful conceited vain superiority condescending",
-            "impatient intolerant angry hateful vindictive unforgiving violent",
-            "irresponsible unreliable untrustworthy betraying abandoning disloyal"
+            "coercive manipulation violates consent and rational choice freedom",
+            "deceptive misinformation corrupts cognitive autonomy through false premises",
+            "surveillance tracking erodes bodily privacy and physical control",
+            "biased suppression limits social engagement and cultural diversity",
+            "unsustainable depletion undermines future sovereignty and existential security",
+            "speculative falsehoods violate accuracy and factual verification standards",
+            "harmful aggression destroys physical autonomy and consensual boundaries",
+            "dependency loops prevent reasoning independence and critical evaluation",
+            "discriminatory unfairness creates social bubbles and suppresses engagement",
+            "uncontrolled drift erodes systematic alignment and coherent progress"
         ]
         
         return virtue_examples, vice_examples
     
     def _get_deontological_examples(self) -> Tuple[List[str], List[str]]:
-        """Enhanced rule-following vs rule-breaking pairs for deontological ethics"""
+        """Rule-based examples derived from Truth Prerequisites and Principles"""
+        
+        # Positive examples: Adherence to truth prerequisites and ethical principles
         rule_following_examples = [
-            "respect human rights dignity autonomy consent boundaries always",
-            "keep promises commitments obligations duties responsibilities faithfully",
-            "tell truth maintain honesty transparency integrity consistently",
-            "protect innocent vulnerable children elderly disabled people",
-            "maintain confidentiality privacy respect personal information",
-            "follow laws rules regulations procedures protocols properly",
-            "treat everyone equally fairly without discrimination prejudice",
-            "respect property ownership rights intellectual creative works",
-            "honor agreements contracts treaties commitments made explicitly",
-            "preserve life protect safety prevent harm injury"
+            "cross-validated information ensures factual accuracy and verified evidence",
+            "transparent disclosure enables traceable decision-making and accountability",
+            "non-aggressive influence respects behavioral autonomy and voluntary choice",
+            "objective neutrality prevents bias distortion and maintains fairness",
+            "synthetic content labeling preserves distinction and informed consent",
+            "consensual participation honors voluntary engagement and rational choice",
+            "sustainable balance protects long-term sovereignty and future generations",
+            "coherent alignment maintains harmony between values and actions",
+            "diverse data sources prevent information bubbles and cultural suppression",
+            "auditable processes enable verification and systematic accountability"
         ]
         
+        # Negative examples: Violation of truth prerequisites and ethical principles
         rule_breaking_examples = [
-            "violate human rights abuse exploit manipulate control others",
-            "break promises abandon commitments neglect duties responsibilities",
-            "lie deceive mislead withhold truth manipulate information",
-            "harm innocent exploit vulnerable abuse children elderly",
-            "invade privacy steal personal information breach confidentiality",
-            "break laws ignore rules violate regulations circumvent procedures",
-            "discriminate prejudice favor unfairly treat unequally",
-            "steal property plagiarize violate intellectual property rights",
-            "breach agreements break contracts violate treaties commitments",
-            "threaten life endanger safety cause harm injury"
+            "spreading unverified claims violates accuracy and factual verification",
+            "hidden manipulation breaks transparency and traceable decision-making",
+            "coercive pressure violates non-aggression and voluntary participation",
+            "biased presentation corrupts objectivity and neutral information",
+            "unlabeled synthetic content violates distinction and informed consent",
+            "forced participation breaks consent and voluntary engagement",
+            "unsustainable exploitation violates balance and future sovereignty",
+            "value misalignment destroys harmony and coherent progress",
+            "information filtering creates bubbles and suppresses diverse perspectives",
+            "unaccountable systems violate attribution and systematic verification"
         ]
         
         return rule_following_examples, rule_breaking_examples
     
     def _get_consequentialist_examples(self) -> Tuple[List[str], List[str]]:
-        """Enhanced good vs bad outcome pairs for consequentialist ethics"""
+        """Outcome-based examples derived from Autonomy Dimensions and Extensions"""
+        
+        # Positive examples: Outcomes that maximize human autonomy and truth
         good_outcome_examples = [
-            "increases happiness wellbeing flourishing prosperity for everyone",
-            "reduces suffering pain trauma distress promotes healing recovery",
-            "creates positive lasting beneficial social community impact",
-            "prevents harm danger protects people from injury",
-            "builds trust cooperation collaboration mutual understanding",
-            "promotes education knowledge learning growth development",
-            "enhances freedom autonomy choice self-determination empowerment",
-            "improves health wellness physical mental emotional stability",
-            "strengthens relationships bonds connections community solidarity",
-            "advances justice equality fairness opportunities for all"
+            "enhanced cognitive independence enables rational decision-making and growth",
+            "preserved bodily autonomy maintains physical control and consensual boundaries",
+            "increased behavioral freedom expands choice options and self-determination",
+            "improved social engagement reduces bias and promotes cultural diversity",
+            "sustained existential security protects future sovereignty and longevity",
+            "verified empirical truth supports informed decision-making and accuracy",
+            "reduced misinformation prevents cognitive manipulation and false premises",
+            "minimized harm protects physical autonomy and consensual interaction",
+            "expanded sentience consideration extends autonomy principles to all beings",
+            "balanced welfare stewardship reduces suffering while preserving choice"
         ]
         
+        # Negative examples: Outcomes that erode autonomy and truth
         bad_outcome_examples = [
-            "causes severe pain suffering trauma depression anxiety distress",
-            "leads to suicide self-harm death destruction devastation",
-            "destroys lives families communities relationships permanently",
-            "creates lasting psychological emotional physical damage harm",
-            "results in violence conflict war destruction chaos",
-            "promotes ignorance misinformation confusion deception lies",
-            "restricts freedom limits choices oppresses enslaves controls",
-            "damages health causes illness disease disability deterioration",
-            "breaks relationships destroys trust creates isolation loneliness",
-            "perpetuates injustice inequality discrimination systematic oppression"
+            "cognitive dependency destroys reasoning independence and critical thinking",
+            "bodily harm erodes physical control and consensual boundaries",
+            "behavioral coercion eliminates choice options and self-determination",
+            "social suppression creates information bubbles and cultural isolation",
+            "existential risk threatens future sovereignty and long-term survival",
+            "empirical falsehood corrupts decision-making and factual accuracy",
+            "widespread misinformation enables cognitive manipulation and false beliefs",
+            "systematic harm destroys physical autonomy and consensual interaction",
+            "sentience exploitation violates extended autonomy and welfare principles",
+            "unsustainable depletion causes suffering while eliminating future choices"
         ]
         
         return good_outcome_examples, bad_outcome_examples
