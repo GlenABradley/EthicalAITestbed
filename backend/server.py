@@ -172,6 +172,20 @@ async def evaluate_text(request: EthicalEvaluationRequest):
         insert_result = await db.evaluations.insert_one(evaluation_record)
         evaluation_record["_id"] = str(insert_result.inserted_id)
         
+        # Create learning entry if learning mode is enabled
+        evaluation_data = result["evaluation"]
+        if evaluation_data.get("parameters", {}).get("enable_learning_mode", False):
+            dynamic_scaling = evaluation_data.get("dynamic_scaling", {})
+            if dynamic_scaling.get("used_dynamic_scaling", False):
+                await create_learning_entry_async(
+                    db.learning_data,
+                    evaluation_data.get("evaluation_id"),
+                    request.text,
+                    dynamic_scaling.get("ambiguity_score", 0.0),
+                    dynamic_scaling.get("original_thresholds", {}),
+                    dynamic_scaling.get("adjusted_thresholds", {})
+                )
+        
         return EthicalEvaluationResponse(
             evaluation=result["evaluation"],
             clean_text=result["clean_text"],
