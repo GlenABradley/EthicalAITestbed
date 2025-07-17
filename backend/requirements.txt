@@ -34,3 +34,4 @@ threadpoolctl
 regex
 safetensors
 tokenizers
+Pillow
