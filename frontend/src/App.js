@@ -232,7 +232,6 @@ function App() {
                     </button>
                     <button
                       onClick={() => {
-                        console.log('🧪 Quick test button clicked');
                         fetch(`${API}/health`)
                           .then(r => r.json())
                           .then(d => alert('API Health: ' + JSON.stringify(d)))
