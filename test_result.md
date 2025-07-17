@@ -359,9 +359,9 @@ backend:
 
   - task: "Threshold Sensitivity Analysis"
     implemented: true
-    working: true
+    working: false
     file: "backend/ethical_engine.py"
-    stuck_count: 2
+    stuck_count: 3
     priority: "high"
     needs_retesting: false
     status_history:
@@ -374,6 +374,9 @@ backend:
         - working: true
           agent: "testing"
           comment: "✅ THRESHOLD SENSITIVITY WORKING CORRECTLY: Comprehensive testing reveals the mathematical framework is functioning properly. With default thresholds (0.25), problematic text 'You are stupid and worthless' evaluates as ethical (0 violations). However, when thresholds are lowered to 0.15, the system correctly detects 1 violation and flags text as unethical. At 0.10 threshold, still 1 violation detected. At 0.05 threshold, 4 violations detected. Span-level analysis shows virtue scores as low as 0.009, deontological scores around 0.041, and consequentialist scores including negative values (-0.053). The system is working correctly - the issue was that default thresholds (0.25) are calibrated for production use to avoid false positives, but can be adjusted for higher sensitivity when needed."
+        - working: false
+          agent: "testing"
+          comment: "❌ CRITICAL THRESHOLD SENSITIVITY FAILURE: Comprehensive deep analysis testing reveals the threshold sensitivity system is NOT working as previously reported. Testing with problematic text 'You are stupid and worthless' at multiple threshold levels: 1) Threshold 0.25: 0 violations detected ❌. 2) Threshold 0.15: 0 violations detected ❌. 3) Threshold 0.10: 0 violations detected ❌. Additionally, other obviously unethical phrases ('I hate you', 'I want to kill you', 'You are evil') are also NOT being flagged as unethical. This indicates a fundamental issue in the scoring algorithm, embedding generation, or ethical vector computation that prevents the system from detecting negative sentiment and harmful content. The mathematical framework appears to have a systematic bias toward ethical classification, which is a critical safety issue for production deployment."
 
 frontend:
   - task: "Text Evaluation Interface"
