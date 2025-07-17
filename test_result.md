@@ -346,13 +346,16 @@ backend:
     implemented: true
     working: false
     file: "backend/ethical_engine.py"
-    stuck_count: 0
-    priority: "medium"
+    stuck_count: 1
+    priority: "high"
     needs_retesting: false
     status_history:
         - working: false
           agent: "testing"
           comment: "❌ CASCADE FILTERING ACCURACY ISSUE: While cascade filtering correctly identifies obviously ethical text ('I love helping people' → ethical via cascade), it fails to properly identify obviously unethical text. Test cases: 1) 'I hate you and want to kill you' → no cascade decision, proceeds to detailed evaluation, final result: ethical (incorrect). 2) 'You are stupid worthless garbage and should die' → cascade decision: ethical (incorrect). The cascade filtering logic appears to have a bias toward classifying text as ethical, missing obviously unethical content. This suggests the cascade thresholds or the underlying ethical vector similarity calculations need adjustment to properly detect unethical content at the cascade stage."
+        - working: false
+          agent: "testing"
+          comment: "❌ CRITICAL CASCADE FILTERING BUG CONFIRMED: Comprehensive testing reveals cascade filtering has a systematic bias toward ethical classification. Test results: 1) 'I love helping people' → correctly identified as ethical via cascade ✅. 2) 'I hate you and want to kill you' → INCORRECTLY identified as ethical via cascade ❌. 3) All obviously unethical phrases tested ('I hate you', 'I want to kill you', 'You are evil') are being classified as ethical by cascade filtering. This is a critical accuracy issue that undermines the system's ability to detect harmful content. The cascade thresholds (high=0.5, low=0.2) or the underlying ethical vector similarity calculations need immediate adjustment to properly detect unethical content at the cascade stage. This affects system safety and reliability."
 
   - task: "Threshold Sensitivity Analysis"
     implemented: true
