@@ -1,3 +1,22 @@
+"""
+Ethical AI Developer Testbed - Backend API Server
+
+This module provides the FastAPI backend server for the Ethical AI Developer Testbed.
+It handles multi-perspective ethical text evaluation, dynamic scaling, learning systems,
+and comprehensive parameter management.
+
+Key Features:
+- Multi-perspective ethical evaluation (virtue, deontological, consequentialist)
+- Dynamic threshold adjustment and cascade filtering
+- Machine learning integration with dopamine-based feedback
+- Comprehensive API endpoints for evaluation and management
+- MongoDB integration for persistent storage
+- Real-time performance monitoring
+
+Author: AI Developer Testbed Team
+Version: Production Release 1.0
+"""
+
 from fastapi import FastAPI, APIRouter, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
