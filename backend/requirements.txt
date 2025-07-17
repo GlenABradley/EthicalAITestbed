@@ -31,3 +31,4 @@ transformers>=4.30.0
 huggingface_hub
 joblib
 threadpoolctl
+regex
