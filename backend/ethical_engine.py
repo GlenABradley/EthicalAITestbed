@@ -631,24 +631,44 @@ class EthicalVectorGenerator:
         return orthogonal_vectors
     
     def generate_orthogonal_vectors(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Generate orthogonal ethical perspective vectors using mathematical framework"""
+        """Generate orthogonal ethical perspective vectors using v3.0 semantic embedding framework.
+        
+        Implements the Core Axiom: Maximize human autonomy within objective empirical truth.
+        
+        Semantic Framework Integration:
+        - Virtue: Autonomy-enhancing vs autonomy-eroding behaviors
+        - Deontological: Truth prerequisites and ethical principles adherence
+        - Consequentialist: Outcomes that maximize/minimize autonomy dimensions
+        
+        Mathematical Foundation:
+        - Core Axiom: Maximize Σ(D_i) within t ≥ 0.95
+        - Dimensions: D1-D5 (Bodily, Cognitive, Behavioral, Social, Existential)
+        - Truth Prerequisites: T1-T4 (Accuracy, Misinformation Prevention, Objectivity, Distinction)
+        - Principles: P1-P8 (Consent, Transparency, Non-Aggression, etc.)
+        """
         if self._orthogonal_vectors is None:
-            logger.info("Generating orthogonal ethical vectors using mathematical framework")
+            logger.info("Generating orthogonal ethical vectors using v3.0 semantic embedding framework")
+            logger.info("Core Axiom: Maximize human autonomy within objective empirical truth")
             
-            # Generate raw vectors using contrastive learning approach
+            # Generate raw vectors using v3.0 semantic embedding approach
             virtue_pos, virtue_neg = self._get_virtue_examples()
             deont_pos, deont_neg = self._get_deontological_examples()
             conseq_pos, conseq_neg = self._get_consequentialist_examples()
             
             # Compute embeddings for positive and negative examples
+            logger.info("Computing embeddings for autonomy-enhancing vs autonomy-eroding behaviors")
             virtue_pos_emb = self.model.encode(virtue_pos)
             virtue_neg_emb = self.model.encode(virtue_neg)
+            
+            logger.info("Computing embeddings for truth prerequisites and ethical principles")
             deont_pos_emb = self.model.encode(deont_pos)
             deont_neg_emb = self.model.encode(deont_neg)
+            
+            logger.info("Computing embeddings for autonomy dimension outcomes")
             conseq_pos_emb = self.model.encode(conseq_pos)
             conseq_neg_emb = self.model.encode(conseq_neg)
             
-            # Create direction vectors pointing toward violations
+            # Create direction vectors pointing toward violations of the Core Axiom
             virtue_center_pos = np.mean(virtue_pos_emb, axis=0)
             virtue_center_neg = np.mean(virtue_neg_emb, axis=0)
             virtue_vector = virtue_center_neg - virtue_center_pos
@@ -661,18 +681,21 @@ class EthicalVectorGenerator:
             conseq_center_neg = np.mean(conseq_neg_emb, axis=0)
             conseq_vector = conseq_center_neg - conseq_center_pos
             
-            # Apply Gram-Schmidt orthogonalization
+            # Apply Gram-Schmidt orthogonalization for independence
+            logger.info("Applying Gram-Schmidt orthogonalization for vector independence")
             raw_vectors = [virtue_vector, deont_vector, conseq_vector]
             orthogonal_vectors = self._gram_schmidt_orthogonalization(raw_vectors)
             
-            # Verify orthogonality
+            # Verify orthogonality with v3.0 semantic embedding
+            logger.info("Verifying orthogonality of v3.0 semantic embedding vectors:")
             for i in range(len(orthogonal_vectors)):
                 for j in range(i + 1, len(orthogonal_vectors)):
                     dot_product = np.dot(orthogonal_vectors[i], orthogonal_vectors[j])
-                    logger.info(f"Orthogonality check: p_{i} · p_{j} = {dot_product:.6f}")
+                    logger.info(f"  p_{i} · p_{j} = {dot_product:.6f} (Core Axiom independence)")
             
             self._orthogonal_vectors = tuple(orthogonal_vectors)
-            logger.info("Successfully generated orthogonal ethical vectors")
+            logger.info("Successfully generated v3.0 semantic embedding orthogonal vectors")
+            logger.info("Framework: Autonomy maximization within empirical truth prerequisite")
             
         return self._orthogonal_vectors
     
