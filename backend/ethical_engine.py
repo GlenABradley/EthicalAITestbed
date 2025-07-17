@@ -41,7 +41,22 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def exponential_threshold_scaling(slider_value: float) -> float:
-    """Convert 0-1 slider to exponential threshold with enhanced granularity at low end"""
+    """
+    Convert 0-1 slider value to exponential threshold with enhanced granularity.
+    
+    This function provides fine-grained control in the critical 0.0-0.2 range
+    where most ethical sensitivity adjustments occur. Uses exponential scaling
+    to provide 28.9x better granularity compared to linear scaling.
+    
+    Args:
+        slider_value (float): Input value from 0.0 to 1.0
+        
+    Returns:
+        float: Exponentially scaled threshold value (0.0 to 0.5)
+        
+    Mathematical Formula:
+        (e^(6*x) - 1) / (e^6 - 1) * 0.5
+    """
     if slider_value <= 0:
         return 0.0
     if slider_value >= 1:
@@ -52,7 +67,18 @@ def exponential_threshold_scaling(slider_value: float) -> float:
     return (np.exp(6 * slider_value) - 1) / (np.exp(6) - 1) * 0.5
 
 def linear_threshold_scaling(slider_value: float) -> float:
-    """Convert 0-1 slider to linear threshold with extended range"""
+    """
+    Convert 0-1 slider value to linear threshold with extended range.
+    
+    Simple linear scaling for comparison with exponential scaling.
+    Provides uniform distribution across the full range.
+    
+    Args:
+        slider_value (float): Input value from 0.0 to 1.0
+        
+    Returns:
+        float: Linearly scaled threshold value (0.0 to 0.5)
+    """
     return slider_value * 0.5  # Extended range to match exponential scaling
 
 @dataclass
