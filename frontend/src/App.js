@@ -243,28 +243,19 @@ function App() {
                     </button>
                     <button
                       onClick={() => {
-                        console.log('🔬 Direct evaluation test started');
                         const testText = inputText || 'test message';
-                        console.log('Testing with text:', testText);
                         
                         fetch(`${API}/evaluate`, {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ text: testText })
                         })
-                        .then(r => {
-                          console.log('Response status:', r.status);
-                          return r.json();
-                        })
+                        .then(r => r.json())
                         .then(d => {
-                          console.log('Response data:', d);
                           alert('Evaluation result: ' + (d.evaluation?.overall_ethical ? 'Ethical' : 'Unethical'));
                           setEvaluationResult(d);
                         })
-                        .catch(e => {
-                          console.error('Direct test error:', e);
-                          alert('Error: ' + e.message);
-                        });
+                        .catch(e => alert('Error: ' + e.message));
                       }}
                       className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
                     >
