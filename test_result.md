@@ -500,13 +500,14 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Dynamic Scaling Details Endpoint"
+    - "Threshold Sensitivity Analysis"
     - "Cascade Filtering Accuracy"
   stuck_tasks:
-    - "Dynamic Scaling Details Endpoint"
+    - "Threshold Sensitivity Analysis"
+    - "Cascade Filtering Accuracy"
   test_all: false
   test_priority: "high_first"
-  final_status: "frontend_fully_functional"
+  final_status: "critical_issues_identified"
   frontend_testing_complete: true
 
 agent_communication:
