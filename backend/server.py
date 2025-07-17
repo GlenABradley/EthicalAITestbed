@@ -72,44 +72,52 @@ executor = ThreadPoolExecutor(max_workers=4)  # Optimized for production load
 
 # Pydantic models for API
 class EthicalEvaluationRequest(BaseModel):
-    text: str
-    parameters: Optional[Dict[str, Any]] = None
+    """Request model for ethical text evaluation"""
+    text: str = Field(..., description="Text to evaluate for ethical violations")
+    parameters: Optional[Dict[str, Any]] = Field(None, description="Optional parameter overrides")
 
 class EthicalEvaluationResponse(BaseModel):
-    evaluation: Dict[str, Any]
-    clean_text: str
-    explanation: str
-    delta_summary: Dict[str, Any]
+    """Response model for ethical text evaluation"""
+    evaluation: Dict[str, Any] = Field(..., description="Comprehensive evaluation results")
+    clean_text: str = Field(..., description="Text with violations removed")
+    explanation: str = Field(..., description="Detailed explanation of evaluation")
+    delta_summary: Dict[str, Any] = Field(..., description="Summary of changes made")
 
 class ParameterUpdateRequest(BaseModel):
-    parameters: Dict[str, Any]
+    """Request model for parameter updates"""
+    parameters: Dict[str, Any] = Field(..., description="Parameters to update")
 
 class CalibrationTest(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    text: str
-    expected_result: str
-    actual_result: Optional[str] = None
-    parameters_used: Optional[Dict[str, Any]] = None
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
-    passed: Optional[bool] = None
+    """Model for calibration test cases"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="Unique test identifier")
+    text: str = Field(..., description="Test text content")
+    expected_result: str = Field(..., description="Expected ethical evaluation result")
+    actual_result: Optional[str] = Field(None, description="Actual evaluation result")
+    parameters_used: Optional[Dict[str, Any]] = Field(None, description="Parameters used in test")
+    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Test creation timestamp")
+    passed: Optional[bool] = Field(None, description="Whether test passed")
 
 class CalibrationTestCreate(BaseModel):
-    text: str
-    expected_result: str
+    """Request model for creating calibration tests"""
+    text: str = Field(..., description="Test text content")
+    expected_result: str = Field(..., description="Expected result (ethical/unethical)")
 
 class FeedbackRequest(BaseModel):
-    evaluation_id: str
-    feedback_score: float = Field(ge=0.0, le=1.0, description="Dopamine feedback score (0.0-1.0)")
-    user_comment: Optional[str] = ""
+    """Request model for learning system feedback"""
+    evaluation_id: str = Field(..., description="Evaluation ID to provide feedback for")
+    feedback_score: float = Field(..., ge=0.0, le=1.0, description="Dopamine feedback score (0.0-1.0)")
+    user_comment: Optional[str] = Field("", description="Optional user comment")
 
 class ThresholdScalingRequest(BaseModel):
-    slider_value: float = Field(ge=0.0, le=1.0, description="Slider value (0.0-1.0)")
-    use_exponential: bool = True
+    """Request model for threshold scaling testing"""
+    slider_value: float = Field(..., ge=0.0, le=1.0, description="Slider value (0.0-1.0)")
+    use_exponential: bool = Field(True, description="Use exponential scaling")
 
 class LearningStatsResponse(BaseModel):
-    total_learning_entries: int
-    average_feedback_score: float
-    learning_active: bool
+    """Response model for learning system statistics"""
+    total_learning_entries: int = Field(..., description="Total learning entries in system")
+    average_feedback_score: float = Field(..., description="Average feedback score")
+    learning_active: bool = Field(..., description="Whether learning system is active")
 
 def initialize_evaluator():
     """Initialize the ethical evaluator with learning layer"""
