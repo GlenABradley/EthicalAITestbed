@@ -35,3 +35,4 @@ regex
 safetensors
 tokenizers
 Pillow
+sympy
