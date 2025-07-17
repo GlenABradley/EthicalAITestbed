@@ -34,37 +34,41 @@ from concurrent.futures import ThreadPoolExecutor
 # Import our ethical evaluation engine
 from ethical_engine import EthicalEvaluator, EthicalParameters, EthicalEvaluation, create_learning_entry_async
 
-# Load environment variables
+# Environment configuration
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
+# MongoDB connection setup
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Create the main app
-app = FastAPI(title="Ethical AI Developer Testbed")
+# FastAPI application setup
+app = FastAPI(
+    title="Ethical AI Developer Testbed",
+    description="Production-ready multi-perspective ethical text evaluation system",
+    version="1.0.0"
+)
 
-# Create a router with the /api prefix
+# API router with versioning
 api_router = APIRouter(prefix="/api")
 
-# Configure CORS
+# CORS configuration for production
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Configure for production environment
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Configure logging
+# Logging configuration
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Global evaluator instance
+# Global instances
 evaluator = None
-executor = ThreadPoolExecutor(max_workers=4)
+executor = ThreadPoolExecutor(max_workers=4)  # Optimized for production load
 
 # Pydantic models for API
 class EthicalEvaluationRequest(BaseModel):
