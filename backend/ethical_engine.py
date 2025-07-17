@@ -18,18 +18,19 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def exponential_threshold_scaling(slider_value: float) -> float:
-    """Convert 0-1 slider to exponential threshold with granularity at low end"""
+    """Convert 0-1 slider to exponential threshold with enhanced granularity at low end"""
     if slider_value <= 0:
         return 0.0
     if slider_value >= 1:
-        return 0.3
+        return 0.5  # Increased max range from 0.3 to 0.5 for better distribution
     
-    # e^(4*x) - 1 gives us range 0-0.3 with most resolution at bottom
-    return (np.exp(4 * slider_value) - 1) / (np.exp(4) - 1) * 0.3
+    # Enhanced exponential function: e^(6*x) - 1 gives us range 0-0.5 with maximum granularity at bottom
+    # This provides much finer control in the critical 0.0-0.2 range
+    return (np.exp(6 * slider_value) - 1) / (np.exp(6) - 1) * 0.5
 
 def linear_threshold_scaling(slider_value: float) -> float:
-    """Convert 0-1 slider to linear threshold (original behavior)"""
-    return slider_value
+    """Convert 0-1 slider to linear threshold with extended range"""
+    return slider_value * 0.5  # Extended range to match exponential scaling
 
 @dataclass
 class LearningEntry:
