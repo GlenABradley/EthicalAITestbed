@@ -265,13 +265,6 @@ function App() {
                 </div>
               </div>
 
-              {/* Debug Info */}
-              <div className="bg-gray-100 p-3 text-sm text-gray-600">
-                <strong>Debug:</strong> Input: "{inputText}" ({inputText.length} chars) | 
-                Loading: {loading ? 'TRUE' : 'FALSE'} | 
-                Result: {evaluationResult ? 'SET' : 'NULL'}
-              </div>
-
               {/* Results Section */}
               {evaluationResult && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
