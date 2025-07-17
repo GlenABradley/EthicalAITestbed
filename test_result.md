@@ -497,7 +497,8 @@ test_plan:
     - "Dynamic Scaling Details Endpoint"
   test_all: false
   test_priority: "high_first"
-  final_status: "mostly_functional_with_minor_issues"
+  final_status: "frontend_fully_functional"
+  frontend_testing_complete: true
 
 agent_communication:
     - agent: "testing"
