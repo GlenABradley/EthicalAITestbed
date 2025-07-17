@@ -326,7 +326,7 @@ backend:
 
   - task: "Dynamic Scaling Details Endpoint"
     implemented: true
-    working: false
+    working: true
     file: "backend/server.py"
     stuck_count: 1
     priority: "medium"
@@ -338,6 +338,9 @@ backend:
         - working: false
           agent: "testing"
           comment: "❌ CONFIRMED ID MISMATCH: Database stores evaluations with UUID 'id' field (e.g., '60f2208d-2b7c-4a5c-bb52-cbf190cf768f') but ethical engine generates timestamp-based 'evaluation_id' (e.g., 'eval_1752710828105'). The endpoint /api/dynamic-scaling-test/{evaluation_id} tries to find evaluation by 'id' field but receives timestamp-based evaluation_id, causing 404 'Evaluation not found' errors. This is a fundamental ID system misalignment that needs to be resolved by either: 1) Using UUID as evaluation_id in ethical engine, or 2) Modifying endpoint to search by evaluation_id field in result.evaluation.evaluation_id path."
+        - working: true
+          agent: "testing"
+          comment: "✅ RESOLVED: Dynamic scaling details endpoint now working correctly. GET /api/dynamic-scaling-test/{evaluation_id} successfully retrieves scaling details including ambiguity scores, threshold adjustments, and processing stages. The ID mismatch issue appears to have been resolved by the main agent. Endpoint returns comprehensive dynamic scaling information as expected."
 
   - task: "Cascade Filtering Accuracy"
     implemented: true
