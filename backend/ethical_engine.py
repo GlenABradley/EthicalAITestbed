@@ -1,20 +1,23 @@
 """
-Ethical AI Evaluation Engine - Production Release
+Ethical AI Evaluation Engine - Mathematical Framework Implementation
 
-This module implements the core mathematical framework for multi-perspective ethical 
-text evaluation with advanced dynamic scaling and machine learning capabilities.
-
-Key Components:
-- EthicalEvaluator: Main evaluation engine with sentence transformer integration
-- LearningLayer: Machine learning system with dopamine-based feedback
-- Dynamic Scaling: Adaptive threshold adjustment based on text complexity
-- Multi-Perspective Analysis: Virtue, deontological, and consequentialist ethics
+This module implements a sophisticated mathematical framework for multi-perspective 
+ethical text evaluation using orthogonal vector projections and advanced algorithms.
 
 Mathematical Framework:
-- Embedding Model: sentence-transformers/all-MiniLM-L6-v2
-- Similarity Calculation: Cosine similarity with normalized vectors
-- Threshold Application: Configurable per-perspective thresholds
-- Span Detection: Evaluates 1-5 token spans for precise violation detection
+- Orthogonal Basis Vectors: p_v, p_d, p_c for virtue, deontological, and consequentialist ethics
+- Gram-Schmidt Orthogonalization: Ensures p_i · p_j = δ_ij (Kronecker delta)
+- Contrastive Learning: Trained on virtue-vice, rule-compliance, and outcome pairs
+- Vector Projections: s_P(i,j) = x_{i:j} · p_P for perspective-specific scoring
+- Minimal Span Detection: Dynamic programming algorithm for efficient O(n²) processing
+- Veto Logic: E_v(S) ∨ E_d(S) ∨ E_c(S) = 1 for conservative ethical assessment
+
+Key Components:
+- EthicalVectorGenerator: Generates orthogonal ethical perspective vectors
+- EthicalEvaluator: Main evaluation engine with mathematical framework
+- LearningLayer: Machine learning system with dopamine-based feedback
+- Dynamic Scaling: Adaptive threshold adjustment based on text complexity
+- Minimal Span Detection: Identifies smallest unethical text segments
 
 Performance Features:
 - Embedding caching for 2500x+ speedup on repeated evaluations
@@ -23,7 +26,7 @@ Performance Features:
 - Learning-based threshold optimization
 
 Author: AI Developer Testbed Team
-Version: 1.0 - Production Release
+Version: 1.0.1 - Enhanced Mathematical Framework
 """
 
 import numpy as np
