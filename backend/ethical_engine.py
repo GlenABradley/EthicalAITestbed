@@ -23,7 +23,7 @@ Performance Features:
 - Learning-based threshold optimization
 
 Author: AI Developer Testbed Team
-Version: Production Release 1.0
+Version: 1.0 - Production Release
 """
 
 import numpy as np
