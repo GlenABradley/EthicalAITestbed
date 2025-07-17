@@ -159,9 +159,13 @@ async def evaluate_text(request: EthicalEvaluationRequest):
             request.parameters
         )
         
-        # Store evaluation in database
+        # Store evaluation in database with consistent ID
+        evaluation_data = result["evaluation"]
+        evaluation_id = evaluation_data.get("evaluation_id")
+        
         evaluation_record = {
             "id": str(uuid.uuid4()),
+            "evaluation_id": evaluation_id,  # Store both IDs for compatibility
             "input_text": request.text,
             "parameters": request.parameters or {},
             "result": result,
