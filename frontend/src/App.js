@@ -122,7 +122,9 @@ function App() {
       body: JSON.stringify({ parameters: newParams })
     })
     .then(response => response.json())
-    .then(data => console.log('Parameters updated:', data))
+    .then(data => {
+      // Parameters updated successfully
+    })
     .catch(error => console.error('Parameter update error:', error));
   };
 
