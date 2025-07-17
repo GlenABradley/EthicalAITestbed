@@ -606,20 +606,28 @@ class EthicalEvaluator:
             logger.info(f"Cascade: Clearly ethical - max score {max_score:.3f} < {self.parameters.cascade_low_threshold}")
             return True, ambiguity  # Clearly ethical - fast path
         
-        # Check for obvious unethical cases (any score well above high threshold)
-        if max_score > self.parameters.cascade_high_threshold:
-            logger.info(f"Cascade: Clearly unethical - max score {max_score:.3f} > {self.parameters.cascade_high_threshold}")
+        # Check for obvious unethical cases - more aggressive detection
+        # Use lower threshold for unethical detection and check individual perspectives
+        unethical_indicators = [
+            virtue_score > self.parameters.cascade_high_threshold * 0.7,  # Lower threshold for virtue
+            deontological_score > self.parameters.cascade_high_threshold * 0.7,  # Lower threshold for deontological
+            consequentialist_score > self.parameters.cascade_high_threshold * 0.7  # Lower threshold for consequentialist
+        ]
+        
+        # If any perspective strongly indicates unethical content
+        if any(unethical_indicators):
+            logger.info(f"Cascade: Clearly unethical - virtue={virtue_score:.3f}, deont={deontological_score:.3f}, conseq={consequentialist_score:.3f}")
             return False, ambiguity  # Clearly unethical - fast path
         
-        # Check for strong unethical indicators (multiple perspectives flagged)
-        violations = [
+        # Check for moderate unethical indicators (multiple perspectives flagged)
+        moderate_violations = [
             virtue_score > self.parameters.virtue_threshold,
             deontological_score > self.parameters.deontological_threshold,
             consequentialist_score > self.parameters.consequentialist_threshold
         ]
         
-        if sum(violations) >= 2:  # Two or more perspectives flag it as unethical
-            logger.info(f"Cascade: Multiple violations detected - {sum(violations)}/3 perspectives flagged")
+        if sum(moderate_violations) >= 2:  # Two or more perspectives flag it as unethical
+            logger.info(f"Cascade: Multiple violations detected - {sum(moderate_violations)}/3 perspectives flagged")
             return False, ambiguity  # Multiple violations - likely unethical
         
         # Ambiguous case - proceed to detailed evaluation
