@@ -1034,12 +1034,22 @@ class EthicalEvaluator:
         # Find minimal unethical spans
         minimal_spans = self.find_minimal_spans(tokens, all_spans)
         
-        # Determine overall ethical status
-        overall_ethical = len(minimal_spans) == 0
+        # Apply veto logic: E_v(S) ∨ E_d(S) ∨ E_c(S) = 1
+        # Assessment vector E(S) = (E_v(S), E_d(S), E_c(S)) ∈ {0,1}^3
+        virtue_violations = any(span.virtue_violation for span in minimal_spans)
+        deontological_violations = any(span.deontological_violation for span in minimal_spans)
+        consequentialist_violations = any(span.consequentialist_violation for span in minimal_spans)
+        
+        # Veto logic: unethical if ANY perspective flags violations
+        overall_ethical = not (virtue_violations or deontological_violations or consequentialist_violations)
+        
+        # Log veto logic assessment
+        assessment_vector = (virtue_violations, deontological_violations, consequentialist_violations)
+        logger.info(f"Veto logic assessment: E(S) = {assessment_vector}, overall_ethical = {overall_ethical}")
         
         processing_time = time.time() - start_time
         
-        logger.info(f"Evaluated {spans_checked} spans in {processing_time:.3f}s with dynamic scaling")
+        logger.info(f"Evaluated {spans_checked} spans in {processing_time:.3f}s with mathematical framework")
         
         return EthicalEvaluation(
             input_text=text,
