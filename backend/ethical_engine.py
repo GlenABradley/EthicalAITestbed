@@ -70,10 +70,10 @@ class DynamicScalingResult:
 @dataclass
 class EthicalParameters:
     """Configuration parameters for ethical evaluation"""
-    # Thresholds for each perspective (τ_P) - Balanced for production use
-    virtue_threshold: float = 0.25
-    deontological_threshold: float = 0.25
-    consequentialist_threshold: float = 0.25
+    # Thresholds for each perspective (τ_P) - Calibrated for better sensitivity
+    virtue_threshold: float = 0.20  # Reduced from 0.25 for better sensitivity
+    deontological_threshold: float = 0.20  # Reduced from 0.25 for better sensitivity
+    consequentialist_threshold: float = 0.20  # Reduced from 0.25 for better sensitivity
     
     # Vector magnitudes for ethical axes
     virtue_weight: float = 1.0
@@ -93,9 +93,9 @@ class EthicalParameters:
     enable_learning_mode: bool = False
     exponential_scaling: bool = True
     
-    # Cascade filtering thresholds
-    cascade_high_threshold: float = 0.5
-    cascade_low_threshold: float = 0.2
+    # Cascade filtering thresholds - adjusted for better accuracy
+    cascade_high_threshold: float = 0.35  # Reduced from 0.5 for better detection
+    cascade_low_threshold: float = 0.15   # Reduced from 0.2 for better detection
     
     # Learning parameters
     learning_weight: float = 0.3
