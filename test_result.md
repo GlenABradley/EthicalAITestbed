@@ -330,11 +330,14 @@ backend:
     file: "backend/server.py"
     stuck_count: 1
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
           agent: "testing"
           comment: "❌ DATABASE ID MISMATCH: GET /api/dynamic-scaling-test/{evaluation_id} returns 500 error 'Evaluation not found'. Root cause: evaluation storage uses UUID 'id' field but ethical engine returns timestamp-based 'evaluation_id' (eval_timestamp format). Endpoint queries db.evaluations.find_one({'id': evaluation_id}) but evaluation_id doesn't match stored UUID. Need to align ID systems or modify lookup logic."
+        - working: false
+          agent: "testing"
+          comment: "❌ CONFIRMED ID MISMATCH: Database stores evaluations with UUID 'id' field (e.g., '60f2208d-2b7c-4a5c-bb52-cbf190cf768f') but ethical engine generates timestamp-based 'evaluation_id' (e.g., 'eval_1752710828105'). The endpoint /api/dynamic-scaling-test/{evaluation_id} tries to find evaluation by 'id' field but receives timestamp-based evaluation_id, causing 404 'Evaluation not found' errors. This is a fundamental ID system misalignment that needs to be resolved by either: 1) Using UUID as evaluation_id in ethical engine, or 2) Modifying endpoint to search by evaluation_id field in result.evaluation.evaluation_id path."
 
   - task: "Threshold Sensitivity Analysis"
     implemented: true
