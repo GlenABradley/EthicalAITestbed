@@ -2,12 +2,22 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import axios from 'axios';
 
+// Backend API endpoint from environment variables
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 console.log('BACKEND_URL:', BACKEND_URL);
 console.log('API:', API);
 
+/**
+ * Main Application Component - Ethical AI Developer Testbed
+ * 
+ * This is the main React component that provides:
+ * - Multi-perspective ethical text evaluation
+ * - Dynamic scaling and learning system integration
+ * - Comprehensive parameter calibration interface
+ * - Real-time feedback system for continuous improvement
+ */
 function App() {
   const [activeTab, setActiveTab] = useState('evaluate');
   const [inputText, setInputText] = useState('');
