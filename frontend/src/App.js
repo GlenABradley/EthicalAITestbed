@@ -89,7 +89,21 @@ function App() {
   };
 
   const updateParameter = (key, value) => {
-    const newParams = { ...parameters, [key]: parseFloat(value) || 0 };
+    // Handle different parameter types properly
+    let processedValue;
+    
+    if (typeof value === 'boolean') {
+      // For checkboxes, use the boolean value directly
+      processedValue = value;
+    } else if (typeof value === 'string' && (value === 'true' || value === 'false')) {
+      // Handle string boolean values
+      processedValue = value === 'true';
+    } else {
+      // For numeric inputs (sliders), parse as float
+      processedValue = parseFloat(value) || 0;
+    }
+    
+    const newParams = { ...parameters, [key]: processedValue };
     setParameters(newParams);
     
     // Update backend parameters
