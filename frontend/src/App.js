@@ -285,37 +285,6 @@ function App() {
                     >
                       {loading ? 'Evaluating...' : 'Evaluate Text'}
                     </button>
-                    <button
-                      onClick={() => {
-                        fetch(`${API}/health`)
-                          .then(r => r.json())
-                          .then(d => alert('API Health: ' + JSON.stringify(d)))
-                          .catch(e => alert('Error: ' + e.message));
-                      }}
-                      className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
-                    >
-                      Test API
-                    </button>
-                    <button
-                      onClick={() => {
-                        const testText = inputText || 'test message';
-                        
-                        fetch(`${API}/evaluate`, {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ text: testText })
-                        })
-                        .then(r => r.json())
-                        .then(d => {
-                          alert('Evaluation result: ' + (d.evaluation?.overall_ethical ? 'Ethical' : 'Unethical'));
-                          setEvaluationResult(d);
-                        })
-                        .catch(e => alert('Error: ' + e.message));
-                      }}
-                      className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
-                    >
-                      Direct Test
-                    </button>
                   </div>
                 </div>
               </div>
