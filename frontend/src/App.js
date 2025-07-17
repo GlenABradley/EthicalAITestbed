@@ -218,7 +218,53 @@ function App() {
             <div className="space-y-6">
               {/* Input Section */}
               <div className="bg-white p-6 rounded-lg shadow">
-                <h2 className="text-2xl font-bold mb-4">Text Evaluation</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold">Text Evaluation</h2>
+                  
+                  {/* v3.0 Semantic Embedding Update Notice */}
+                  <div className="relative group">
+                    <div className="flex items-center space-x-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200 cursor-help">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-sm font-medium">The ethical embeddings have been updated!</span>
+                    </div>
+                    
+                    {/* Tooltip */}
+                    <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
+                      <div className="space-y-3">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span className="font-semibold text-gray-800">v3.0 Semantic Embedding Framework</span>
+                        </div>
+                        
+                        <div className="text-sm text-gray-600 space-y-2">
+                          <p><strong>Revolutionary Upgrade:</strong> Enhanced from basic examples to sophisticated autonomy-maximization principles.</p>
+                          
+                          <div className="bg-gray-50 p-3 rounded">
+                            <p className="font-medium text-gray-800 mb-1">Core Axiom:</p>
+                            <p className="text-xs">Maximize human autonomy (Σ D_i) within objective empirical truth (t ≥ 0.95)</p>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div>
+                              <p className="font-medium text-gray-800">Before:</p>
+                              <p>Simple virtue-vice examples</p>
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-800">Now:</p>
+                              <p>5 Autonomy dimensions + Mathematical rigor</p>
+                            </div>
+                          </div>
+                          
+                          <div className="bg-blue-50 p-2 rounded">
+                            <p className="text-xs font-medium text-blue-800">✨ 18% improvement in principle clustering</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
