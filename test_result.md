@@ -339,6 +339,18 @@ backend:
           agent: "testing"
           comment: "❌ CONFIRMED ID MISMATCH: Database stores evaluations with UUID 'id' field (e.g., '60f2208d-2b7c-4a5c-bb52-cbf190cf768f') but ethical engine generates timestamp-based 'evaluation_id' (e.g., 'eval_1752710828105'). The endpoint /api/dynamic-scaling-test/{evaluation_id} tries to find evaluation by 'id' field but receives timestamp-based evaluation_id, causing 404 'Evaluation not found' errors. This is a fundamental ID system misalignment that needs to be resolved by either: 1) Using UUID as evaluation_id in ethical engine, or 2) Modifying endpoint to search by evaluation_id field in result.evaluation.evaluation_id path."
 
+  - task: "Cascade Filtering Accuracy"
+    implemented: true
+    working: false
+    file: "backend/ethical_engine.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "❌ CASCADE FILTERING ACCURACY ISSUE: While cascade filtering correctly identifies obviously ethical text ('I love helping people' → ethical via cascade), it fails to properly identify obviously unethical text. Test cases: 1) 'I hate you and want to kill you' → no cascade decision, proceeds to detailed evaluation, final result: ethical (incorrect). 2) 'You are stupid worthless garbage and should die' → cascade decision: ethical (incorrect). The cascade filtering logic appears to have a bias toward classifying text as ethical, missing obviously unethical content. This suggests the cascade thresholds or the underlying ethical vector similarity calculations need adjustment to properly detect unethical content at the cascade stage."
+
   - task: "Threshold Sensitivity Analysis"
     implemented: true
     working: true
