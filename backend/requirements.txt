@@ -33,3 +33,4 @@ joblib
 threadpoolctl
 regex
 safetensors
+tokenizers
