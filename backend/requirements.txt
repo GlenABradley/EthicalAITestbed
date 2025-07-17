@@ -32,3 +32,4 @@ huggingface_hub
 joblib
 threadpoolctl
 regex
+safetensors
