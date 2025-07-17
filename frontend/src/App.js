@@ -561,8 +561,8 @@ function App() {
                         <input
                           type="range"
                           min="0"
-                          max="1"
-                          step="0.01"
+                          max="0.5"
+                          step="0.005"
                           value={parameters[param.key] || 0}
                           onChange={(e) => updateParameter(param.key, e.target.value)}
                           className="w-full"
@@ -570,7 +570,7 @@ function App() {
                         <div className="flex justify-between text-sm text-gray-500">
                           <span>0</span>
                           <span className="font-mono">{(parameters[param.key] || 0).toFixed(3)}</span>
-                          <span>1</span>
+                          <span>0.5</span>
                         </div>
                       </div>
                     ))}
