@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import axios from 'axios';
+import EthicalChart from './components/EthicalChart';
 
 // Backend API endpoint from environment variables
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
