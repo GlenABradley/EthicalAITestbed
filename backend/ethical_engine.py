@@ -1506,6 +1506,12 @@ class EthicalEvaluator:
             self.causal_analyzer = CausalCounterfactual(self)
         else:
             self.causal_analyzer = None
+            
+        # v1.1 UPGRADE: Initialize uncertainty analyzer
+        if self.parameters.enable_uncertainty_analysis:
+            self.uncertainty_analyzer = UncertaintyAnalyzer(self)
+        else:
+            self.uncertainty_analyzer = None
         
         logger.info(f"Initialized EthicalEvaluator with model: {self.parameters.embedding_model}")
         logger.info("v1.1 UPGRADE: MiniLM + Graph Attention Architecture for distributed pattern detection")
@@ -1516,6 +1522,8 @@ class EthicalEvaluator:
         logger.info(f"LoRA available: {LORA_AVAILABLE}")
         logger.info(f"Causal analysis enabled: {self.parameters.enable_causal_analysis}")
         logger.info(f"Causal available: {CAUSAL_AVAILABLE}")
+        logger.info(f"Uncertainty analysis enabled: {self.parameters.enable_uncertainty_analysis}")
+        logger.info(f"Human routing threshold: {self.parameters.uncertainty_threshold}")
     
     def benchmark_embedding_performance(self, test_texts: List[str]) -> Dict[str, float]:
         """
