@@ -289,7 +289,13 @@ async def get_heat_map_visualization(request: EvaluationRequest):
                 "stochastic": calculate_grade(calculate_avg_score(stochastic))
             },
             "textLength": text_length,
-            "originalEvaluation": evaluation_result
+            "originalEvaluation": {
+                "input_text": evaluation_result.input_text,
+                "overall_ethical": evaluation_result.overall_ethical,
+                "violation_count": evaluation_result.violation_count,
+                "processing_time": evaluation_result.processing_time,
+                "evaluation_id": evaluation_result.evaluation_id
+            }
         }
         
         return visualization_data
