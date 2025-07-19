@@ -168,8 +168,11 @@ function App() {
     setHeatMapLoading(true);
     try {
       // Using real evaluation endpoint for authentic heat-map generation
+      // Extended timeout to accommodate complex ethical evaluation processing
       const response = await axios.post(`${API}/heat-map-visualization`, {
         text: text
+      }, {
+        timeout: 120000 // 2 minutes timeout for complex evaluation
       });
       setHeatMapData(response.data);
     } catch (error) {
