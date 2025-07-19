@@ -39,3 +39,4 @@ sympy
 tqdm
 peft
 torchvision
+torch-geometric
