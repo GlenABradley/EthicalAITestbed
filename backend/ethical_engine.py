@@ -784,6 +784,7 @@ class EthicalEvaluation:
     parameters: EthicalParameters
     dynamic_scaling_result: Optional[DynamicScalingResult] = None
     evaluation_id: str = field(default_factory=lambda: f"eval_{int(time.time() * 1000)}")
+    causal_analysis: Optional[Dict[str, Any]] = None  # v1.1 UPGRADE: Causal counterfactual results
     
     @property
     def violation_count(self) -> int:
