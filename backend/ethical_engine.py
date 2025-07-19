@@ -732,7 +732,8 @@ class EthicalEvaluator:
         self.embedding_cache = {}
         
         logger.info(f"Initialized EthicalEvaluator with model: {self.parameters.embedding_model}")
-        logger.info("v1.1 UPGRADE: Jina v4 embeddings initialized for enhanced distributed pattern detection")
+        logger.info("v1.1 UPGRADE: Enhanced MPNet embeddings initialized for improved semantic understanding")
+        logger.info("Future upgrade path: Jina v4 for distributed pattern detection when compute allows")
     
     def benchmark_embedding_performance(self, test_texts: List[str]) -> Dict[str, float]:
         """
