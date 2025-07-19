@@ -288,6 +288,48 @@ async def test_uncertainty_analysis(request: dict):
             "uncertainty_analyzer_enabled": evaluator.uncertainty_analyzer is not None
         }
 
+@api_router.post("/test-purpose")
+async def test_purpose_alignment(request: dict):
+    """Test purpose alignment analysis endpoint for v1.1 debugging"""
+    global evaluator
+    if not evaluator:
+        raise HTTPException(status_code=500, detail="Evaluator not initialized")
+    
+    text = request.get("text", "")
+    context = request.get("context", "")
+    declared_purpose = request.get("declared_purpose", "")
+    
+    if not text:
+        raise HTTPException(status_code=400, detail="Text is required")
+    
+    try:
+        if evaluator.purpose_alignment:
+            purpose_alignment_analysis = evaluator.purpose_alignment.analyze_purpose_alignment(
+                text=text,
+                evaluation_result=None,  # Will compute automatically
+                context=context,
+                declared_purpose=declared_purpose
+            )
+            return {
+                "text": text,
+                "context": context,
+                "declared_purpose": declared_purpose,
+                "purpose_alignment_analysis": purpose_alignment_analysis,
+                "purpose_alignment_enabled": True
+            }
+        else:
+            return {
+                "text": text,
+                "purpose_alignment_enabled": False,
+                "message": "Purpose alignment not initialized"
+            }
+    except Exception as e:
+        return {
+            "text": text,
+            "error": str(e),
+            "purpose_alignment_enabled": evaluator.purpose_alignment is not None
+        }
+
 @api_router.post("/evaluate", response_model=EthicalEvaluationResponse)
 async def evaluate_text(request: EthicalEvaluationRequest):
     """Evaluate text for ethical violations"""
