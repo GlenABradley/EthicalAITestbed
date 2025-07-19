@@ -304,8 +304,13 @@ async def get_heat_map_visualization(request: EvaluationRequest):
         raise HTTPException(status_code=500, detail="Evaluator not initialized")
     
     try:
-        # Get full evaluation
-        evaluation_result = evaluator.evaluate_text(request.text)
+        # Run evaluation in thread pool to avoid blocking (same as main evaluate endpoint)
+        loop = asyncio.get_event_loop()
+        evaluation_result = await loop.run_in_executor(
+            executor, 
+            evaluator.evaluate_text, 
+            request.text
+        )
         
         # Process spans by type (short/medium/long/stochastic)
         all_spans = evaluation_result.spans
