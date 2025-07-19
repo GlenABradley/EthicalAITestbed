@@ -119,6 +119,10 @@ class LearningStatsResponse(BaseModel):
     average_feedback_score: float = Field(..., description="Average feedback score")
     learning_active: bool = Field(..., description="Whether learning system is active")
 
+class EvaluationRequest(BaseModel):
+    """Request model for evaluation"""
+    text: str = Field(..., description="Text to evaluate")
+
 def initialize_evaluator():
     """Initialize the ethical evaluator with learning layer"""
     global evaluator
