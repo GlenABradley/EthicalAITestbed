@@ -519,13 +519,12 @@ class OptimizedEvaluationEngine:
             spans=core_analysis.get("spans", []),
             minimal_spans=core_analysis.get("violations", []),
             overall_ethical=core_analysis.get("overall_ethical", True),
-            violation_count=core_analysis.get("violation_count", 0),
             processing_time=0.0,  # Will be set by caller
             parameters=self.parameters,
             evaluation_id=f"eval_{int(time.time() * 1000)}",
             # Add v1.1 specific results
-            graph_attention_result=advanced_results.get("graph_attention_result"),
-            intent_classification=advanced_results.get("intent_classification")
+            causal_analysis=advanced_results.get("graph_attention_result"),
+            uncertainty_analysis=advanced_results.get("intent_classification")
         )
     
     def _create_empty_evaluation(self, text: str, processing_time: float) -> EthicalEvaluation:
