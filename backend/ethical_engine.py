@@ -1283,6 +1283,12 @@ class EthicalEvaluator:
         else:
             self.intent_hierarchy = None
         
+        # v1.1 UPGRADE: Initialize causal counterfactual analyzer
+        if self.parameters.enable_causal_analysis:
+            self.causal_analyzer = CausalCounterfactual(self)
+        else:
+            self.causal_analyzer = None
+        
         logger.info(f"Initialized EthicalEvaluator with model: {self.parameters.embedding_model}")
         logger.info("v1.1 UPGRADE: MiniLM + Graph Attention Architecture for distributed pattern detection")
         logger.info(f"Graph attention enabled: {self.parameters.enable_graph_attention}")
@@ -1290,6 +1296,8 @@ class EthicalEvaluator:
         logger.info(f"Intent hierarchy enabled: {self.parameters.enable_intent_hierarchy}")
         logger.info(f"Intent categories: {self.parameters.intent_categories}")
         logger.info(f"LoRA available: {LORA_AVAILABLE}")
+        logger.info(f"Causal analysis enabled: {self.parameters.enable_causal_analysis}")
+        logger.info(f"Causal available: {CAUSAL_AVAILABLE}")
     
     def benchmark_embedding_performance(self, test_texts: List[str]) -> Dict[str, float]:
         """
