@@ -1273,6 +1273,7 @@ class EthicalEvaluation:
     evaluation_id: str = field(default_factory=lambda: f"eval_{int(time.time() * 1000)}")
     causal_analysis: Optional[Dict[str, Any]] = None  # v1.1 UPGRADE: Causal counterfactual results
     uncertainty_analysis: Optional[Dict[str, Any]] = None  # v1.1 UPGRADE: Uncertainty analysis results
+    purpose_alignment_analysis: Optional[Dict[str, Any]] = None  # v1.1 UPGRADE: IRL purpose alignment results
     
     @property
     def violation_count(self) -> int:
