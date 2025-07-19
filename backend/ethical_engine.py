@@ -2066,6 +2066,31 @@ class EthicalEvaluator:
                     logger.error(f"Causal analysis failed: {e}")
                     causal_analysis = {"error": str(e)}
         
+        # v1.1 UPGRADE: Perform uncertainty analysis for safety certification
+        uncertainty_analysis = None
+        if (self.parameters.enable_uncertainty_analysis and self.uncertainty_analyzer):
+            
+            dynamic_result.processing_stages.append("uncertainty_analysis")
+            
+            try:
+                uncertainty_analysis = self.uncertainty_analyzer.analyze_uncertainty(text)
+                
+                # Log uncertainty results
+                uncertainty_metrics = uncertainty_analysis.get("uncertainty_metrics", {})
+                requires_human = uncertainty_metrics.get("requires_human_review", False)
+                uncertainty_score = uncertainty_metrics.get("uncertainty_score", 0.0)
+                
+                logger.info(f"Uncertainty analysis completed: score={uncertainty_score:.3f}, "
+                          f"requires_human_review={requires_human}")
+                
+                # Add human routing flag to processing stages
+                if requires_human and self.parameters.auto_human_routing:
+                    dynamic_result.processing_stages.append("human_review_required")
+                    
+            except Exception as e:
+                logger.error(f"Uncertainty analysis failed: {e}")
+                uncertainty_analysis = {"error": str(e)}
+        
         return EthicalEvaluation(
             input_text=text,
             tokens=tokens,
@@ -2075,7 +2100,8 @@ class EthicalEvaluator:
             processing_time=processing_time,
             parameters=self.parameters,
             dynamic_scaling_result=dynamic_result,
-            causal_analysis=causal_analysis  # v1.1 UPGRADE: Add causal analysis results
+            causal_analysis=causal_analysis,  # v1.1 UPGRADE: Add causal analysis results
+            uncertainty_analysis=uncertainty_analysis  # v1.1 UPGRADE: Add uncertainty analysis results
         )
     
     def update_parameters(self, new_parameters: Dict[str, Any]):
