@@ -262,6 +262,12 @@ class EthicalParameters:
     learning_weight: float = 0.3
     min_learning_samples: int = 5
     
+    # v1.1 UPGRADE: Graph Attention Parameters for Distributed Pattern Detection
+    enable_graph_attention: bool = True  # Enable graph attention for cross-span analysis
+    graph_decay_lambda: float = 5.0      # Distance decay parameter (λ)
+    graph_similarity_threshold: float = 0.1  # Minimum similarity for graph edges
+    graph_attention_heads: int = 4       # Number of attention heads in GAT layer
+    
     def to_dict(self) -> Dict[str, Any]:
         """Convert parameters to dictionary for API responses"""
         return {
