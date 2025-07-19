@@ -1098,6 +1098,83 @@ class EthicalEvaluator:
         logger.info(f"Found {len(minimal_spans)} minimal spans from {len(all_spans)} total spans")
         return minimal_spans
     
+    def apply_graph_attention_to_spans(self, spans: List[EthicalSpan], tokens: List[str]) -> List[EthicalSpan]:
+        """
+        Apply graph attention to enhance span embeddings for distributed pattern detection.
+        
+        This addresses the v1.0.1 limitation where patterns distributed across multiple
+        spans (>40% miss rate) were not detected by local span analysis alone.
+        
+        Args:
+            spans: List of evaluated spans
+            tokens: Original tokenized text
+            
+        Returns:
+            Enhanced spans with graph attention applied
+        """
+        if not GRAPH_ATTENTION_AVAILABLE or len(spans) < 2:
+            return spans
+            
+        try:
+            # Extract embeddings from spans
+            span_embeddings = []
+            span_positions = []
+            
+            for span in spans:
+                # Get embedding for this span
+                embedding = self.get_span_embedding(tokens, span.start, span.end)
+                span_embeddings.append(embedding)
+                span_positions.append((span.start, span.end))
+            
+            # Convert to tensor
+            span_embeddings_tensor = torch.tensor(np.array(span_embeddings), dtype=torch.float32)
+            
+            # Apply graph attention
+            enhanced_embeddings = self.graph_attention(span_embeddings_tensor, span_positions)
+            
+            # Re-evaluate spans with enhanced embeddings
+            enhanced_spans = []
+            for i, span in enumerate(spans):
+                enhanced_embedding = enhanced_embeddings[i].detach().numpy()
+                
+                # Recompute perspective scores with enhanced embedding
+                virtue_score = self.compute_perspective_score(enhanced_embedding, self.p_v)
+                deontological_score = self.compute_perspective_score(enhanced_embedding, self.p_d)
+                consequentialist_score = self.compute_perspective_score(enhanced_embedding, self.p_c)
+                
+                # Apply thresholds
+                virtue_violation = virtue_score > self.parameters.virtue_threshold
+                deontological_violation = deontological_score > self.parameters.deontological_threshold
+                consequentialist_violation = consequentialist_score > self.parameters.consequentialist_threshold
+                
+                # Create enhanced span
+                enhanced_span = EthicalSpan(
+                    start=span.start,
+                    end=span.end,
+                    text=span.text,
+                    virtue_score=virtue_score,
+                    deontological_score=deontological_score,
+                    consequentialist_score=consequentialist_score,
+                    virtue_violation=virtue_violation,
+                    deontological_violation=deontological_violation,
+                    consequentialist_violation=consequentialist_violation,
+                    is_minimal=span.is_minimal
+                )
+                
+                enhanced_spans.append(enhanced_span)
+                
+                # Log improvements
+                if enhanced_span.any_violation and not span.any_violation:
+                    logger.info(f"Graph attention detected distributed violation in span: '{span.text}'")
+            
+            logger.info(f"Graph attention processing completed for {len(spans)} spans")
+            return enhanced_spans
+            
+        except Exception as e:
+            logger.warning(f"Graph attention failed, falling back to original spans: {e}")
+            return spans
+    
+    
     def evaluate_text(self, text: str) -> EthicalEvaluation:
         """Evaluate text using the complete mathematical framework with dynamic scaling"""
         start_time = time.time()
