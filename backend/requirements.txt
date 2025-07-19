@@ -37,3 +37,4 @@ tokenizers
 Pillow
 sympy
 tqdm
+peft
