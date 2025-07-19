@@ -125,7 +125,7 @@ class Phase1IntegrationTester:
             # Test single text embedding (sync)
             result = service.get_embedding_sync("Hello world")
             
-            if result.embeddings.shape[0] == 384:  # MiniLM-L6-v2 dimension
+            if result.embeddings.shape == (384,):  # Single embedding should be 1D
                 self.log_result("Single Embedding Test", True, f"Embedding generated successfully, shape: {result.embeddings.shape}")
             else:
                 self.log_result("Single Embedding Test", False, f"Unexpected embedding shape: {result.embeddings.shape}")
