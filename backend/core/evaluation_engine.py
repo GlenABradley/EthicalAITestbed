@@ -550,11 +550,9 @@ class OptimizedEvaluationEngine:
             spans=[],
             minimal_spans=[],
             overall_ethical=True,  # Conservative default
-            violation_count=0,
             processing_time=self.max_processing_time,
             parameters=self.parameters,
-            evaluation_id=f"eval_timeout_{int(time.time() * 1000)}",
-            error_message=f"Evaluation timed out during {timeout_type}"
+            evaluation_id=f"eval_timeout_{int(time.time() * 1000)}"
         )
     
     def _create_error_evaluation(self, text: str, error_message: str) -> EthicalEvaluation:
