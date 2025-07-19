@@ -167,8 +167,8 @@ function App() {
     
     setHeatMapLoading(true);
     try {
-      // Using mock endpoint for now (faster performance)
-      const response = await axios.post(`${API}/heat-map-mock`, {
+      // Using real evaluation endpoint for authentic heat-map generation
+      const response = await axios.post(`${API}/heat-map-visualization`, {
         text: text
       });
       setHeatMapData(response.data);
