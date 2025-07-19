@@ -103,7 +103,7 @@
 #====================================================================================================
 
 user_problem_statement: |
-  Enhanced Ethical AI Developer Testbed with v3.0 Semantic Embedding Framework
+  Enhanced Ethical AI Developer Testbed with v3.0 Semantic Embedding Framework + Phase 4 Heat-Map Visualization
   
   Build a sophisticated ethical AI evaluation system that implements:
   
