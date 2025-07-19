@@ -229,6 +229,18 @@ backend:
           comment: "🔥 CRITICAL HEAT-MAP FUNCTIONALITY FIXES VERIFICATION: Comprehensive testing of the specific critical functionality fixes mentioned in review request confirms ALL FIXES WORKING PERFECTLY: 1) ✅ HEAT-MAP MOCK ENDPOINT: Optimized for fast UI response - Short text: 299.9ms, Medium: 201.4ms, Long: 80.6ms, Empty: 120.0ms, Special chars: 192.1ms (all <1000ms target). 2) ✅ TIMEOUT HANDLING: Main evaluation endpoint properly times out after 2 minutes with proper error handling (no crashes). 3) ✅ DATA STRUCTURE: Perfect JSON structure with evaluations.short/medium/long/stochastic, V/A/C dimensions (0.0-1.0 range), uncertainty values, grade calculations (A+ to F format), valid span positions. 4) ✅ DATA SOURCE INDICATORS: Mock data properly labeled with 'mock_ethical_engine_v1.1' metadata to distinguish from real evaluation data. 5) ✅ PERFORMANCE COMPARISON: Mock endpoint (88.1ms) vs Real endpoint (timeout) - exactly as intended, mock provides instant UI response while real evaluation uses authentic but slow ethical engine. 6) ✅ API HEALTH: Service healthy, evaluator initialized (128.2ms response). CONCLUSION: All critical fixes successfully implemented - user's concerns about 'evaluate text locks up' and 'heatmaps respond too quickly' are resolved with optimized mock data for heat-maps while maintaining authentic evaluation for main endpoint."
 
 frontend:
+  - task: "CRITICAL: React Initialization Failure - Evaluation Results Not Displaying"
+    implemented: false
+    working: false
+    file: "frontend/src/App.js, backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "🚨 CRITICAL PRODUCTION BLOCKER IDENTIFIED: Comprehensive investigation reveals React bundle (1.7MB) loads successfully but React fails to initialize due to 404 errors from /api/learning-stats endpoint during useEffect. This causes the entire React app to crash before mounting, leaving only static HTML. Symptoms: 1) Button clicks do nothing (no React event handlers), 2) No evaluation results display despite backend working perfectly (confirmed 0.54s API response), 3) No React elements found in DOM, 4) React not available in window object. ROOT CAUSE: loadLearningStats() in useEffect throws unhandled 404 error that crashes React initialization. IMMEDIATE FIX: Either implement missing /api/learning-stats endpoint or add proper error handling to prevent 404 from blocking React mount. This explains why user reports 'no results appear after clicking Evaluate Text' - React never initializes to handle the click or display results."
+
   - task: "Phase 4A: Heat-Map Visualization Frontend"
     implemented: true
     working: true
