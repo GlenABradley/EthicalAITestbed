@@ -347,6 +347,15 @@ function App() {
                   </div>
                   <div className="flex space-x-4">
                     <button
+                      onClick={() => {
+                        console.log('🔥 TEST BUTTON CLICKED - Direct arrow function works!');
+                        alert('Test button clicked! React events are working.');
+                      }}
+                      className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
+                    >
+                      Test Click
+                    </button>
+                    <button
                       onClick={handleEvaluate}
                       disabled={loading || !inputText.trim()}
                       className="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
