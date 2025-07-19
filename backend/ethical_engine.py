@@ -287,7 +287,12 @@ class EthicalParameters:
             'cascade_high_threshold': self.cascade_high_threshold,
             'cascade_low_threshold': self.cascade_low_threshold,
             'learning_weight': self.learning_weight,
-            'min_learning_samples': self.min_learning_samples
+            'min_learning_samples': self.min_learning_samples,
+            # v1.1 Graph attention parameters
+            'enable_graph_attention': self.enable_graph_attention,
+            'graph_decay_lambda': self.graph_decay_lambda,
+            'graph_similarity_threshold': self.graph_similarity_threshold,
+            'graph_attention_heads': self.graph_attention_heads
         }
 
 @dataclass
