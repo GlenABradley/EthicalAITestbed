@@ -59,11 +59,15 @@ function App() {
 
   // Simple evaluation function
   const handleEvaluate = () => {
+    console.log('🔥 BUTTON CLICKED - handleEvaluate called!');
+    
     if (!inputText.trim()) {
+      console.log('❌ No input text provided');
       alert('Please enter some text to evaluate');
       return;
     }
 
+    console.log('✅ Input text validated:', inputText);
     setLoading(true);
     console.log('🚀 Starting evaluation for:', inputText);
 
