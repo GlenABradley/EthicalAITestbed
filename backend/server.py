@@ -193,7 +193,7 @@ async def get_heat_map_visualization(request: EvaluationRequest):
         evaluation_result = evaluator.evaluate_text(request.text)
         
         # Process spans by type (short/medium/long/stochastic)
-        all_spans = evaluation_result.get('spans', [])
+        all_spans = evaluation_result.spans
         text_length = len(request.text)
         
         def categorize_spans(spans):
@@ -204,16 +204,16 @@ async def get_heat_map_visualization(request: EvaluationRequest):
             stochastic_spans = []
             
             for span in spans:
-                span_length = span['end'] - span['start']
+                span_length = span.end - span.start
                 span_data = {
-                    'span': [span['start'], span['end']],
-                    'text': span['text'],
+                    'span': [span.start, span.end],
+                    'text': span.text,
                     'scores': {
-                        'V': span['virtue_score'],
-                        'A': span['deontological_score'],  # Autonomy mapping
-                        'C': span['consequentialist_score']
+                        'V': span.virtue_score,
+                        'A': span.deontological_score,  # Autonomy mapping
+                        'C': span.consequentialist_score
                     },
-                    'uncertainty': span.get('uncertainty', 0.0)
+                    'uncertainty': getattr(span, 'uncertainty', 0.0)
                 }
                 
                 if span_length <= 10:
