@@ -178,17 +178,6 @@ function App() {
       setHeatMapLoading(false);
     }
   };
-      console.log('Feedback submitted:', data);
-      setFeedbackMessage(`✅ Feedback recorded (score: ${feedbackScore})`);
-      loadLearningStats(); // Refresh stats
-      setTimeout(() => setFeedbackMessage(''), 3000);
-    })
-    .catch(error => {
-      console.error('Feedback error:', error);
-      setFeedbackMessage(`❌ Error: ${error.message}`);
-      setTimeout(() => setFeedbackMessage(''), 3000);
-    });
-  };
 
   const testThresholdScaling = (sliderValue, useExponential = true) => {
     fetch(`${API}/threshold-scaling`, {
