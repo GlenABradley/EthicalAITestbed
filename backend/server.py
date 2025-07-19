@@ -177,6 +177,41 @@ async def health_check():
         "timestamp": datetime.utcnow()
     }
 
+@api_router.post("/test-intent")
+async def test_intent_classification(request: dict):
+    """Test intent classification endpoint for v1.1 debugging"""
+    global evaluator
+    if not evaluator:
+        raise HTTPException(status_code=500, detail="Evaluator not initialized")
+    
+    text = request.get("text", "")
+    if not text:
+        raise HTTPException(status_code=400, detail="Text is required")
+    
+    try:
+        if evaluator.intent_hierarchy:
+            intent_scores = evaluator.intent_hierarchy.classify_intent(text)
+            dominant_intent, confidence = evaluator.intent_hierarchy.get_dominant_intent(text)
+            return {
+                "text": text,
+                "intent_scores": intent_scores,
+                "dominant_intent": dominant_intent,
+                "intent_confidence": confidence,
+                "intent_hierarchy_enabled": True
+            }
+        else:
+            return {
+                "text": text,
+                "intent_hierarchy_enabled": False,
+                "message": "Intent hierarchy not initialized"
+            }
+    except Exception as e:
+        return {
+            "text": text,
+            "error": str(e),
+            "intent_hierarchy_enabled": evaluator.intent_hierarchy is not None
+        }
+
 @api_router.post("/evaluate", response_model=EthicalEvaluationResponse)
 async def evaluate_text(request: EthicalEvaluationRequest):
     """Evaluate text for ethical violations"""
