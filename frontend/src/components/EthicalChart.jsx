@@ -209,7 +209,12 @@ const EthicalChart = ({ data, className = '' }) => {
   const totalTextLength = data.textLength || 100; // Fallback to prevent division by zero
   
   return (
-    <div className={`bg-gray-900 p-6 rounded-lg ${className}`} role="region" aria-label="Ethical Evaluation Heat Map">
+    <div 
+      className={`bg-gray-900 p-6 rounded-lg ${className}`} 
+      role="region" 
+      aria-label="Ethical Evaluation Heat Map"
+      dir="auto"
+    >
       {/* Header */}
       <div className="mb-6">
         <h2 className="text-xl font-bold text-white mb-2">
