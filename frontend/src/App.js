@@ -29,6 +29,10 @@ function App() {
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [thresholdScalingTest, setThresholdScalingTest] = useState({});
   
+  // Phase 4: Heat-map visualization state
+  const [heatMapData, setHeatMapData] = useState(null);
+  const [heatMapLoading, setHeatMapLoading] = useState(false);
+  
   // Load initial parameters and learning stats
   useEffect(() => {
     loadParameters();
