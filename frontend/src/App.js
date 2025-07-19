@@ -67,15 +67,9 @@ function App() {
     }
   };
 
-  // Enhanced evaluation function with React event binding fix
-  const handleEvaluate = React.useCallback((event) => {
-    console.log('🔥 BUTTON CLICKED - handleEvaluate called!', event);
-    
-    // Prevent any default behavior and ensure event is handled
-    if (event) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
+  // Simplified evaluation function - direct implementation
+  const handleEvaluate = () => {
+    console.log('🔥 BUTTON CLICKED - handleEvaluate called!');
     
     if (!inputText.trim()) {
       console.log('❌ No input text provided');
@@ -87,11 +81,7 @@ function App() {
     setLoading(true);
     console.log('🚀 Starting evaluation for:', inputText);
 
-    // Create abort controller for timeout handling
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minutes timeout
-
-    // Use fetch with extended timeout for complex ethical evaluation
+    // Use fetch for evaluation
     fetch(`${API}/evaluate`, {
       method: 'POST',
       headers: {
@@ -100,11 +90,9 @@ function App() {
       body: JSON.stringify({
         text: inputText,
         parameters: parameters || {}
-      }),
-      signal: controller.signal
+      })
     })
     .then(response => {
-      clearTimeout(timeoutId); // Clear timeout on successful response
       console.log('📥 Response received:', response.status);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -112,24 +100,19 @@ function App() {
       return response.json();
     })
     .then(data => {
-      console.log('📊 Evaluation data:', data);
+      console.log('📊 Evaluation data received:', data);
       setEvaluationResult(data);
       console.log('✅ Results set successfully');
     })
     .catch(error => {
-      clearTimeout(timeoutId); // Clear timeout on error
       console.error('❌ Error during evaluation:', error);
-      if (error.name === 'AbortError') {
-        alert('Error: Request timed out. The ethical evaluation is taking longer than expected (>2 minutes). Please try with shorter text or check system performance.');
-      } else {
-        alert('Error: ' + error.message);
-      }
+      alert('Error: ' + error.message);
     })
     .finally(() => {
       setLoading(false);
       console.log('🏁 Evaluation finished');
     });
-  }, [inputText, parameters]); // Dependencies for useCallback
+  };
 
   const updateParameter = (key, value) => {
     // Handle different parameter types properly
