@@ -84,6 +84,7 @@ function App() {
       signal: controller.signal
     })
     .then(response => {
+      clearTimeout(timeoutId); // Clear timeout on successful response
       console.log('📥 Response received:', response.status);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -96,8 +97,13 @@ function App() {
       console.log('✅ Results set successfully');
     })
     .catch(error => {
+      clearTimeout(timeoutId); // Clear timeout on error
       console.error('❌ Error during evaluation:', error);
-      alert('Error: ' + error.message);
+      if (error.name === 'AbortError') {
+        alert('Error: Request timed out. The ethical evaluation is taking longer than expected (>2 minutes). Please try with shorter text or check system performance.');
+      } else {
+        alert('Error: ' + error.message);
+      }
     })
     .finally(() => {
       setLoading(false);
