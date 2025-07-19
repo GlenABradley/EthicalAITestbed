@@ -709,13 +709,13 @@ function App() {
                           min="0"
                           max="0.5"
                           step="0.005"
-                          value={parameters[param.key] || 0}
+                          value={parameters?.[param.key] || 0}
                           onChange={(e) => updateParameter(param.key, e.target.value)}
                           className="w-full"
                         />
                         <div className="flex justify-between text-sm text-gray-500">
                           <span>0</span>
-                          <span className="font-mono">{(parameters[param.key] || 0).toFixed(3)}</span>
+                          <span className="font-mono">{(parameters?.[param.key] || 0).toFixed(3)}</span>
                           <span>0.5</span>
                         </div>
                       </div>
