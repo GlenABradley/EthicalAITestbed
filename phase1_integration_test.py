@@ -12,8 +12,9 @@ import numpy as np
 from typing import Dict, Any, List
 import traceback
 
-# Add backend to path for imports
-sys.path.append('/app/backend')
+# Change to backend directory and add to path for proper imports
+os.chdir('/app/backend')
+sys.path.insert(0, '/app/backend')
 
 class Phase1IntegrationTester:
     def __init__(self):
