@@ -456,7 +456,12 @@ class EthicalParameters:
             'enable_graph_attention': self.enable_graph_attention,
             'graph_decay_lambda': self.graph_decay_lambda,
             'graph_similarity_threshold': self.graph_similarity_threshold,
-            'graph_attention_heads': self.graph_attention_heads
+            'graph_attention_heads': self.graph_attention_heads,
+            # v1.1 Intent hierarchy parameters
+            'enable_intent_hierarchy': self.enable_intent_hierarchy,
+            'intent_threshold': self.intent_threshold,
+            'intent_categories': self.intent_categories,
+            'enable_contrastive_learning': self.enable_contrastive_learning
         }
 
 @dataclass
