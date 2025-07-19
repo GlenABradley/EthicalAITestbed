@@ -41,12 +41,22 @@ Version: 1.0.1 - v3.0 Semantic Embedding Integration
 import numpy as np
 import re
 import time
+import torch
+import torch.nn as nn
 from typing import List, Dict, Tuple, Optional, Any
 from dataclasses import dataclass, field
 from datetime import datetime
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 import logging
+
+# v1.1 Graph attention imports
+try:
+    import torch_geometric.nn as pyg_nn
+    GRAPH_ATTENTION_AVAILABLE = True
+except ImportError:
+    GRAPH_ATTENTION_AVAILABLE = False
+    logging.getLogger(__name__).warning("torch_geometric not available, falling back to local spans only")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
