@@ -1019,10 +1019,22 @@ class EthicalEvaluator:
         # Embedding cache for efficiency
         self.embedding_cache = {}
         
+        # v1.1 UPGRADE: Initialize intent hierarchy
+        if self.parameters.enable_intent_hierarchy:
+            self.intent_hierarchy = IntentHierarchy(
+                base_model=self.model,
+                intent_categories=self.parameters.intent_categories
+            )
+        else:
+            self.intent_hierarchy = None
+        
         logger.info(f"Initialized EthicalEvaluator with model: {self.parameters.embedding_model}")
         logger.info("v1.1 UPGRADE: MiniLM + Graph Attention Architecture for distributed pattern detection")
         logger.info(f"Graph attention enabled: {self.parameters.enable_graph_attention}")
         logger.info(f"Graph attention available: {GRAPH_ATTENTION_AVAILABLE}")
+        logger.info(f"Intent hierarchy enabled: {self.parameters.enable_intent_hierarchy}")
+        logger.info(f"Intent categories: {self.parameters.intent_categories}")
+        logger.info(f"LoRA available: {LORA_AVAILABLE}")
     
     def benchmark_embedding_performance(self, test_texts: List[str]) -> Dict[str, float]:
         """
