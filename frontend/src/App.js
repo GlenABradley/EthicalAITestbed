@@ -579,6 +579,86 @@ function App() {
             </div>
           )}
 
+          {activeTab === 'heatmap' && (
+            <div className="space-y-6">
+              {/* Heat-Map Input Section */}
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h2 className="text-2xl font-bold mb-4">📊 Heat-Map Visualization</h2>
+                <p className="text-gray-600 mb-4">
+                  Generate multidimensional ethical evaluation heat-maps with span granularity analysis.
+                </p>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="heatmap-text" className="block text-sm font-medium text-gray-700 mb-2">
+                      Enter text to visualize:
+                    </label>
+                    <textarea
+                      id="heatmap-text"
+                      value={inputText}
+                      onChange={(e) => setInputText(e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      rows="4"
+                      placeholder="Type your text here for heat-map analysis..."
+                    />
+                  </div>
+                  
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={() => generateHeatMap(inputText)}
+                      disabled={!inputText.trim() || heatMapLoading}
+                      className="px-6 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    >
+                      {heatMapLoading ? 'Generating...' : 'Generate Heat-Map'}
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setHeatMapData(null);
+                        setInputText('');
+                      }}
+                      className="px-6 py-2 bg-gray-600 text-white font-medium rounded-md hover:bg-gray-700"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Heat-Map Visualization */}
+              {heatMapLoading && (
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <span className="ml-3 text-gray-600">Generating heat-map visualization...</span>
+                  </div>
+                </div>
+              )}
+
+              {heatMapData && !heatMapLoading && (
+                <EthicalChart data={heatMapData} />
+              )}
+
+              {!heatMapData && !heatMapLoading && inputText.trim() && (
+                <div className="bg-gray-50 p-6 rounded-lg border-2 border-dashed border-gray-300">
+                  <div className="text-center text-gray-500">
+                    <div className="text-lg mb-2">📊 Ready to Generate</div>
+                    <div className="text-sm">Click "Generate Heat-Map" to create visualization</div>
+                  </div>
+                </div>
+              )}
+              
+              {!inputText.trim() && !heatMapLoading && (
+                <div className="bg-gray-50 p-6 rounded-lg border-2 border-dashed border-gray-300">
+                  <div className="text-center text-gray-500">
+                    <div className="text-lg mb-2">📝 Enter Text Above</div>
+                    <div className="text-sm">Add text to generate multidimensional ethical visualization</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTab === 'parameters' && (
             <div className="bg-white p-6 rounded-lg shadow">
               <h2 className="text-2xl font-bold mb-4">Parameter Calibration</h2>
