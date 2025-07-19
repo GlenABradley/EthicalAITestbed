@@ -535,7 +535,6 @@ class OptimizedEvaluationEngine:
             spans=[],
             minimal_spans=[],
             overall_ethical=True,
-            violation_count=0,
             processing_time=processing_time,
             parameters=self.parameters,
             evaluation_id=f"eval_empty_{int(time.time() * 1000)}"
