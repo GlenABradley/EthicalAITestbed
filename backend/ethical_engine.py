@@ -1224,6 +1224,11 @@ class EthicalEvaluator:
                 if span.any_violation and span_length <= 3:
                     logger.info(f"Early violation found: {span.text}")
         
+        # v1.1 UPGRADE: Apply graph attention to enhance span embeddings for distributed patterns
+        if self.parameters.enable_graph_attention and all_spans and len(all_spans) > 1:
+            dynamic_result.processing_stages.append("graph_attention")
+            all_spans = self.apply_graph_attention_to_spans(all_spans, tokens)
+        
         # Find minimal unethical spans
         minimal_spans = self.find_minimal_spans(tokens, all_spans)
         
