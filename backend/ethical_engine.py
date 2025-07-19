@@ -146,8 +146,10 @@ class EthicalParameters:
     max_span_length: int = 5  # Reduced from 10 for better performance
     min_span_length: int = 1
     
-    # Model parameters - UPGRADED TO JINA V4 FOR v1.1
-    embedding_model: str = "jinaai/jina-embeddings-v4"
+    # Model parameters - v1.1 UPGRADE: Enhanced embeddings with fallback
+    # Primary: Jina v4 (3.8B params) for maximum performance
+    # Fallback: sentence-transformers/all-mpnet-base-v2 (enhanced from MiniLM)
+    embedding_model: str = "sentence-transformers/all-mpnet-base-v2"  # Fallback for compute constraints
     
     # Dynamic scaling parameters
     enable_dynamic_scaling: bool = False
