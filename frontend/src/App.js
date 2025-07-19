@@ -339,7 +339,51 @@ function App() {
                       Test Click
                     </button>
                     <button
-                      onClick={handleEvaluate}
+                      onClick={() => {
+                        console.log('🔥 INLINE BUTTON CLICKED - Direct inline onClick!');
+                        
+                        if (!inputText.trim()) {
+                          console.log('❌ No input text provided');
+                          alert('Please enter some text to evaluate');
+                          return;
+                        }
+
+                        console.log('✅ Input text validated:', inputText);
+                        setLoading(true);
+                        console.log('🚀 Starting evaluation for:', inputText);
+
+                        // Use fetch for evaluation
+                        fetch(`${API}/evaluate`, {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({
+                            text: inputText,
+                            parameters: parameters || {}
+                          })
+                        })
+                        .then(response => {
+                          console.log('📥 Response received:', response.status);
+                          if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                          }
+                          return response.json();
+                        })
+                        .then(data => {
+                          console.log('📊 Evaluation data received:', data);
+                          setEvaluationResult(data);
+                          console.log('✅ Results set successfully');
+                        })
+                        .catch(error => {
+                          console.error('❌ Error during evaluation:', error);
+                          alert('Error: ' + error.message);
+                        })
+                        .finally(() => {
+                          setLoading(false);
+                          console.log('🏁 Evaluation finished');
+                        });
+                      }}
                       disabled={loading || !inputText.trim()}
                       className="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
                     >
