@@ -563,11 +563,9 @@ class OptimizedEvaluationEngine:
             spans=[],
             minimal_spans=[],
             overall_ethical=True,  # Conservative default
-            violation_count=0,
             processing_time=0.0,
             parameters=self.parameters,
-            evaluation_id=f"eval_error_{int(time.time() * 1000)}",
-            error_message=error_message
+            evaluation_id=f"eval_error_{int(time.time() * 1000)}"
         )
     
     def get_performance_stats(self) -> Dict[str, Any]:
