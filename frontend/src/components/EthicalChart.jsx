@@ -220,8 +220,20 @@ const EthicalChart = ({ data, className = '' }) => {
         <h2 className="text-xl font-bold text-white mb-2" tabIndex="0">
           📊 Multidimensional Ethical Evaluation Heat-Map
         </h2>
-        <div className="text-sm text-gray-400" id="heatmap-description">
-          Interactive visualization across span granularities (V=Virtue, A=Autonomy, C=Consequentialist)
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-400" id="heatmap-description">
+            Interactive visualization across span granularities (V=Virtue, A=Autonomy, C=Consequentialist)
+          </div>
+          {/* Data Source Indicator */}
+          {data.originalEvaluation?.dataset_source ? (
+            <div className="text-xs px-2 py-1 rounded bg-blue-900 text-blue-200 border border-blue-600">
+              Real Evaluation Data
+            </div>
+          ) : (
+            <div className="text-xs px-2 py-1 rounded bg-yellow-900 text-yellow-200 border border-yellow-600">
+              Optimized Demo Data
+            </div>
+          )}
         </div>
       </div>
       
