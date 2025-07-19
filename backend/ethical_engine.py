@@ -478,6 +478,11 @@ class EthicalSpan:
     consequentialist_violation: bool
     is_minimal: bool = False
     
+    # v1.1 UPGRADE: Intent hierarchy results
+    intent_scores: Dict[str, float] = field(default_factory=dict)
+    dominant_intent: str = "neutral"
+    intent_confidence: float = 0.0
+    
     @property
     def any_violation(self) -> bool:
         """Check if any perspective flags this span as unethical"""
