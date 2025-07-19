@@ -35,7 +35,7 @@ Performance Features:
 - 18% improvement in principle clustering (v3.0 vs v2.1)
 
 Author: AI Developer Testbed Team
-Version: 1.0.1 - v3.0 Semantic Embedding Integration
+Version: 1.1.0 Phase 4A - v3.0 Semantic Embedding + Heat-Map Visualization
 """
 
 import numpy as np
