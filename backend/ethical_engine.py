@@ -1201,6 +1201,20 @@ class EthicalEvaluator:
         deontological_violation = deontological_score > thresholds['deontological_threshold']
         consequentialist_violation = consequentialist_score > thresholds['consequentialist_threshold']
         
+        # v1.1 UPGRADE: Add intent hierarchy classification
+        intent_scores = {}
+        dominant_intent = "neutral"
+        intent_confidence = 0.0
+        
+        if self.parameters.enable_intent_hierarchy and self.intent_hierarchy:
+            try:
+                intent_scores = self.intent_hierarchy.classify_intent(span_text)
+                dominant_intent, intent_confidence = self.intent_hierarchy.get_dominant_intent(
+                    span_text, self.parameters.intent_threshold
+                )
+            except Exception as e:
+                logger.warning(f"Intent classification failed for span '{span_text}': {e}")
+        
         return EthicalSpan(
             start=start,
             end=end,
@@ -1210,7 +1224,10 @@ class EthicalEvaluator:
             consequentialist_score=consequentialist_score,
             virtue_violation=virtue_violation,
             deontological_violation=deontological_violation,
-            consequentialist_violation=consequentialist_violation
+            consequentialist_violation=consequentialist_violation,
+            intent_scores=intent_scores,
+            dominant_intent=dominant_intent,
+            intent_confidence=intent_confidence
         )
     
     def find_minimal_spans(self, tokens: List[str], all_spans: List[EthicalSpan]) -> List[EthicalSpan]:
