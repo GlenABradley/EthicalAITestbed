@@ -420,21 +420,31 @@ class CausalCounterfactual:
             
         return text
     
-    def compute_autonomy_delta(self, original_text: str, edited_text: str) -> Dict[str, float]:
+    def compute_autonomy_delta(self, original_text: str, edited_text: str, 
+                             skip_causal_analysis: bool = True) -> Dict[str, float]:
         """
         Compute autonomy delta (∆) between original and counterfactual text.
         
         Args:
             original_text: Original text with harmful content
             edited_text: Counterfactual text with intervention applied
+            skip_causal_analysis: Skip causal analysis to prevent recursion
             
         Returns:
             Dict with autonomy delta metrics
         """
         try:
+            # Temporarily disable causal analysis to prevent recursion
+            original_causal_setting = self.evaluator.parameters.enable_causal_analysis
+            if skip_causal_analysis:
+                self.evaluator.parameters.enable_causal_analysis = False
+            
             # Evaluate both texts
             original_eval = self.evaluator.evaluate_text(original_text)
             edited_eval = self.evaluator.evaluate_text(edited_text)
+            
+            # Restore causal analysis setting
+            self.evaluator.parameters.enable_causal_analysis = original_causal_setting
             
             # Compute autonomy scores (inverted ethics scores = higher autonomy)
             original_autonomy = self._compute_autonomy_score(original_eval)
