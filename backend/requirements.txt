@@ -36,3 +36,4 @@ safetensors
 tokenizers
 Pillow
 sympy
+tqdm
