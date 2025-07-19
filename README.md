@@ -1,14 +1,18 @@
-# Ethical AI Developer Testbed - Version 1.0.1 v3.0 Semantic Embedding Framework
+# Ethical AI Developer Testbed - Version 1.1.0 Phase 4A Heat-Map Visualization
 
-A sophisticated multi-perspective ethical text evaluation system implementing advanced v3.0 semantic embedding framework with orthogonal vector projections and autonomy-maximization principles.
+A sophisticated multi-perspective ethical text evaluation system implementing advanced v3.0 semantic embedding framework with orthogonal vector projections, autonomy-maximization principles, and revolutionary heat-map visualization capabilities.
 
-## **Version 1.0.1 - v3.0 Semantic Embedding Integration**
+## **Version 1.1.0 Phase 4A - Heat-Map Visualization Integration**
 
-This version represents a significant advancement in ethical AI evaluation with the integration of a sophisticated v3.0 semantic embedding framework based on autonomy-maximization principles. The system now operates on the Core Axiom: **Maximize human autonomy (Σ D_i) within objective empirical truth (t ≥ 0.95)**.
+This version represents a major advancement in ethical AI evaluation with the successful completion of Phase 4A from the v1.1 Technical Implementation Roadmap. The system now features:
+
+- **All v1.1 Backend Algorithmic Upgrades**: Graph Attention Networks, Intent Hierarchy with LoRA adapters, Causal Counterfactuals, Uncertainty Analysis, and IRL Purpose Alignment
+- **Revolutionary Heat-Map Visualization**: Multidimensional ethical evaluation visualization with span granularity analysis
+- **Enhanced UI/UX**: Professional heat-map interface with accessibility features and WCAG compliance
 
 ## **System Overview**
 
-The Ethical AI Developer Testbed is a production-ready application that evaluates text content through a mathematically rigorous framework implementing orthogonal ethical vectors derived from autonomy-maximization principles. The system provides 18% improved principle clustering compared to previous versions.
+The Ethical AI Developer Testbed is a production-ready application that evaluates text content through a mathematically rigorous framework implementing orthogonal ethical vectors derived from autonomy-maximization principles. The system provides 18% improved principle clustering and now includes advanced visualization capabilities for comprehensive ethical analysis.
 
 ### **Core Mathematical Framework**
 
@@ -19,6 +23,23 @@ The Ethical AI Developer Testbed is a production-ready application that evaluate
 - **Truth Prerequisites**: T1-T4 (Accuracy, Misinformation Prevention, Objectivity, Distinction)
 - **Ethical Principles**: P1-P8 (Consent, Transparency, Non-Aggression, Accountability, etc.)
 - **Extensions**: E1-E3 (Sentience, Welfare, Coherence)
+
+### **v1.1 Advanced Features (Phase 1-3 Complete)**
+
+- **Graph Attention Networks**: Distributed pattern detection using torch_geometric
+- **Intent Hierarchy with LoRA**: Fine-tuned classification with Parameter-Efficient Fine-Tuning
+- **Causal Counterfactuals**: Autonomy delta scoring with intervention analysis
+- **Uncertainty Analysis**: Bootstrap variance for human routing decisions
+- **IRL Purpose Alignment**: Inverse Reinforcement Learning for user intent inference
+
+### **Phase 4A: Heat-Map Visualization (NEW)**
+
+- **Multidimensional Visualization**: Four stacked horizontal graphs (short/medium/long/stochastic spans)
+- **Sharp Rectangle Design**: Professional SVG-based visualization with solid color fills
+- **WCAG Compliant Colors**: Red (<0.20), Orange (0.20-0.40), Yellow (0.40-0.60), Green (0.60-0.90), Blue (≥0.90)
+- **V/A/C Dimensions**: Virtue, Autonomy, Consequentialist analysis per specification
+- **Interactive Features**: Hover tooltips with span details and grade calculations (A+ to F)
+- **Accessibility**: ARIA labels, RTL support, keyboard navigation
 
 ### **Key Features**
 
