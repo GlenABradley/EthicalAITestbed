@@ -1152,6 +1152,12 @@ class EthicalParameters:
     uncertainty_dropout_rate: float = 0.15      # Dropout rate for variance generation
     auto_human_routing: bool = True              # Automatically route uncertain cases to human review
     
+    # v1.1 UPGRADE: IRL Purpose Alignment Parameters for User Intent Alignment
+    enable_purpose_alignment: bool = True        # Enable IRL purpose alignment analysis
+    purpose_alignment_threshold: float = 0.95    # Minimum alignment score for safety certification
+    auto_purpose_inference: bool = True          # Automatically infer user purpose from context
+    purpose_weight_adaptation: bool = False      # Adapt evaluation weights based on inferred purpose
+    
     def to_dict(self) -> Dict[str, Any]:
         """Convert parameters to dictionary for API responses"""
         return {
