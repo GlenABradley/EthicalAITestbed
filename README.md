@@ -58,15 +58,19 @@ The Ethical AI Developer Testbed is a production-ready application that evaluate
 - **v3.0 Semantic Embedding Engine**: Orthogonal vector generation from autonomy principles
 - **Mathematical Framework**: Gram-Schmidt orthogonalization and vector projections
 - **Ethical Evaluation Engine**: Three-perspective analysis with veto logic
+- **v1.1 Advanced Algorithms**: Graph Attention Networks, Intent Hierarchy, Causal Counterfactuals, Uncertainty Analysis, IRL Purpose Alignment
+- **Heat-Map Visualization API**: Structured JSON output with span categorization and grading
 - **Dynamic Scaling System**: Multi-stage evaluation with cascade filtering
 - **Learning Layer**: MongoDB-based pattern recognition and feedback integration
-- **API Endpoints**: 12 comprehensive endpoints for evaluation and management
+- **API Endpoints**: 13 comprehensive endpoints including heat-map visualization
 
 ### **Frontend (React)**
-- **Dual-Tab Interface**: Text evaluation and parameter calibration
+- **Triple-Tab Interface**: Text evaluation, Heat-Map visualization, and parameter calibration
+- **Heat-Map Component**: Professional SVG-based multidimensional visualization with WCAG compliance
 - **4-Tab Results Display**: Violations, All Spans, Learning & Feedback, Dynamic Scaling
 - **Autonomy Controls**: Dimension-specific threshold adjustment
 - **Real-time Feedback**: Dopamine-based learning system
+- **Accessibility Features**: ARIA labels, RTL support, keyboard navigation
 - **Professional Design**: Responsive Tailwind CSS styling
 
 ### **Database (MongoDB)**
