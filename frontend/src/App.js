@@ -67,7 +67,11 @@ function App() {
     setLoading(true);
     console.log('🚀 Starting evaluation for:', inputText);
 
-    // Use fetch instead of axios for simplicity
+    // Create abort controller for timeout handling
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minutes timeout
+
+    // Use fetch with extended timeout for complex ethical evaluation
     fetch(`${API}/evaluate`, {
       method: 'POST',
       headers: {
@@ -76,7 +80,8 @@ function App() {
       body: JSON.stringify({
         text: inputText,
         parameters: parameters || {}
-      })
+      }),
+      signal: controller.signal
     })
     .then(response => {
       console.log('📥 Response received:', response.status);
