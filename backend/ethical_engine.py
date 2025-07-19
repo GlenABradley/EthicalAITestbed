@@ -711,7 +711,12 @@ class EthicalParameters:
             'enable_intent_hierarchy': self.enable_intent_hierarchy,
             'intent_threshold': self.intent_threshold,
             'intent_categories': self.intent_categories,
-            'enable_contrastive_learning': self.enable_contrastive_learning
+            'enable_contrastive_learning': self.enable_contrastive_learning,
+            # v1.1 Causal counterfactual parameters
+            'enable_causal_analysis': self.enable_causal_analysis,
+            'autonomy_delta_threshold': self.autonomy_delta_threshold,
+            'causal_intervention_types': self.causal_intervention_types,
+            'max_counterfactuals_per_span': self.max_counterfactuals_per_span
         }
 
 @dataclass
