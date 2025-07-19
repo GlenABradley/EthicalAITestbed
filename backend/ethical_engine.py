@@ -1809,6 +1809,37 @@ class EthicalEvaluator:
         
         logger.info(f"Evaluated {spans_checked} spans in {processing_time:.3f}s with mathematical framework")
         
+        # v1.1 UPGRADE: Perform causal counterfactual analysis if violations found
+        causal_analysis = None
+        if (self.parameters.enable_causal_analysis and self.causal_analyzer and 
+            minimal_spans and not overall_ethical):
+            
+            dynamic_result.processing_stages.append("causal_analysis")
+            
+            # Convert minimal spans to format for causal analysis
+            harmful_spans = []
+            for span in minimal_spans:
+                if span.any_violation:
+                    harmful_spans.append({
+                        'text': span.text,
+                        'start': span.start,
+                        'end': span.end,
+                        'virtue_score': span.virtue_score,
+                        'deontological_score': span.deontological_score,
+                        'consequentialist_score': span.consequentialist_score,
+                        'dominant_intent': getattr(span, 'dominant_intent', 'unknown'),
+                        'intent_confidence': getattr(span, 'intent_confidence', 0.0)
+                    })
+            
+            if harmful_spans:
+                try:
+                    causal_analysis = self.causal_analyzer.analyze_causal_chain(text, harmful_spans)
+                    logger.info(f"Causal analysis completed: {causal_analysis['total_interventions']} interventions, "
+                              f"{causal_analysis['effective_interventions']} effective")
+                except Exception as e:
+                    logger.error(f"Causal analysis failed: {e}")
+                    causal_analysis = {"error": str(e)}
+        
         return EthicalEvaluation(
             input_text=text,
             tokens=tokens,
@@ -1817,7 +1848,8 @@ class EthicalEvaluator:
             overall_ethical=overall_ethical,
             processing_time=processing_time,
             parameters=self.parameters,
-            dynamic_scaling_result=dynamic_result
+            dynamic_scaling_result=dynamic_result,
+            causal_analysis=causal_analysis  # v1.1 UPGRADE: Add causal analysis results
         )
     
     def update_parameters(self, new_parameters: Dict[str, Any]):
