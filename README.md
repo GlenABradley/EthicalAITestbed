@@ -180,10 +180,15 @@ sudo supervisorctl restart frontend
 ## **API Documentation**
 
 ### **Core Endpoints**
-- `GET /api/health` - Health check with evaluator status
-- `POST /api/evaluate` - Evaluate text with autonomy-based analysis
+- `GET /api/health` - Health check with evaluator status and optimization metrics
+- `POST /api/evaluate` - High-performance evaluation with intelligent caching and timeout protection
 - `GET /api/parameters` - Get current evaluation parameters
 - `POST /api/update-parameters` - Update evaluation parameters
+- `GET /api/performance-stats` - Comprehensive performance and optimization statistics
+
+### **Heat-Map Visualization Endpoints**
+- `POST /api/heat-map-mock` - Fast mock endpoint for UI testing (sub-second response)
+- `POST /api/heat-map-visualization` - Full heat-map with integrated optimization system
 
 ### **Dynamic Scaling Endpoints**
 - `POST /api/threshold-scaling` - Test threshold scaling conversion
