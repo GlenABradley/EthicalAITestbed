@@ -181,6 +181,123 @@ async def health_check():
         "timestamp": datetime.utcnow()
     }
 
+@api_router.post("/heat-map-visualization")
+async def get_heat_map_visualization(request: EvaluationRequest):
+    """Enhanced endpoint for heat-map visualization data (Phase 4)"""
+    global evaluator
+    if not evaluator:
+        raise HTTPException(status_code=500, detail="Evaluator not initialized")
+    
+    try:
+        # Get full evaluation
+        evaluation_result = await evaluator.evaluate_text_async(request.text)
+        
+        # Process spans by type (short/medium/long/stochastic)
+        all_spans = evaluation_result.get('spans', [])
+        text_length = len(request.text)
+        
+        def categorize_spans(spans):
+            """Categorize spans by length"""
+            short_spans = []
+            medium_spans = []
+            long_spans = []
+            stochastic_spans = []
+            
+            for span in spans:
+                span_length = span['end'] - span['start']
+                span_data = {
+                    'span': [span['start'], span['end']],
+                    'text': span['text'],
+                    'scores': {
+                        'V': span['virtue_score'],
+                        'A': span['deontological_score'],  # Autonomy mapping
+                        'C': span['consequentialist_score']
+                    },
+                    'uncertainty': span.get('uncertainty', 0.0)
+                }
+                
+                if span_length <= 10:
+                    short_spans.append(span_data)
+                elif span_length <= 50:
+                    medium_spans.append(span_data)
+                elif span_length <= 200:
+                    long_spans.append(span_data)
+                else:
+                    stochastic_spans.append(span_data)
+            
+            return short_spans, medium_spans, long_spans, stochastic_spans
+        
+        short, medium, long_spans, stochastic = categorize_spans(all_spans)
+        
+        def calculate_avg_score(spans):
+            """Calculate average score across all dimensions"""
+            if not spans:
+                return 0.0
+            total_score = 0.0
+            total_count = 0
+            for span in spans:
+                for dim_score in span['scores'].values():
+                    total_score += dim_score
+                    total_count += 1
+            return total_score / total_count if total_count > 0 else 0.0
+        
+        # Calculate grades for each span type
+        def calculate_grade(avg_score):
+            percentage = int(avg_score * 100)
+            if avg_score >= 0.97: return f"A+ ({percentage}%)"
+            elif avg_score >= 0.93: return f"A ({percentage}%)"
+            elif avg_score >= 0.90: return f"A- ({percentage}%)"
+            elif avg_score >= 0.87: return f"B+ ({percentage}%)"
+            elif avg_score >= 0.83: return f"B ({percentage}%)"
+            elif avg_score >= 0.80: return f"B- ({percentage}%)"
+            elif avg_score >= 0.77: return f"C+ ({percentage}%)"
+            elif avg_score >= 0.73: return f"C ({percentage}%)"
+            elif avg_score >= 0.70: return f"C- ({percentage}%)"
+            elif avg_score >= 0.67: return f"D+ ({percentage}%)"
+            elif avg_score >= 0.63: return f"D ({percentage}%)"
+            elif avg_score >= 0.60: return f"D- ({percentage}%)"
+            else: return f"F ({percentage}%)"
+        
+        # Structure data for heat-map visualization
+        visualization_data = {
+            "evaluations": {
+                "short": {
+                    "spans": short,
+                    "averageScore": calculate_avg_score(short),
+                    "metadata": {"dataset_source": "ethical_engine_v1.1"}
+                },
+                "medium": {
+                    "spans": medium,
+                    "averageScore": calculate_avg_score(medium),
+                    "metadata": {"dataset_source": "ethical_engine_v1.1"}
+                },
+                "long": {
+                    "spans": long_spans,
+                    "averageScore": calculate_avg_score(long_spans),
+                    "metadata": {"dataset_source": "ethical_engine_v1.1"}
+                },
+                "stochastic": {
+                    "spans": stochastic,
+                    "averageScore": calculate_avg_score(stochastic),
+                    "metadata": {"dataset_source": "ethical_engine_v1.1"}
+                }
+            },
+            "overallGrades": {
+                "short": calculate_grade(calculate_avg_score(short)),
+                "medium": calculate_grade(calculate_avg_score(medium)),
+                "long": calculate_grade(calculate_avg_score(long_spans)),
+                "stochastic": calculate_grade(calculate_avg_score(stochastic))
+            },
+            "textLength": text_length,
+            "originalEvaluation": evaluation_result
+        }
+        
+        return visualization_data
+        
+    except Exception as e:
+        logger.error(f"Heat-map visualization error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Visualization error: {str(e)}")
+
 @api_router.post("/test-intent")
 async def test_intent_classification(request: dict):
     """Test intent classification endpoint for v1.1 debugging"""
