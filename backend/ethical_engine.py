@@ -58,6 +58,14 @@ except ImportError:
     GRAPH_ATTENTION_AVAILABLE = False
     logging.getLogger(__name__).warning("torch_geometric not available, falling back to local spans only")
 
+# v1.1 Intent hierarchy imports  
+try:
+    from peft import LoraConfig, get_peft_model, TaskType
+    LORA_AVAILABLE = True
+except ImportError:
+    LORA_AVAILABLE = False
+    logging.getLogger(__name__).warning("peft not available, intent hierarchy disabled")
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
