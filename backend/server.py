@@ -190,7 +190,7 @@ async def get_heat_map_visualization(request: EvaluationRequest):
     
     try:
         # Get full evaluation
-        evaluation_result = await evaluator.evaluate_text_async(request.text)
+        evaluation_result = evaluator.evaluate_text(request.text)
         
         # Process spans by type (short/medium/long/stochastic)
         all_spans = evaluation_result.get('spans', [])
