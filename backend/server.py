@@ -212,6 +212,50 @@ async def test_intent_classification(request: dict):
             "intent_hierarchy_enabled": evaluator.intent_hierarchy is not None
         }
 
+@api_router.post("/test-causal")
+async def test_causal_analysis(request: dict):
+    """Test causal counterfactual analysis endpoint for v1.1 debugging"""
+    global evaluator
+    if not evaluator:
+        raise HTTPException(status_code=500, detail="Evaluator not initialized")
+    
+    text = request.get("text", "")
+    if not text:
+        raise HTTPException(status_code=400, detail="Text is required")
+    
+    try:
+        if evaluator.causal_analyzer:
+            # Create mock harmful spans for testing
+            harmful_spans = [{
+                'text': text,
+                'start': 0,
+                'end': len(text),
+                'virtue_score': 0.8,
+                'deontological_score': 0.7,
+                'consequentialist_score': 0.6,
+                'dominant_intent': 'fraud',
+                'intent_confidence': 0.5
+            }]
+            
+            causal_analysis = evaluator.causal_analyzer.analyze_causal_chain(text, harmful_spans)
+            return {
+                "text": text,
+                "causal_analysis": causal_analysis,
+                "causal_analyzer_enabled": True
+            }
+        else:
+            return {
+                "text": text,
+                "causal_analyzer_enabled": False,
+                "message": "Causal analyzer not initialized"
+            }
+    except Exception as e:
+        return {
+            "text": text,
+            "error": str(e),
+            "causal_analyzer_enabled": evaluator.causal_analyzer is not None
+        }
+
 @api_router.post("/evaluate", response_model=EthicalEvaluationResponse)
 async def evaluate_text(request: EthicalEvaluationRequest):
     """Evaluate text for ethical violations"""
