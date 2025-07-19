@@ -763,7 +763,7 @@ function App() {
                       <label className="flex items-center space-x-2">
                         <input
                           type="checkbox"
-                          checked={parameters.enable_dynamic_scaling || false}
+                          checked={parameters?.enable_dynamic_scaling || false}
                           onChange={(e) => updateParameter('enable_dynamic_scaling', e.target.checked)}
                           className="rounded"
                         />
@@ -773,7 +773,7 @@ function App() {
                       <label className="flex items-center space-x-2">
                         <input
                           type="checkbox"
-                          checked={parameters.enable_cascade_filtering || false}
+                          checked={parameters?.enable_cascade_filtering || false}
                           onChange={(e) => updateParameter('enable_cascade_filtering', e.target.checked)}
                           className="rounded"
                         />
@@ -783,7 +783,7 @@ function App() {
                       <label className="flex items-center space-x-2">
                         <input
                           type="checkbox"
-                          checked={parameters.enable_learning_mode || false}
+                          checked={parameters?.enable_learning_mode || false}
                           onChange={(e) => updateParameter('enable_learning_mode', e.target.checked)}
                           className="rounded"
                         />
@@ -793,7 +793,7 @@ function App() {
                       <label className="flex items-center space-x-2">
                         <input
                           type="checkbox"
-                          checked={parameters.exponential_scaling || false}
+                          checked={parameters?.exponential_scaling || false}
                           onChange={(e) => updateParameter('exponential_scaling', e.target.checked)}
                           className="rounded"
                         />
