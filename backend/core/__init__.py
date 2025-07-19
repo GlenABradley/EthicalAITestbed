@@ -22,9 +22,9 @@ Version: 1.1.0 - Performance Optimized Modular Architecture
 """
 
 # Import core services for easy access
-from ..utils.caching_manager import CacheManager, EmbeddingCache
-from .embedding_service import EmbeddingService
-from .evaluation_engine import OptimizedEvaluationEngine
+from utils.caching_manager import CacheManager, EmbeddingCache
+from core.embedding_service import EmbeddingService
+from core.evaluation_engine import OptimizedEvaluationEngine
 
 __all__ = [
     'CacheManager',
