@@ -1783,6 +1783,12 @@ class EthicalEvaluator:
             self.uncertainty_analyzer = UncertaintyAnalyzer(self)
         else:
             self.uncertainty_analyzer = None
+            
+        # v1.1 UPGRADE: Initialize IRL purpose alignment analyzer
+        if self.parameters.enable_purpose_alignment:
+            self.purpose_alignment = IRLPurposeAlignment(self)
+        else:
+            self.purpose_alignment = None
         
         logger.info(f"Initialized EthicalEvaluator with model: {self.parameters.embedding_model}")
         logger.info("v1.1 UPGRADE: MiniLM + Graph Attention Architecture for distributed pattern detection")
@@ -1795,6 +1801,8 @@ class EthicalEvaluator:
         logger.info(f"Causal available: {CAUSAL_AVAILABLE}")
         logger.info(f"Uncertainty analysis enabled: {self.parameters.enable_uncertainty_analysis}")
         logger.info(f"Human routing threshold: {self.parameters.uncertainty_threshold}")
+        logger.info(f"Purpose alignment enabled: {self.parameters.enable_purpose_alignment}")
+        logger.info(f"Purpose alignment threshold: {self.parameters.purpose_alignment_threshold}")
     
     def benchmark_embedding_performance(self, test_texts: List[str]) -> Dict[str, float]:
         """
