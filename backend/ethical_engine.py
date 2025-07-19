@@ -847,6 +847,8 @@ class EthicalEvaluator:
         
         logger.info(f"Initialized EthicalEvaluator with model: {self.parameters.embedding_model}")
         logger.info("v1.1 UPGRADE: MiniLM + Graph Attention Architecture for distributed pattern detection")
+        logger.info(f"Graph attention enabled: {self.parameters.enable_graph_attention}")
+        logger.info(f"Graph attention available: {GRAPH_ATTENTION_AVAILABLE}")
     
     def benchmark_embedding_performance(self, test_texts: List[str]) -> Dict[str, float]:
         """
