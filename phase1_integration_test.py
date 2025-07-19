@@ -125,7 +125,8 @@ class Phase1IntegrationTester:
             # Test single text embedding (sync)
             result = service.get_embedding_sync("Hello world")
             
-            if result.embeddings.shape == (384,):  # Single embedding should be 1D
+            # Single embedding should be returned as (1, 384) for consistency with batch processing
+            if result.embeddings.shape == (1, 384):  # Batch format even for single embedding
                 self.log_result("Single Embedding Test", True, f"Embedding generated successfully, shape: {result.embeddings.shape}")
             else:
                 self.log_result("Single Embedding Test", False, f"Unexpected embedding shape: {result.embeddings.shape}")
