@@ -817,7 +817,7 @@ function App() {
                         />
                         <div className="flex justify-between text-sm text-gray-500">
                           <span>0.15</span>
-                          <span className="font-mono">{(parameters.cascade_high_threshold || 0.25).toFixed(3)}</span>
+                          <span className="font-mono">{(parameters?.cascade_high_threshold || 0.25).toFixed(3)}</span>
                           <span>0.5</span>
                         </div>
                       </div>
