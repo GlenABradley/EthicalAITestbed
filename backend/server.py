@@ -182,6 +182,120 @@ async def health_check():
         "timestamp": datetime.utcnow()
     }
 
+@api_router.post("/heat-map-mock")
+async def get_heat_map_mock(request: EvaluationRequest):
+    """Mock heat-map data for testing UI (Phase 4)"""
+    try:
+        # Generate mock data for testing
+        text_length = len(request.text)
+        
+        # Create mock spans based on text
+        mock_spans = []
+        if text_length > 0:
+            # Short spans (words)
+            words = request.text.split()
+            pos = 0
+            for i, word in enumerate(words[:5]):  # Limit to first 5 words
+                start = pos
+                end = pos + len(word)
+                mock_spans.append({
+                    'span': [start, end],
+                    'text': word,
+                    'scores': {
+                        'V': 0.8 - (i * 0.1),  # Decreasing virtue scores
+                        'A': 0.7 + (i * 0.05), # Increasing autonomy scores  
+                        'C': 0.6 + (i * 0.08)  # Increasing consequentialist scores
+                    },
+                    'uncertainty': 0.1 + (i * 0.05)
+                })
+                pos = end + 1
+        
+        # Categorize mock spans
+        short_spans = mock_spans[:2] if len(mock_spans) >= 2 else mock_spans
+        medium_spans = mock_spans[2:4] if len(mock_spans) >= 4 else mock_spans[1:2] if len(mock_spans) >= 2 else []
+        long_spans = mock_spans[4:] if len(mock_spans) >= 5 else mock_spans[2:] if len(mock_spans) >= 3 else []
+        stochastic_spans = [
+            {
+                'span': [0, min(20, text_length)],
+                'text': request.text[:20] + ("..." if text_length > 20 else ""),
+                'scores': {'V': 0.45, 'A': 0.65, 'C': 0.55},
+                'uncertainty': 0.3
+            }
+        ] if text_length > 0 else []
+        
+        def calculate_avg_score(spans):
+            if not spans:
+                return 0.0
+            total = 0.0
+            count = 0
+            for span in spans:
+                for score in span['scores'].values():
+                    total += score
+                    count += 1
+            return total / count if count > 0 else 0.0
+        
+        def calculate_grade(avg_score):
+            percentage = int(avg_score * 100)
+            if avg_score >= 0.97: return f"A+ ({percentage}%)"
+            elif avg_score >= 0.93: return f"A ({percentage}%)"
+            elif avg_score >= 0.90: return f"A- ({percentage}%)"
+            elif avg_score >= 0.87: return f"B+ ({percentage}%)"
+            elif avg_score >= 0.83: return f"B ({percentage}%)"
+            elif avg_score >= 0.80: return f"B- ({percentage}%)"
+            elif avg_score >= 0.77: return f"C+ ({percentage}%)"
+            elif avg_score >= 0.73: return f"C ({percentage}%)"
+            elif avg_score >= 0.70: return f"C- ({percentage}%)"
+            elif avg_score >= 0.67: return f"D+ ({percentage}%)"
+            elif avg_score >= 0.63: return f"D ({percentage}%)"
+            elif avg_score >= 0.60: return f"D- ({percentage}%)"
+            else: return f"F ({percentage}%)"
+        
+        # Structure mock data
+        mock_data = {
+            "evaluations": {
+                "short": {
+                    "spans": short_spans,
+                    "averageScore": calculate_avg_score(short_spans),
+                    "metadata": {"dataset_source": "mock_ethical_engine_v1.1"}
+                },
+                "medium": {
+                    "spans": medium_spans,
+                    "averageScore": calculate_avg_score(medium_spans),
+                    "metadata": {"dataset_source": "mock_ethical_engine_v1.1"}
+                },
+                "long": {
+                    "spans": long_spans,
+                    "averageScore": calculate_avg_score(long_spans),
+                    "metadata": {"dataset_source": "mock_ethical_engine_v1.1"}
+                },
+                "stochastic": {
+                    "spans": stochastic_spans,
+                    "averageScore": calculate_avg_score(stochastic_spans),
+                    "metadata": {"dataset_source": "mock_ethical_engine_v1.1"}
+                }
+            },
+            "overallGrades": {
+                "short": calculate_grade(calculate_avg_score(short_spans)),
+                "medium": calculate_grade(calculate_avg_score(medium_spans)),
+                "long": calculate_grade(calculate_avg_score(long_spans)),
+                "stochastic": calculate_grade(calculate_avg_score(stochastic_spans))
+            },
+            "textLength": text_length,
+            "originalEvaluation": {
+                "input_text": request.text,
+                "overall_ethical": True,
+                "violation_count": 0,
+                "processing_time": 0.05,
+                "evaluation_id": f"mock_eval_{int(time.time() * 1000)}"
+            }
+        }
+        
+        return mock_data
+        
+    except Exception as e:
+        logger.error(f"Mock heat-map error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Mock error: {str(e)}")
+
 @api_router.post("/heat-map-visualization")
 async def get_heat_map_visualization(request: EvaluationRequest):
     """Enhanced endpoint for heat-map visualization data (Phase 4)"""
