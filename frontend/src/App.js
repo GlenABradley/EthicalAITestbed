@@ -224,6 +224,16 @@ function App() {
               Evaluate Text
             </button>
             <button
+              onClick={() => setActiveTab('heatmap')}
+              className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                activeTab === 'heatmap'
+                  ? 'bg-blue-500 text-white'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              📊 Heat-Map
+            </button>
+            <button
               onClick={() => setActiveTab('parameters')}
               className={`px-4 py-2 rounded-md font-medium transition-colors ${
                 activeTab === 'parameters'
