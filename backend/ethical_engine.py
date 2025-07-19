@@ -423,6 +423,15 @@ class EthicalParameters:
     graph_similarity_threshold: float = 0.1  # Minimum similarity for graph edges
     graph_attention_heads: int = 4       # Number of attention heads in GAT layer
     
+    # v1.1 UPGRADE: Intent Hierarchy Parameters for Structured Harm Classification
+    enable_intent_hierarchy: bool = True  # Enable hierarchical intent classification
+    intent_threshold: float = 0.6        # Confidence threshold for intent detection
+    intent_categories: List[str] = field(default_factory=lambda: [
+        "fraud", "manipulation", "coercion", "deception", 
+        "harassment", "discrimination", "violence", "exploitation"
+    ])
+    enable_contrastive_learning: bool = False  # Enable contrastive learning mode
+    
     def to_dict(self) -> Dict[str, Any]:
         """Convert parameters to dictionary for API responses"""
         return {
