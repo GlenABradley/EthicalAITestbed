@@ -341,42 +341,51 @@ class Phase1IntegrationTester:
         try:
             from core.embedding_service import EmbeddingService
             
+            # Create a fresh service instance to avoid event loop issues
             service = EmbeddingService(batch_size=4, max_workers=2)
             
             test_text = "Performance test sentence for caching"
             
-            # First call (should be slow - no cache)
-            start_time = time.time()
-            first_result = service.get_embedding_sync(test_text)
-            first_time = time.time() - start_time
+            # Create a new event loop for this test
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
             
-            # Second call (should be fast - cached)
-            start_time = time.time()
-            second_result = service.get_embedding_sync(test_text)
-            second_time = time.time() - start_time
-            
-            # Calculate speedup
-            if second_time > 0:
-                speedup = first_time / second_time
-            else:
-                speedup = float('inf')
-            
-            if speedup > 5:  # Should be at least 5x faster (reduced from 10x for more realistic expectation)
-                self.log_result("Performance Improvement", True, f"Cache provides {speedup:.1f}x speedup ({first_time:.3f}s -> {second_time:.3f}s)")
-            else:
-                self.log_result("Performance Improvement", False, f"Insufficient speedup: {speedup:.1f}x ({first_time:.3f}s -> {second_time:.3f}s)")
-            
-            # Test batch processing efficiency
-            texts = [f"Batch test sentence {i}" for i in range(5)]
-            
-            start_time = time.time()
-            batch_result = service.get_embeddings_sync(texts)
-            batch_time = time.time() - start_time
-            
-            if batch_result.text_count == 5 and batch_time < 10.0:  # Should process 5 texts in under 10 seconds
-                self.log_result("Batch Processing", True, f"Batch processing efficient: {batch_result.text_count} texts in {batch_time:.3f}s")
-            else:
-                self.log_result("Batch Processing", False, f"Batch processing inefficient: {batch_result.text_count} texts in {batch_time:.3f}s")
+            try:
+                # First call (should be slow - no cache)
+                start_time = time.time()
+                first_result = loop.run_until_complete(service.get_embedding_async(test_text))
+                first_time = time.time() - start_time
+                
+                # Second call (should be fast - cached)
+                start_time = time.time()
+                second_result = loop.run_until_complete(service.get_embedding_async(test_text))
+                second_time = time.time() - start_time
+                
+                # Calculate speedup
+                if second_time > 0:
+                    speedup = first_time / second_time
+                else:
+                    speedup = float('inf')
+                
+                if speedup > 5:  # Should be at least 5x faster
+                    self.log_result("Performance Improvement", True, f"Cache provides {speedup:.1f}x speedup ({first_time:.3f}s -> {second_time:.3f}s)")
+                else:
+                    self.log_result("Performance Improvement", False, f"Insufficient speedup: {speedup:.1f}x ({first_time:.3f}s -> {second_time:.3f}s)")
+                
+                # Test batch processing efficiency
+                texts = [f"Batch test sentence {i}" for i in range(5)]
+                
+                start_time = time.time()
+                batch_result = loop.run_until_complete(service.get_embeddings_async(texts))
+                batch_time = time.time() - start_time
+                
+                if batch_result.text_count == 5 and batch_time < 10.0:  # Should process 5 texts in under 10 seconds
+                    self.log_result("Batch Processing", True, f"Batch processing efficient: {batch_result.text_count} texts in {batch_time:.3f}s")
+                else:
+                    self.log_result("Batch Processing", False, f"Batch processing inefficient: {batch_result.text_count} texts in {batch_time:.3f}s")
+                
+            finally:
+                loop.close()
             
             service.cleanup()
             return True
