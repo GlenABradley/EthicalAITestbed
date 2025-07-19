@@ -831,7 +831,7 @@ function App() {
                           min="0.0"
                           max="0.2"
                           step="0.01"
-                          value={parameters.cascade_low_threshold || 0.08}
+                          value={parameters?.cascade_low_threshold || 0.08}
                           onChange={(e) => updateParameter('cascade_low_threshold', e.target.value)}
                           className="w-full"
                         />
