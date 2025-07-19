@@ -47,7 +47,7 @@ db = client[os.environ['DB_NAME']]
 # FastAPI application setup
 app = FastAPI(
     title="Ethical AI Developer Testbed",
-    description="Version 1.0 - Production-ready multi-perspective ethical text evaluation system",
+    description="Version 1.1.0 Phase 4A - Advanced ethical evaluation with heat-map visualization",
     version="1.0.0"
 )
 
