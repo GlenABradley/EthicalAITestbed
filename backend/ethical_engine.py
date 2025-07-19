@@ -1230,6 +1230,10 @@ class EthicalSpan:
         """Check if any perspective flags this span as unethical"""
         return self.virtue_violation or self.deontological_violation or self.consequentialist_violation
     
+    def has_violation(self) -> bool:
+        """Compatibility method for optimized evaluation engine"""
+        return self.any_violation
+    
     @property
     def violation_perspectives(self) -> List[str]:
         """Return list of perspectives that flag this span"""
