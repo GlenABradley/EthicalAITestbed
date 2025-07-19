@@ -674,6 +674,14 @@ class EthicalParameters:
     ])
     enable_contrastive_learning: bool = False  # Enable contrastive learning mode
     
+    # v1.1 UPGRADE: Causal Counterfactual Parameters for Autonomy Delta Analysis
+    enable_causal_analysis: bool = True      # Enable causal counterfactual analysis
+    autonomy_delta_threshold: float = 0.1    # Minimum delta for meaningful intervention
+    causal_intervention_types: List[str] = field(default_factory=lambda: [
+        "removal", "masking", "neutralize", "soften"
+    ])
+    max_counterfactuals_per_span: int = 4    # Maximum counterfactuals to generate per span
+    
     def to_dict(self) -> Dict[str, Any]:
         """Convert parameters to dictionary for API responses"""
         return {
