@@ -134,6 +134,18 @@ sudo supervisorctl restart frontend
    - **Learning & Feedback**: Learning system status and feedback options
    - **Dynamic Scaling**: Scaling information and threshold adjustments
 
+### **Heat-Map Visualization (Phase 4A)**
+1. Navigate to the **📊 Heat-Map** tab
+2. Enter text to visualize ethical evaluation patterns
+3. Click "Generate Heat-Map" for multidimensional analysis
+4. Explore the visualization:
+   - **Four Span Granularities**: Short, Medium, Long, Stochastic spans analysis
+   - **V/A/C Dimensions**: Virtue, Autonomy, Consequentialist perspectives
+   - **Color-Coded Results**: Red (violations) to Blue (highly ethical)
+   - **Interactive Tooltips**: Hover for detailed span information
+   - **Grade Assessments**: A+ to F letter grades with percentages
+   - **Overall Assessment**: Summary across all span types
+
 ### **Parameter Calibration**
 1. Go to Parameter Tuning tab
 2. Adjust ethical perspective thresholds (0-1 range)
