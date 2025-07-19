@@ -1198,7 +1198,12 @@ class EthicalParameters:
             'uncertainty_threshold': self.uncertainty_threshold,
             'bootstrap_samples': self.bootstrap_samples,
             'uncertainty_dropout_rate': self.uncertainty_dropout_rate,
-            'auto_human_routing': self.auto_human_routing
+            'auto_human_routing': self.auto_human_routing,
+            # v1.1 IRL purpose alignment parameters
+            'enable_purpose_alignment': self.enable_purpose_alignment,
+            'purpose_alignment_threshold': self.purpose_alignment_threshold,
+            'auto_purpose_inference': self.auto_purpose_inference,
+            'purpose_weight_adaptation': self.purpose_weight_adaptation
         }
 
 @dataclass
