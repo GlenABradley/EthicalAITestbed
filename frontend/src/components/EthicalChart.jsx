@@ -217,10 +217,10 @@ const EthicalChart = ({ data, className = '' }) => {
     >
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-xl font-bold text-white mb-2">
+        <h2 className="text-xl font-bold text-white mb-2" tabIndex="0">
           📊 Multidimensional Ethical Evaluation Heat-Map
         </h2>
-        <div className="text-sm text-gray-400">
+        <div className="text-sm text-gray-400" id="heatmap-description">
           Interactive visualization across span granularities (V=Virtue, A=Autonomy, C=Consequentialist)
         </div>
       </div>
