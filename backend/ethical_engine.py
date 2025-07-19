@@ -718,7 +718,11 @@ class EthicalEvaluator:
     def __init__(self, parameters: EthicalParameters = None, db_collection=None):
         self.parameters = parameters or EthicalParameters()
         # Initialize Jina v4 model with trust_remote_code for v1.1 upgrade
-        self.model = SentenceTransformer(self.parameters.embedding_model, trust_remote_code=True)
+        self.model = SentenceTransformer(
+            self.parameters.embedding_model, 
+            trust_remote_code=True,
+            model_kwargs={'default_task': 'retrieval'}
+        )
         self.vector_generator = EthicalVectorGenerator(self.model)
         self.learning_layer = LearningLayer(db_collection)
         
