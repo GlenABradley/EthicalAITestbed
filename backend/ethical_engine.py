@@ -717,8 +717,7 @@ class EthicalEvaluator:
     
     def __init__(self, parameters: EthicalParameters = None, db_collection=None):
         self.parameters = parameters or EthicalParameters()
-        # Initialize enhanced embedding model for v1.1 upgrade
-        # MPNet provides better semantic understanding than MiniLM while being compute-efficient
+        # Initialize proven MiniLM model with v1.1 graph attention enhancement
         self.model = SentenceTransformer(self.parameters.embedding_model)
         self.vector_generator = EthicalVectorGenerator(self.model)
         self.learning_layer = LearningLayer(db_collection)
