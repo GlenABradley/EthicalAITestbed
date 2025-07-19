@@ -146,8 +146,8 @@ class EthicalParameters:
     max_span_length: int = 5  # Reduced from 10 for better performance
     min_span_length: int = 1
     
-    # Model parameters
-    embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+    # Model parameters - UPGRADED TO JINA V4 FOR v1.1
+    embedding_model: str = "jinaai/jina-embeddings-v4"
     
     # Dynamic scaling parameters
     enable_dynamic_scaling: bool = False
