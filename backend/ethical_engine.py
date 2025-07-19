@@ -835,6 +835,13 @@ class EthicalEvaluator:
         # Initialize ethical vectors
         self.p_v, self.p_d, self.p_c = self.vector_generator.get_all_vectors()
         
+        # v1.1 UPGRADE: Initialize graph attention layer
+        embedding_dim = self.model.get_sentence_embedding_dimension()
+        self.graph_attention = GraphAttention(
+            emb_dim=embedding_dim,
+            decay_lambda=self.parameters.graph_decay_lambda
+        )
+        
         # Embedding cache for efficiency
         self.embedding_cache = {}
         
