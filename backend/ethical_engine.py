@@ -66,6 +66,16 @@ except ImportError:
     LORA_AVAILABLE = False
     logging.getLogger(__name__).warning("peft not available, intent hierarchy disabled")
 
+# v1.1 Causal counterfactuals imports
+try:
+    # DoWhy might be heavy, so we'll implement a lightweight version
+    import random
+    from typing import Callable
+    CAUSAL_AVAILABLE = True
+except ImportError:
+    CAUSAL_AVAILABLE = False
+    logging.getLogger(__name__).warning("causal analysis dependencies not available")
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
