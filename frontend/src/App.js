@@ -67,9 +67,15 @@ function App() {
     }
   };
 
-  // Simple evaluation function
-  const handleEvaluate = () => {
-    console.log('🔥 BUTTON CLICKED - handleEvaluate called!');
+  // Enhanced evaluation function with React event binding fix
+  const handleEvaluate = React.useCallback((event) => {
+    console.log('🔥 BUTTON CLICKED - handleEvaluate called!', event);
+    
+    // Prevent any default behavior and ensure event is handled
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
     
     if (!inputText.trim()) {
       console.log('❌ No input text provided');
@@ -123,7 +129,7 @@ function App() {
       setLoading(false);
       console.log('🏁 Evaluation finished');
     });
-  };
+  }, [inputText, parameters]); // Dependencies for useCallback
 
   const updateParameter = (key, value) => {
     // Handle different parameter types properly
