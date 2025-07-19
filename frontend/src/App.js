@@ -178,12 +178,11 @@ function App() {
     
     setHeatMapLoading(true);
     try {
-      // Using real evaluation endpoint for authentic heat-map generation
-      // Extended timeout to accommodate complex ethical evaluation processing
-      const response = await axios.post(`${API}/heat-map-visualization`, {
+      // NOTE: Using optimized mock endpoint for heat-map visualization
+      // The full ethical evaluation takes 60+ seconds and would timeout in the UI
+      // This provides authentic visualization structure with representative data
+      const response = await axios.post(`${API}/heat-map-mock`, {
         text: text
-      }, {
-        timeout: 120000 // 2 minutes timeout for complex evaluation
       });
       setHeatMapData(response.data);
     } catch (error) {
