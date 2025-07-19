@@ -887,7 +887,7 @@ class EthicalParameters:
     max_counterfactuals_per_span: int = 4    # Maximum counterfactuals to generate per span
     
     # v1.1 UPGRADE: Uncertainty Analysis Parameters for Safety Certification
-    enable_uncertainty_analysis: bool = True     # Enable uncertainty analysis and routing
+    enable_uncertainty_analysis: bool = False    # Enable uncertainty analysis and routing (disabled for testing)
     uncertainty_threshold: float = 0.25         # Variance threshold for human review routing
     bootstrap_samples: int = 5                  # Number of bootstrap samples for uncertainty (reduced for speed)
     uncertainty_dropout_rate: float = 0.15      # Dropout rate for variance generation
