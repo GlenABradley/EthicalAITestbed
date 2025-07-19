@@ -43,4 +43,15 @@ module.exports = {
       return webpackConfig;
     },
   },
+  devServer: {
+    // Fix the deprecated middleware warnings
+    setupMiddlewares: (middlewares, devServer) => {
+      return middlewares;
+    },
+    // Use webSocketServer instead of webSocketURL for newer versions
+    webSocketServer: 'sockjs',
+    client: {
+      webSocketTransport: 'sockjs',
+    },
+  },
 };
