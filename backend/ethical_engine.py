@@ -1350,6 +1350,20 @@ class EthicalEvaluator:
                 deontological_violation = deontological_score > self.parameters.deontological_threshold
                 consequentialist_violation = consequentialist_score > self.parameters.consequentialist_threshold
                 
+                # v1.1 UPGRADE: Re-classify intent with enhanced embedding
+                intent_scores = span.intent_scores.copy()  # Keep original if available
+                dominant_intent = span.dominant_intent
+                intent_confidence = span.intent_confidence
+                
+                if self.parameters.enable_intent_hierarchy and self.intent_hierarchy:
+                    try:
+                        intent_scores = self.intent_hierarchy.classify_intent(span.text)
+                        dominant_intent, intent_confidence = self.intent_hierarchy.get_dominant_intent(
+                            span.text, self.parameters.intent_threshold
+                        )
+                    except Exception as e:
+                        logger.warning(f"Intent re-classification failed for span '{span.text}': {e}")
+                
                 # Create enhanced span
                 enhanced_span = EthicalSpan(
                     start=span.start,
@@ -1361,7 +1375,10 @@ class EthicalEvaluator:
                     virtue_violation=virtue_violation,
                     deontological_violation=deontological_violation,
                     consequentialist_violation=consequentialist_violation,
-                    is_minimal=span.is_minimal
+                    is_minimal=span.is_minimal,
+                    intent_scores=intent_scores,
+                    dominant_intent=dominant_intent,
+                    intent_confidence=intent_confidence
                 )
                 
                 enhanced_spans.append(enhanced_span)
