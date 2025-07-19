@@ -38,3 +38,4 @@ Pillow
 sympy
 tqdm
 peft
+torchvision
