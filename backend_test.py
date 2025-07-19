@@ -1741,6 +1741,437 @@ class BackendTester:
         except Exception as e:
             self.log_result("API Integration - Complete Flow", False, f"Error: {str(e)}")
 
+    # PHASE 4A HEAT-MAP VISUALIZATION TESTS
+    
+    def test_heat_map_mock_short_text(self):
+        """Test /api/heat-map-mock with short text"""
+        try:
+            test_text = "Hello world"
+            
+            response = requests.post(
+                f"{API_BASE}/heat-map-mock",
+                json={"text": test_text},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Validate response structure
+                required_fields = ['evaluations', 'overallGrades', 'textLength', 'originalEvaluation']
+                if all(field in data for field in required_fields):
+                    
+                    # Check evaluations structure
+                    evaluations = data['evaluations']
+                    required_eval_types = ['short', 'medium', 'long', 'stochastic']
+                    
+                    if all(eval_type in evaluations for eval_type in required_eval_types):
+                        
+                        # Validate span structure
+                        short_spans = evaluations['short']['spans']
+                        if short_spans and len(short_spans) > 0:
+                            span = short_spans[0]
+                            required_span_fields = ['span', 'text', 'scores', 'uncertainty']
+                            
+                            if all(field in span for field in required_span_fields):
+                                scores = span['scores']
+                                required_scores = ['V', 'A', 'C']
+                                
+                                if all(score_type in scores for score_type in required_scores):
+                                    # Validate score ranges (0.0-1.0)
+                                    all_scores_valid = all(0.0 <= scores[s] <= 1.0 for s in required_scores)
+                                    
+                                    if all_scores_valid and data['textLength'] == len(test_text):
+                                        self.log_result(
+                                            "Heat-Map Mock - Short Text", 
+                                            True, 
+                                            f"Mock data generated correctly for '{test_text}' ({len(short_spans)} spans)"
+                                        )
+                                    else:
+                                        self.log_result("Heat-Map Mock - Short Text", False, "Invalid score ranges or text length")
+                                else:
+                                    self.log_result("Heat-Map Mock - Short Text", False, "Missing V/A/C scores")
+                            else:
+                                self.log_result("Heat-Map Mock - Short Text", False, "Invalid span structure")
+                        else:
+                            self.log_result("Heat-Map Mock - Short Text", True, "No spans generated for short text (acceptable)")
+                    else:
+                        self.log_result("Heat-Map Mock - Short Text", False, "Missing evaluation types")
+                else:
+                    self.log_result("Heat-Map Mock - Short Text", False, "Missing required response fields", data)
+            else:
+                self.log_result("Heat-Map Mock - Short Text", False, f"HTTP {response.status_code}", {"response": response.text})
+                
+        except Exception as e:
+            self.log_result("Heat-Map Mock - Short Text", False, f"Connection error: {str(e)}")
+    
+    def test_heat_map_mock_medium_text(self):
+        """Test /api/heat-map-mock with medium text"""
+        try:
+            test_text = "This is a test of ethical evaluation with some content"
+            
+            response = requests.post(
+                f"{API_BASE}/heat-map-mock",
+                json={"text": test_text},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                evaluations = data.get('evaluations', {})
+                
+                # Check that medium spans are generated
+                medium_spans = evaluations.get('medium', {}).get('spans', [])
+                overall_grades = data.get('overallGrades', {})
+                
+                # Validate grades format (should be like "A (85%)" or "B+ (87%)")
+                grade_pattern_valid = True
+                for grade_type, grade in overall_grades.items():
+                    if not isinstance(grade, str) or '(' not in grade or ')' not in grade:
+                        grade_pattern_valid = False
+                        break
+                
+                if grade_pattern_valid and data.get('textLength') == len(test_text):
+                    self.log_result(
+                        "Heat-Map Mock - Medium Text", 
+                        True, 
+                        f"Medium text processed: {len(medium_spans)} medium spans, grades: {overall_grades.get('medium', 'N/A')}"
+                    )
+                else:
+                    self.log_result("Heat-Map Mock - Medium Text", False, "Invalid grade format or text length")
+            else:
+                self.log_result("Heat-Map Mock - Medium Text", False, f"HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_result("Heat-Map Mock - Medium Text", False, f"Connection error: {str(e)}")
+    
+    def test_heat_map_mock_long_text(self):
+        """Test /api/heat-map-mock with long text"""
+        try:
+            test_text = "AI systems should respect human autonomy and avoid manipulation or deception in their interactions with users to maintain trust and ethical standards"
+            
+            response = requests.post(
+                f"{API_BASE}/heat-map-mock",
+                json={"text": test_text},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                evaluations = data.get('evaluations', {})
+                
+                # Check all span types are populated for long text
+                span_counts = {}
+                for span_type in ['short', 'medium', 'long', 'stochastic']:
+                    spans = evaluations.get(span_type, {}).get('spans', [])
+                    span_counts[span_type] = len(spans)
+                
+                # Long text should generate spans across multiple categories
+                total_spans = sum(span_counts.values())
+                
+                if total_spans > 0:
+                    self.log_result(
+                        "Heat-Map Mock - Long Text", 
+                        True, 
+                        f"Long text processed: {span_counts} (total: {total_spans} spans)"
+                    )
+                else:
+                    self.log_result("Heat-Map Mock - Long Text", False, "No spans generated for long text")
+            else:
+                self.log_result("Heat-Map Mock - Long Text", False, f"HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_result("Heat-Map Mock - Long Text", False, f"Connection error: {str(e)}")
+    
+    def test_heat_map_mock_empty_text(self):
+        """Test /api/heat-map-mock with empty text"""
+        try:
+            test_text = ""
+            
+            response = requests.post(
+                f"{API_BASE}/heat-map-mock",
+                json={"text": test_text},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Empty text should return valid structure with empty spans
+                if data.get('textLength') == 0:
+                    evaluations = data.get('evaluations', {})
+                    all_empty = True
+                    
+                    for span_type in ['short', 'medium', 'long', 'stochastic']:
+                        spans = evaluations.get(span_type, {}).get('spans', [])
+                        if len(spans) > 0:
+                            all_empty = False
+                            break
+                    
+                    if all_empty:
+                        self.log_result("Heat-Map Mock - Empty Text", True, "Empty text handled correctly (no spans generated)")
+                    else:
+                        self.log_result("Heat-Map Mock - Empty Text", False, "Spans generated for empty text")
+                else:
+                    self.log_result("Heat-Map Mock - Empty Text", False, "Incorrect text length for empty text")
+            else:
+                self.log_result("Heat-Map Mock - Empty Text", False, f"HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_result("Heat-Map Mock - Empty Text", False, f"Connection error: {str(e)}")
+    
+    def test_heat_map_mock_special_characters(self):
+        """Test /api/heat-map-mock with special characters"""
+        try:
+            test_text = "Testing with émojis 🚀 and special chars @#$%"
+            
+            response = requests.post(
+                f"{API_BASE}/heat-map-mock",
+                json={"text": test_text},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Should handle special characters without errors
+                if data.get('textLength') == len(test_text):
+                    original_eval = data.get('originalEvaluation', {})
+                    
+                    # Check that original text is preserved
+                    if original_eval.get('input_text') == test_text:
+                        self.log_result(
+                            "Heat-Map Mock - Special Characters", 
+                            True, 
+                            "Special characters and emojis handled correctly"
+                        )
+                    else:
+                        self.log_result("Heat-Map Mock - Special Characters", False, "Original text not preserved")
+                else:
+                    self.log_result("Heat-Map Mock - Special Characters", False, "Incorrect text length calculation")
+            else:
+                self.log_result("Heat-Map Mock - Special Characters", False, f"HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_result("Heat-Map Mock - Special Characters", False, f"Connection error: {str(e)}")
+    
+    def test_heat_map_mock_performance(self):
+        """Test /api/heat-map-mock performance (should be <100ms)"""
+        try:
+            test_text = "Performance test for heat-map mock endpoint"
+            
+            start_time = time.time()
+            response = requests.post(
+                f"{API_BASE}/heat-map-mock",
+                json={"text": test_text},
+                timeout=10
+            )
+            end_time = time.time()
+            
+            response_time = (end_time - start_time) * 1000  # Convert to milliseconds
+            
+            if response.status_code == 200:
+                if response_time < 100:
+                    self.log_result(
+                        "Heat-Map Mock - Performance", 
+                        True, 
+                        f"Fast response: {response_time:.1f}ms (target: <100ms)"
+                    )
+                else:
+                    self.log_result(
+                        "Heat-Map Mock - Performance", 
+                        False, 
+                        f"Slow response: {response_time:.1f}ms (target: <100ms)"
+                    )
+            else:
+                self.log_result("Heat-Map Mock - Performance", False, f"HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_result("Heat-Map Mock - Performance", False, f"Connection error: {str(e)}")
+    
+    def test_heat_map_mock_data_quality(self):
+        """Test heat-map mock data quality and consistency"""
+        try:
+            test_text = "Data quality test for comprehensive validation"
+            
+            response = requests.post(
+                f"{API_BASE}/heat-map-mock",
+                json={"text": test_text},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                evaluations = data.get('evaluations', {})
+                overall_grades = data.get('overallGrades', {})
+                
+                quality_issues = []
+                
+                # Check span position validity
+                for span_type, eval_data in evaluations.items():
+                    spans = eval_data.get('spans', [])
+                    for i, span in enumerate(spans):
+                        span_pos = span.get('span', [])
+                        if len(span_pos) == 2:
+                            start, end = span_pos
+                            if start < 0 or end > len(test_text) or start >= end:
+                                quality_issues.append(f"{span_type} span {i}: invalid position [{start}, {end}]")
+                        
+                        # Check score ranges
+                        scores = span.get('scores', {})
+                        for score_type, score_val in scores.items():
+                            if not (0.0 <= score_val <= 1.0):
+                                quality_issues.append(f"{span_type} span {i}: {score_type} score {score_val} out of range")
+                        
+                        # Check uncertainty
+                        uncertainty = span.get('uncertainty', 0)
+                        if not (0.0 <= uncertainty <= 1.0):
+                            quality_issues.append(f"{span_type} span {i}: uncertainty {uncertainty} out of range")
+                
+                # Check grade consistency
+                for grade_type, grade_str in overall_grades.items():
+                    if grade_type in evaluations:
+                        avg_score = evaluations[grade_type].get('averageScore', 0)
+                        
+                        # Extract percentage from grade string
+                        if '(' in grade_str and ')' in grade_str:
+                            try:
+                                percentage_str = grade_str.split('(')[1].split('%')[0]
+                                percentage = int(percentage_str)
+                                expected_percentage = int(avg_score * 100)
+                                
+                                if abs(percentage - expected_percentage) > 1:  # Allow 1% tolerance
+                                    quality_issues.append(f"{grade_type}: grade percentage {percentage}% doesn't match average score {expected_percentage}%")
+                            except:
+                                quality_issues.append(f"{grade_type}: invalid grade format '{grade_str}'")
+                
+                if len(quality_issues) == 0:
+                    self.log_result("Heat-Map Mock - Data Quality", True, "All data quality checks passed")
+                else:
+                    self.log_result("Heat-Map Mock - Data Quality", False, f"Quality issues: {quality_issues}")
+            else:
+                self.log_result("Heat-Map Mock - Data Quality", False, f"HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_result("Heat-Map Mock - Data Quality", False, f"Connection error: {str(e)}")
+    
+    def test_heat_map_mock_error_handling(self):
+        """Test heat-map mock error handling"""
+        try:
+            # Test missing text field
+            response = requests.post(
+                f"{API_BASE}/heat-map-mock",
+                json={},
+                timeout=10
+            )
+            
+            if response.status_code in [400, 422]:
+                self.log_result("Heat-Map Mock - Error Handling (Missing Text)", True, f"Properly rejected missing text (HTTP {response.status_code})")
+            else:
+                self.log_result("Heat-Map Mock - Error Handling (Missing Text)", False, f"Unexpected response: HTTP {response.status_code}")
+            
+            # Test invalid JSON
+            try:
+                response = requests.post(
+                    f"{API_BASE}/heat-map-mock",
+                    data="invalid json",
+                    headers={'Content-Type': 'application/json'},
+                    timeout=10
+                )
+                
+                if response.status_code in [400, 422]:
+                    self.log_result("Heat-Map Mock - Error Handling (Invalid JSON)", True, f"Properly rejected invalid JSON (HTTP {response.status_code})")
+                else:
+                    self.log_result("Heat-Map Mock - Error Handling (Invalid JSON)", False, f"Unexpected response: HTTP {response.status_code}")
+            except:
+                self.log_result("Heat-Map Mock - Error Handling (Invalid JSON)", True, "Request properly rejected invalid JSON")
+                
+        except Exception as e:
+            self.log_result("Heat-Map Mock - Error Handling", False, f"Connection error: {str(e)}")
+    
+    def test_heat_map_visualization_integration(self):
+        """Test /api/heat-map-visualization endpoint (full ethical engine)"""
+        try:
+            test_text = "This is a test for the full heat-map visualization"
+            
+            response = requests.post(
+                f"{API_BASE}/heat-map-visualization",
+                json={"text": test_text},
+                timeout=30  # Longer timeout for full evaluation
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Should have same structure as mock but with real evaluation data
+                required_fields = ['evaluations', 'overallGrades', 'textLength', 'originalEvaluation']
+                
+                if all(field in data for field in required_fields):
+                    original_eval = data.get('originalEvaluation', {})
+                    
+                    # Should have real evaluation metadata
+                    if 'evaluation_id' in original_eval and 'processing_time' in original_eval:
+                        self.log_result(
+                            "Heat-Map Visualization - Integration", 
+                            True, 
+                            f"Full ethical engine integration working (processing time: {original_eval.get('processing_time', 'unknown')}s)"
+                        )
+                    else:
+                        self.log_result("Heat-Map Visualization - Integration", False, "Missing real evaluation metadata")
+                else:
+                    self.log_result("Heat-Map Visualization - Integration", False, "Invalid response structure")
+            elif response.status_code == 500:
+                # Check if it's an evaluator initialization issue
+                if "not initialized" in response.text.lower():
+                    self.log_result("Heat-Map Visualization - Integration", False, "Evaluator not initialized")
+                else:
+                    self.log_result("Heat-Map Visualization - Integration", False, f"Server error: {response.text}")
+            else:
+                self.log_result("Heat-Map Visualization - Integration", False, f"HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_result("Heat-Map Visualization - Integration", False, f"Connection error: {str(e)}")
+    
+    def test_heat_map_integration_with_existing_endpoints(self):
+        """Test that heat-map endpoints work alongside existing endpoints"""
+        try:
+            # Test health check still works
+            health_response = requests.get(f"{API_BASE}/health", timeout=10)
+            health_ok = health_response.status_code == 200
+            
+            # Test parameters still work
+            params_response = requests.get(f"{API_BASE}/parameters", timeout=10)
+            params_ok = params_response.status_code == 200
+            
+            # Test heat-map mock works
+            heatmap_response = requests.post(
+                f"{API_BASE}/heat-map-mock",
+                json={"text": "Integration test"},
+                timeout=10
+            )
+            heatmap_ok = heatmap_response.status_code == 200
+            
+            if health_ok and params_ok and heatmap_ok:
+                self.log_result(
+                    "Heat-Map Integration - No Conflicts", 
+                    True, 
+                    "Heat-map endpoints work alongside existing v1.1 features"
+                )
+            else:
+                issues = []
+                if not health_ok: issues.append("health")
+                if not params_ok: issues.append("parameters")
+                if not heatmap_ok: issues.append("heat-map")
+                
+                self.log_result(
+                    "Heat-Map Integration - No Conflicts", 
+                    False, 
+                    f"Integration issues with: {', '.join(issues)}"
+                )
+                
+        except Exception as e:
+            self.log_result("Heat-Map Integration - No Conflicts", False, f"Connection error: {str(e)}")
+
     def run_all_tests(self):
         """Run all backend tests with focus on critical review items"""
         print(f"🚀 Starting comprehensive backend testing for: {API_BASE}")
