@@ -573,7 +573,7 @@ class UncertaintyAnalyzer:
             evaluator: EthicalEvaluator instance for bootstrapped evaluations
         """
         self.evaluator = evaluator
-        self.n_bootstrap_samples = 10  # Number of bootstrap samples
+        self.n_bootstrap_samples = 5   # Reduced from 10 for faster analysis
         self.dropout_rate = 0.15       # Dropout rate for variance generation
         self.uncertainty_threshold = 0.25  # Variance threshold for human routing
         
