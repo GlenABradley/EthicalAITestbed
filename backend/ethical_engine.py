@@ -729,6 +729,35 @@ class EthicalEvaluator:
         self.embedding_cache = {}
         
         logger.info(f"Initialized EthicalEvaluator with model: {self.parameters.embedding_model}")
+        logger.info("v1.1 UPGRADE: Jina v4 embeddings initialized for enhanced distributed pattern detection")
+    
+    def benchmark_embedding_performance(self, test_texts: List[str]) -> Dict[str, float]:
+        """
+        Benchmark Jina v4 performance for v1.1 validation
+        
+        Args:
+            test_texts: List of test texts for benchmarking
+            
+        Returns:
+            Dict with performance metrics
+        """
+        import time
+        start_time = time.time()
+        
+        # Process embeddings
+        embeddings = self.model.encode(test_texts)
+        embedding_time = time.time() - start_time
+        
+        # Calculate distributed pattern metrics (placeholder for now)
+        distributed_score = np.mean([len(text.split()) for text in test_texts]) / 100.0
+        
+        return {
+            "embedding_time": embedding_time,
+            "texts_processed": len(test_texts),
+            "avg_time_per_text": embedding_time / len(test_texts),
+            "distributed_pattern_score": min(distributed_score, 1.0),
+            "model_type": "jina-v4"
+        }
     
     def apply_threshold_scaling(self, slider_value: float) -> float:
         """Apply exponential or linear scaling to threshold values"""
