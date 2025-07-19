@@ -39,11 +39,11 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as ConcurrentTimeoutError
 
 # Import our optimization modules
-from .embedding_service import EmbeddingService, global_embedding_service
-from ..utils.caching_manager import CacheManager, global_cache_manager
+from core.embedding_service import EmbeddingService, global_embedding_service
+from utils.caching_manager import CacheManager, global_cache_manager
 
 # Import original components (we'll gradually replace these)
-from ..ethical_engine import (
+from ethical_engine import (
     EthicalParameters, EthicalEvaluation, EthicalSpan,
     DynamicScalingResult, LearningLayer
 )
