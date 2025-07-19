@@ -927,7 +927,13 @@ class EthicalParameters:
             'enable_causal_analysis': self.enable_causal_analysis,
             'autonomy_delta_threshold': self.autonomy_delta_threshold,
             'causal_intervention_types': self.causal_intervention_types,
-            'max_counterfactuals_per_span': self.max_counterfactuals_per_span
+            'max_counterfactuals_per_span': self.max_counterfactuals_per_span,
+            # v1.1 Uncertainty analysis parameters
+            'enable_uncertainty_analysis': self.enable_uncertainty_analysis,
+            'uncertainty_threshold': self.uncertainty_threshold,
+            'bootstrap_samples': self.bootstrap_samples,
+            'uncertainty_dropout_rate': self.uncertainty_dropout_rate,
+            'auto_human_routing': self.auto_human_routing
         }
 
 @dataclass
