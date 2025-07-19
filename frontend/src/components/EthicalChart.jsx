@@ -149,12 +149,26 @@ const DimensionRow = ({ dimension, spans, totalTextLength }) => {
  * Span type section (short/medium/long/stochastic)
  */
 const SpanTypeSection = ({ type, data, totalTextLength }) => {
-  if (!data || !data.spans || data.spans.length === 0) {
+  // Handle both data structures: 
+  // 1. data as array (direct API response)
+  // 2. data.spans as array (legacy structure)
+  const spans = Array.isArray(data) ? data : (data?.spans || []);
+  
+  if (!spans || spans.length === 0) {
     return null;
   }
   
   const dimensions = ['V', 'A', 'C']; // Virtue, Autonomy, Consequentialist
-  const avgScore = data.averageScore || 0;
+  
+  // Calculate average score from spans
+  const totalScores = spans.reduce((acc, span) => {
+    dimensions.forEach(dim => {
+      acc[dim] += span.scores[dim] || 0;
+    });
+    return acc;
+  }, { V: 0, A: 0, C: 0 });
+  
+  const avgScore = dimensions.reduce((sum, dim) => sum + totalScores[dim], 0) / (dimensions.length * spans.length);
   const grade = calculateGrade(avgScore);
   
   return (
@@ -173,19 +187,16 @@ const SpanTypeSection = ({ type, data, totalTextLength }) => {
           <DimensionRow
             key={dimension}
             dimension={dimension}
-            spans={data.spans}
+            spans={spans}
             totalTextLength={totalTextLength}
           />
         ))}
       </div>
       
-      {data.metadata && (
-        <div className="mt-2 text-xs text-gray-400">
-          Spans: {data.spans.length} | 
-          Avg Score: {avgScore.toFixed(3)} |
-          {data.metadata.dataset_source && ` Source: ${data.metadata.dataset_source}`}
-        </div>
-      )}
+      <div className="mt-2 text-xs text-gray-400">
+        Spans: {spans.length} | 
+        Avg Score: {avgScore.toFixed(3)}
+      </div>
     </div>
   );
 };
