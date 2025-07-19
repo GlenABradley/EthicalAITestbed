@@ -256,6 +256,38 @@ async def test_causal_analysis(request: dict):
             "causal_analyzer_enabled": evaluator.causal_analyzer is not None
         }
 
+@api_router.post("/test-uncertainty")
+async def test_uncertainty_analysis(request: dict):
+    """Test uncertainty analysis endpoint for v1.1 debugging"""
+    global evaluator
+    if not evaluator:
+        raise HTTPException(status_code=500, detail="Evaluator not initialized")
+    
+    text = request.get("text", "")
+    if not text:
+        raise HTTPException(status_code=400, detail="Text is required")
+    
+    try:
+        if evaluator.uncertainty_analyzer:
+            uncertainty_analysis = evaluator.uncertainty_analyzer.analyze_uncertainty(text)
+            return {
+                "text": text,
+                "uncertainty_analysis": uncertainty_analysis,
+                "uncertainty_analyzer_enabled": True
+            }
+        else:
+            return {
+                "text": text,
+                "uncertainty_analyzer_enabled": False,
+                "message": "Uncertainty analyzer not initialized"
+            }
+    except Exception as e:
+        return {
+            "text": text,
+            "error": str(e),
+            "uncertainty_analyzer_enabled": evaluator.uncertainty_analyzer is not None
+        }
+
 @api_router.post("/evaluate", response_model=EthicalEvaluationResponse)
 async def evaluate_text(request: EthicalEvaluationRequest):
     """Evaluate text for ethical violations"""
