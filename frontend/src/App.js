@@ -51,9 +51,19 @@ function App() {
   const loadParameters = async () => {
     try {
       const response = await axios.get(`${API}/parameters`);
-      setParameters(response.data.parameters);
+      // Fix: parameters are directly in response.data, not response.data.parameters
+      setParameters(response.data);
     } catch (error) {
       console.error('Error loading parameters:', error);
+      // Set default parameters if loading fails
+      setParameters({
+        virtue_threshold: 0.15,
+        deontological_threshold: 0.15,
+        consequentialist_threshold: 0.15,
+        virtue_weight: 1.0,
+        deontological_weight: 1.0,
+        consequentialist_weight: 1.0
+      });
     }
   };
 
