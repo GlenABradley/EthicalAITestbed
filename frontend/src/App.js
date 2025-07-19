@@ -148,6 +148,36 @@ function App() {
     })
     .then(response => response.json())
     .then(data => {
+      setFeedbackMessage('Feedback submitted successfully!');
+      setTimeout(() => setFeedbackMessage(''), 3000);
+      loadLearningStats(); // Refresh stats
+    })
+    .catch(error => {
+      console.error('Feedback error:', error);
+      setFeedbackMessage('Error submitting feedback');
+    });
+  };
+
+  // Phase 4: Heat-map visualization function
+  const generateHeatMap = async (text) => {
+    if (!text.trim()) {
+      setHeatMapData(null);
+      return;
+    }
+    
+    setHeatMapLoading(true);
+    try {
+      const response = await axios.post(`${API}/heat-map-visualization`, {
+        text: text
+      });
+      setHeatMapData(response.data);
+    } catch (error) {
+      console.error('Heat-map generation error:', error);
+      setHeatMapData(null);
+    } finally {
+      setHeatMapLoading(false);
+    }
+  };
       console.log('Feedback submitted:', data);
       setFeedbackMessage(`✅ Feedback recorded (score: ${feedbackScore})`);
       loadLearningStats(); // Refresh stats
