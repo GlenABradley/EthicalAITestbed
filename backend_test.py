@@ -2177,6 +2177,20 @@ class BackendTester:
         print(f"🚀 Starting comprehensive backend testing for: {API_BASE}")
         print("=" * 80)
         
+        # PHASE 4A HEAT-MAP VISUALIZATION TESTS (Priority)
+        print("\n🔥 PHASE 4A HEAT-MAP VISUALIZATION TESTING")
+        print("=" * 60)
+        self.test_heat_map_mock_short_text()
+        self.test_heat_map_mock_medium_text()
+        self.test_heat_map_mock_long_text()
+        self.test_heat_map_mock_empty_text()
+        self.test_heat_map_mock_special_characters()
+        self.test_heat_map_mock_performance()
+        self.test_heat_map_mock_data_quality()
+        self.test_heat_map_mock_error_handling()
+        self.test_heat_map_visualization_integration()
+        self.test_heat_map_integration_with_existing_endpoints()
+        
         # CRITICAL TESTS FROM REVIEW REQUEST
         print("\n" + "🔥" * 20 + " CRITICAL REVIEW TESTS " + "🔥" * 20)
         
