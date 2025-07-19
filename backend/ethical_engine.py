@@ -2370,6 +2370,50 @@ class EthicalEvaluator:
                 logger.error(f"Uncertainty analysis failed: {e}")
                 uncertainty_analysis = {"error": str(e)}
         
+        # v1.1 UPGRADE: Perform IRL purpose alignment analysis for user intent alignment
+        purpose_alignment_analysis = None
+        if (self.parameters.enable_purpose_alignment and self.purpose_alignment):
+            
+            dynamic_result.processing_stages.append("purpose_alignment")
+            
+            try:
+                # Create a temporary evaluation result for purpose alignment
+                temp_eval_result = EthicalEvaluation(
+                    input_text=text,
+                    tokens=tokens,
+                    spans=all_spans,
+                    minimal_spans=minimal_spans,
+                    overall_ethical=overall_ethical,
+                    processing_time=processing_time,
+                    parameters=self.parameters,
+                    dynamic_scaling_result=dynamic_result
+                )
+                
+                # Note: In production, context and declared_purpose would come from user input
+                # For now, we'll analyze with empty context to demonstrate the capability
+                purpose_alignment_analysis = self.purpose_alignment.analyze_purpose_alignment(
+                    text=text,
+                    evaluation_result=temp_eval_result,
+                    context="",  # Would be provided by user in production
+                    declared_purpose=""  # Would be provided by user in production
+                )
+                
+                # Log purpose alignment results
+                alignment_score = purpose_alignment_analysis.get("alignment_metrics", {}).get("alignment_score", 1.0)
+                inferred_purpose = purpose_alignment_analysis.get("user_purpose", {}).get("inferred_purpose", "unknown")
+                is_aligned = purpose_alignment_analysis.get("alignment_metrics", {}).get("overall_aligned", True)
+                
+                logger.info(f"Purpose alignment completed: purpose='{inferred_purpose}', "
+                          f"alignment_score={alignment_score:.3f}, aligned={is_aligned}")
+                
+                # Add alignment flag to processing stages
+                if not is_aligned:
+                    dynamic_result.processing_stages.append("purpose_misalignment_detected")
+                    
+            except Exception as e:
+                logger.error(f"Purpose alignment analysis failed: {e}")
+                purpose_alignment_analysis = {"error": str(e)}
+        
         return EthicalEvaluation(
             input_text=text,
             tokens=tokens,
@@ -2380,7 +2424,8 @@ class EthicalEvaluator:
             parameters=self.parameters,
             dynamic_scaling_result=dynamic_result,
             causal_analysis=causal_analysis,  # v1.1 UPGRADE: Add causal analysis results
-            uncertainty_analysis=uncertainty_analysis  # v1.1 UPGRADE: Add uncertainty analysis results
+            uncertainty_analysis=uncertainty_analysis,  # v1.1 UPGRADE: Add uncertainty analysis results
+            purpose_alignment_analysis=purpose_alignment_analysis  # v1.1 UPGRADE: Add purpose alignment results
         )
     
     def update_parameters(self, new_parameters: Dict[str, Any]):
