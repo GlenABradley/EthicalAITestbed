@@ -44,11 +44,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "User Issue Verification Complete"
-    - "All Backend APIs Functional"
+    - "Backend API Operational"
+    - "Frontend Interface Complete"
   stuck_tasks: []
   test_all: false
-  test_priority: "verification_complete"
+  test_priority: "minimal_validation"
 
 agent_communication:
   - agent: "testing"
