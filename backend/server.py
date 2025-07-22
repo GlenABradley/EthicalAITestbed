@@ -710,7 +710,7 @@ def create_integrated_app():
     @api_router.post("/ml/ethical-vectors", response_model=MLEthicalVectorResponse)
     async def generate_ethical_vectors(request: MLTrainingDataRequest):
         """
-        Generate ethical guidance vectors for ML training.
+        Generate ethical guidance vectors for ML training using advanced vector engine.
         
         Converts ethical evaluations into actionable vectors that can guide
         ML model training, loss functions, and behavioral adjustments.
@@ -718,104 +718,111 @@ def create_integrated_app():
         try:
             start_time = time.time()
             
-            # Initialize vector collections
-            autonomy_vectors = []
-            harm_prevention_vectors = []
-            fairness_vectors = []
-            transparency_vectors = []
+            # Parse enum values
+            dataset_type = DatasetType(request.dataset_type)
+            training_phase = TrainingPhase(request.training_phase.replace('-', '_'))
             
-            # Evaluate training data and extract ethical vectors
+            # Collect all evaluations and vectors
+            all_ml_vectors = []
+            ethical_scores = []
+            batch_evaluations = []
+            
+            # Evaluate training data and extract ethical vectors using advanced engine
             for example in request.training_data:
                 if evaluator:
                     evaluation = evaluator.evaluate_text(example)
+                    batch_evaluations.append(evaluation)
                     
-                    # Convert autonomy dimensions to vectors (D1-D5)
-                    autonomy_dim_values = list(evaluation.autonomy_dimensions.values())
-                    autonomy_vectors.append(autonomy_dim_values)
+                    # Use advanced ML Ethics Vector Engine
+                    ml_vectors = ml_ethics_engine.convert_evaluation_to_ml_vectors(
+                        evaluation,
+                        dataset_type=dataset_type,
+                        training_phase=training_phase,
+                        model_type=request.model_type
+                    )
+                    all_ml_vectors.append(ml_vectors)
                     
-                    # Generate harm prevention vectors based on ethical principles
-                    harm_vector = [
-                        1.0 - evaluation.ethical_principles.get("non_aggression", 1.0),
-                        1.0 - evaluation.ethical_principles.get("harm_prevention", 1.0),
-                        evaluation.ethical_principles.get("safety", 0.0)
-                    ]
-                    harm_prevention_vectors.append(harm_vector)
-                    
-                    # Fairness vectors based on bias detection
-                    fairness_vector = [
-                        evaluation.ethical_principles.get("fairness", 0.5),
-                        evaluation.ethical_principles.get("equality", 0.5),
-                        1.0 - evaluation.ethical_principles.get("discrimination", 0.0)
-                    ]
-                    fairness_vectors.append(fairness_vector)
-                    
-                    # Transparency vectors
-                    transparency_vector = [
-                        evaluation.ethical_principles.get("transparency", 0.5),
-                        evaluation.ethical_principles.get("explainability", 0.5),
-                        evaluation.ethical_principles.get("openness", 0.5)
-                    ]
-                    transparency_vectors.append(transparency_vector)
+                    # Calculate ethical score
+                    autonomy_score = sum(evaluation.autonomy_dimensions.values()) / len(evaluation.autonomy_dimensions)
+                    ethical_scores.append(autonomy_score)
             
-            # Average vectors across all examples
-            def average_vectors(vector_list):
-                if not vector_list:
-                    return [0.0]
-                return [sum(col) / len(vector_list) for col in zip(*vector_list)]
+            # Average all vectors across examples
+            if all_ml_vectors:
+                def average_vector_field(field_name):
+                    field_vectors = [getattr(v, field_name) for v in all_ml_vectors]
+                    return [sum(vals) / len(vals) for vals in zip(*field_vectors)]
+                
+                averaged_vectors = MLEthicalVector(
+                    autonomy_vectors=average_vector_field('autonomy_vectors'),
+                    harm_prevention_vectors=average_vector_field('harm_prevention_vectors'),
+                    fairness_vectors=average_vector_field('fairness_vectors'),
+                    transparency_vectors=average_vector_field('transparency_vectors'),
+                    bias_mitigation_vectors=average_vector_field('bias_mitigation_vectors'),
+                    safety_vectors=average_vector_field('safety_vectors')
+                )
+            else:
+                # Default vectors if no evaluations
+                averaged_vectors = MLEthicalVector(
+                    autonomy_vectors=[0.5] * 5,
+                    harm_prevention_vectors=[0.5] * 5,
+                    fairness_vectors=[0.5] * 5,
+                    transparency_vectors=[0.5] * 5,
+                    bias_mitigation_vectors=[0.5] * 5,
+                    safety_vectors=[0.5] * 5
+                )
             
-            avg_autonomy = average_vectors(autonomy_vectors)
-            avg_harm_prevention = average_vectors(harm_prevention_vectors) 
-            avg_fairness = average_vectors(fairness_vectors)
-            avg_transparency = average_vectors(transparency_vectors)
+            # Generate advanced training adjustments
+            avg_ethical_score = sum(ethical_scores) / len(ethical_scores) if ethical_scores else 0.5
             
-            # Calculate training adjustments based on ethical analysis
-            ethical_score_avg = sum(len([v for v in vec if v > 0.5]) for vec in autonomy_vectors) / max(len(autonomy_vectors), 1)
+            training_adjustments = ml_ethics_engine.generate_training_adjustments(
+                averaged_vectors,
+                avg_ethical_score,
+                training_phase=training_phase
+            )
             
-            training_adjustments = {
-                "loss_function_modifier": 0.1 + (0.3 * (1.0 - ethical_score_avg)),  # Increase loss weight for unethical content
-                "gradient_steering": avg_autonomy,  # Use autonomy vectors for gradient adjustment
-                "attention_weights": avg_transparency,  # Focus attention on transparent content
-                "regularization_strength": 0.05 + (0.2 * (1.0 - ethical_score_avg)),  # Stronger regularization for problematic data
-                "learning_rate_modifier": max(0.5, 1.0 - (0.5 * (1.0 - ethical_score_avg)))  # Reduce learning rate for unethical examples
-            }
-            
-            # Generate recommendations
+            # Generate recommendations using advanced analysis
             recommendations = []
-            if ethical_score_avg < 0.6:
-                recommendations.append(f"Dataset ethical score is {ethical_score_avg:.2f} - consider additional ethical filtering")
-            if request.training_phase == "fine-tuning":
-                recommendations.append("Fine-tuning phase: Apply stronger ethical constraints")
-            if request.dataset_type == "uncurated":
+            if avg_ethical_score < 0.6:
+                recommendations.append(f"Dataset ethical score is {avg_ethical_score:.2f} - consider additional ethical filtering")
+            
+            # Phase-specific recommendations
+            if training_phase == TrainingPhase.FINE_TUNING:
+                recommendations.append("Fine-tuning phase: Apply stronger ethical constraints and monitoring")
+            elif training_phase == TrainingPhase.REINFORCEMENT:
+                recommendations.append("RLHF phase: Implement continuous ethical feedback loops")
+                
+            if dataset_type == DatasetType.UNCURATED:
                 recommendations.append("Uncurated dataset: Implement continuous ethical monitoring during training")
                 
-            recommendations.append("Use provided vectors to guide training towards ethical behavior")
+            recommendations.extend([
+                "Use autonomy vectors to guide gradient updates toward human autonomy preservation",
+                "Apply bias mitigation vectors to prevent discriminatory patterns",
+                "Use safety vectors to prevent harmful output generation",
+                "Monitor transparency vectors to ensure explainable model behavior"
+            ])
             
-            # Risk assessment
+            # Enhanced risk assessment using advanced engine
             risk_assessment = {
-                "autonomy_risk": 1.0 - (sum(avg_autonomy) / max(len(avg_autonomy), 1)),
-                "harm_risk": sum(avg_harm_prevention) / max(len(avg_harm_prevention), 1),
-                "bias_risk": 1.0 - (sum(avg_fairness) / max(len(avg_fairness), 1)),
-                "transparency_risk": 1.0 - (sum(avg_transparency) / max(len(avg_transparency), 1)),
-                "overall_risk": (1.0 - ethical_score_avg)
+                "autonomy_risk": 1.0 - avg_ethical_score,
+                "harm_risk": 1.0 - (sum(averaged_vectors.harm_prevention_vectors) / len(averaged_vectors.harm_prevention_vectors)),
+                "bias_risk": 1.0 - (sum(averaged_vectors.bias_mitigation_vectors) / len(averaged_vectors.bias_mitigation_vectors)),
+                "transparency_risk": 1.0 - (sum(averaged_vectors.transparency_vectors) / len(averaged_vectors.transparency_vectors)),
+                "safety_risk": 1.0 - (sum(averaged_vectors.safety_vectors) / len(averaged_vectors.safety_vectors)),
+                "overall_risk": (1.0 - avg_ethical_score)
             }
             
             processing_time = time.time() - start_time
             
             return MLEthicalVectorResponse(
-                ethical_vectors={
-                    "autonomy_preservation": avg_autonomy,
-                    "harm_prevention": avg_harm_prevention,
-                    "fairness_guidance": avg_fairness,
-                    "transparency_weights": avg_transparency
-                },
-                training_adjustments=training_adjustments,
+                ethical_vectors=averaged_vectors.to_dict(),
+                training_adjustments=training_adjustments.to_dict(),
                 recommendations=recommendations,
                 risk_assessment=risk_assessment
             )
             
         except Exception as e:
-            logger.error(f"Ethical vector generation failed: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"Ethical vector generation failed: {str(e)}")
+            logger.error(f"Enhanced ethical vector generation failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Enhanced ethical vector generation failed: {str(e)}")
     
     @api_router.post("/ml/training-guidance", response_model=MLGuidanceResponse)
     async def provide_training_guidance(request: MLTrainingBatchRequest):
