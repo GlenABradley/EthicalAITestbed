@@ -2,43 +2,43 @@
   {
     "test_name": "Quick Start Test",
     "passed": true,
-    "response_time": 0.0977175235748291,
-    "details": "Response time: 0.098s (Target: < 3.0s) | Optimization ID: opt_17531965... | Status: started | Performance target met: True",
-    "timestamp": "2025-07-22T15:02:58.798088"
+    "response_time": 0.09678816795349121,
+    "details": "Response time: 0.097s (Target: < 3.0s) | Optimization ID: opt_17531967... | Status: started | Performance target met: True",
+    "timestamp": "2025-07-22T15:05:49.253283"
   },
   {
     "test_name": "Status Monitoring",
     "passed": false,
-    "response_time": 3.259282112121582,
-    "details": "Response time: 3.259s (Target: < 1.0s) | Error: Unknown error | Performance target met: False",
-    "timestamp": "2025-07-22T15:03:02.057624"
+    "response_time": 2.7120625972747803,
+    "details": "Response time: 2.712s (Target: < 1.0s) | Error: Unknown error | Performance target met: False",
+    "timestamp": "2025-07-22T15:05:51.965603"
   },
   {
     "test_name": "Optimization Completion",
     "passed": false,
     "response_time": 36.0,
     "details": "Total time: 36.0s | Status: unknown | Completed in 15-30s: False",
-    "timestamp": "2025-07-22T15:03:38.252499"
+    "timestamp": "2025-07-22T15:06:28.167392"
   },
   {
     "test_name": "Results Retrieval",
     "passed": false,
-    "response_time": 0.006491422653198242,
-    "details": "Response time: 0.006s | Error: Unknown error",
-    "timestamp": "2025-07-22T15:03:38.259152"
+    "response_time": 0.0075321197509765625,
+    "details": "Response time: 0.008s | Error: Unknown error",
+    "timestamp": "2025-07-22T15:06:28.175093"
   },
   {
     "test_name": "Parameter Application",
     "passed": false,
-    "response_time": 0.008574724197387695,
-    "details": "Response time: 0.009s | Error: Unknown error",
-    "timestamp": "2025-07-22T15:03:38.267898"
+    "response_time": 0.00780487060546875,
+    "details": "Response time: 0.008s | Error: Unknown error",
+    "timestamp": "2025-07-22T15:06:28.183078"
   },
   {
     "test_name": "List Optimizations",
     "passed": true,
-    "response_time": 0.048804521560668945,
-    "details": "Response time: 0.049s | Found 2 optimizations | Has pagination: False",
-    "timestamp": "2025-07-22T15:03:38.316909"
+    "response_time": 0.047302961349487305,
+    "details": "Response time: 0.047s | Found 2 optimizations | Has pagination: False",
+    "timestamp": "2025-07-22T15:06:28.230607"
   }
 ]
