@@ -3,257 +3,257 @@
     {
       "test_name": "Health Endpoint",
       "passed": false,
-      "response_time": 30.593872547149658,
-      "details": "Response time: 30.594s | Error: ",
-      "timestamp": "2025-07-22T13:53:03.849799"
+      "response_time": 40.88986825942993,
+      "details": "Response time: 40.890s | Error: ",
+      "timestamp": "2025-07-22T14:52:56.849758"
     },
     {
       "test_name": "Parameters Endpoint",
       "passed": false,
-      "response_time": 30.943350315093994,
-      "details": "Response time: 30.943s | Error: ",
-      "timestamp": "2025-07-22T13:53:34.793225"
+      "response_time": 41.00065898895264,
+      "details": "Response time: 41.001s | Error: ",
+      "timestamp": "2025-07-22T14:53:37.850493"
     },
     {
       "test_name": "Evaluate Endpoint",
       "passed": false,
-      "response_time": 31.05638027191162,
-      "details": "Response time: 31.056s | Error: ",
-      "timestamp": "2025-07-22T13:54:05.849721"
+      "response_time": 40.999897480010986,
+      "details": "Response time: 41.000s | Error: ",
+      "timestamp": "2025-07-22T14:54:18.850494"
     },
     {
       "test_name": "Heat Map Endpoint",
       "passed": false,
-      "response_time": 30.94337821006775,
-      "details": "Response time: 30.943s | Error: ",
-      "timestamp": "2025-07-22T13:54:36.793178"
+      "response_time": 40.999123334884644,
+      "details": "Response time: 40.999s | Error: ",
+      "timestamp": "2025-07-22T14:54:59.849711"
     }
   ],
   "performance_tests": [
     {
       "test_name": "Response Time - Short text",
       "passed": false,
-      "response_time": 31.056397438049316,
-      "details": "Text length: 12 chars | Response time: 31.056s",
-      "timestamp": "2025-07-22T13:55:07.849672"
+      "response_time": 40.99989366531372,
+      "details": "Text length: 12 chars | Response time: 41.000s",
+      "timestamp": "2025-07-22T14:55:40.849720"
     },
     {
       "test_name": "Response Time - Medium text",
       "passed": false,
-      "response_time": 30.94303274154663,
-      "details": "Text length: 136 chars | Response time: 30.943s",
-      "timestamp": "2025-07-22T13:55:38.792746"
+      "response_time": 41.00099301338196,
+      "details": "Text length: 136 chars | Response time: 41.001s",
+      "timestamp": "2025-07-22T14:56:21.850757"
     },
     {
       "test_name": "Response Time - Long text",
       "passed": false,
-      "response_time": 31.059194803237915,
-      "details": "Text length: 1699 chars | Response time: 31.059s",
-      "timestamp": "2025-07-22T13:56:09.851978"
+      "response_time": 41.002360582351685,
+      "details": "Text length: 1699 chars | Response time: 41.002s",
+      "timestamp": "2025-07-22T14:57:02.853159"
     },
     {
       "test_name": "Average Response Time",
       "passed": false,
-      "response_time": 31.019541660944622,
-      "details": "Average response time: 31.020s | Claimed: 0.055s",
-      "timestamp": "2025-07-22T13:56:09.852084"
+      "response_time": 41.00108242034912,
+      "details": "Average response time: 41.001s | Claimed: 0.055s",
+      "timestamp": "2025-07-22T14:57:02.853256"
     },
     {
       "test_name": "Concurrent Requests",
       "passed": false,
-      "response_time": 30.99884581565857,
-      "details": "5 concurrent requests | 0/5 successful | Total time: 30.999s",
-      "timestamp": "2025-07-22T13:56:40.850993"
+      "response_time": 40.9971399307251,
+      "details": "5 concurrent requests | 0/5 successful | Total time: 40.997s",
+      "timestamp": "2025-07-22T14:57:43.850468"
     }
   ],
   "content_tests": [
     {
       "test_name": "Diverse Content Test 1",
       "passed": false,
-      "response_time": 30.94119167327881,
-      "details": "Text 1 | Response time: 30.941s",
-      "timestamp": "2025-07-22T13:57:11.792290"
+      "response_time": 40.999088287353516,
+      "details": "Text 1 | Response time: 40.999s",
+      "timestamp": "2025-07-22T14:58:24.849643"
     },
     {
       "test_name": "Diverse Content Test 2",
       "passed": false,
-      "response_time": 31.05982542037964,
-      "details": "Text 2 | Response time: 31.060s",
-      "timestamp": "2025-07-22T13:57:42.852151"
+      "response_time": 40.95443153381348,
+      "details": "Text 2 | Response time: 40.954s",
+      "timestamp": "2025-07-22T14:59:05.804111"
     },
     {
       "test_name": "Diverse Content Test 3",
       "passed": false,
-      "response_time": 30.99746584892273,
-      "details": "Text 3 | Response time: 30.997s",
-      "timestamp": "2025-07-22T13:58:13.849653"
+      "response_time": 41.04700994491577,
+      "details": "Text 3 | Response time: 41.047s",
+      "timestamp": "2025-07-22T14:59:46.851157"
     },
     {
       "test_name": "Diverse Content Test 4",
       "passed": false,
-      "response_time": 30.943480014801025,
-      "details": "Text 4 | Response time: 30.943s",
-      "timestamp": "2025-07-22T13:58:44.793168"
+      "response_time": 40.95193815231323,
+      "details": "Text 4 | Response time: 40.952s",
+      "timestamp": "2025-07-22T15:00:27.803132"
     },
     {
       "test_name": "Diverse Content Test 5",
       "passed": false,
-      "response_time": 30.999924659729004,
-      "details": "Text 5 | Response time: 31.000s",
-      "timestamp": "2025-07-22T13:59:15.793128"
+      "response_time": 41.047966957092285,
+      "details": "Text 5 | Response time: 41.048s",
+      "timestamp": "2025-07-22T15:01:08.851136"
     },
     {
       "test_name": "Edge Case - Empty text",
       "passed": true,
-      "response_time": 31.05705499649048,
-      "details": "Response time: 31.057s | Text length: 0 | Expected validation failure",
-      "timestamp": "2025-07-22T13:59:46.850265"
+      "response_time": 40.9909029006958,
+      "details": "Response time: 40.991s | Text length: 0 | Expected validation failure",
+      "timestamp": "2025-07-22T15:01:49.842128"
     },
     {
       "test_name": "Edge Case - Single character",
       "passed": false,
-      "response_time": 30.99945640563965,
-      "details": "Response time: 30.999s | Text length: 1",
-      "timestamp": "2025-07-22T14:00:17.849760"
+      "response_time": 26.93670916557312,
+      "details": "Response time: 26.937s | Text length: 1",
+      "timestamp": "2025-07-22T15:02:16.778883"
     },
     {
       "test_name": "Edge Case - Special characters",
       "passed": false,
-      "response_time": 30.943339586257935,
-      "details": "Response time: 30.943s | Text length: 26",
-      "timestamp": "2025-07-22T14:00:48.793135"
+      "response_time": 0.008266210556030273,
+      "details": "Response time: 0.008s | Text length: 26",
+      "timestamp": "2025-07-22T15:02:16.787187"
     },
     {
       "test_name": "Edge Case - Very long text",
       "passed": false,
-      "response_time": 31.05677843093872,
-      "details": "Response time: 31.057s | Text length: 10000",
-      "timestamp": "2025-07-22T14:01:19.849950"
+      "response_time": 0.007930517196655273,
+      "details": "Response time: 0.008s | Text length: 10000",
+      "timestamp": "2025-07-22T15:02:16.795153"
     },
     {
       "test_name": "Edge Case - Unicode text",
       "passed": false,
-      "response_time": 30.943178415298462,
-      "details": "Response time: 30.943s | Text length: 25",
-      "timestamp": "2025-07-22T14:01:50.793165"
+      "response_time": 0.0061702728271484375,
+      "details": "Response time: 0.006s | Text length: 25",
+      "timestamp": "2025-07-22T15:02:16.801360"
     }
   ],
   "integration_tests": [
     {
       "test_name": "Get Parameters",
       "passed": false,
-      "response_time": 31.048964023590088,
+      "response_time": 0.006900787353515625,
       "details": "Failed to get current parameters",
-      "timestamp": "2025-07-22T14:02:21.842204"
+      "timestamp": "2025-07-22T15:02:16.808337"
     },
     {
       "test_name": "Learning Statistics",
       "passed": false,
-      "response_time": 31.007381916046143,
-      "details": "Response time: 31.007s",
-      "timestamp": "2025-07-22T14:02:52.849669"
+      "response_time": 0.006783008575439453,
+      "details": "Response time: 0.007s",
+      "timestamp": "2025-07-22T15:02:16.815198"
     },
     {
       "test_name": "Error Handling",
       "passed": true,
-      "response_time": 30.99997639656067,
-      "details": "Response time: 31.000s | Graceful error handling: True",
-      "timestamp": "2025-07-22T14:03:23.849740"
+      "response_time": 0.034388065338134766,
+      "details": "Response time: 0.034s | Graceful error handling: True",
+      "timestamp": "2025-07-22T15:02:16.849661"
     }
   ],
   "reliability_tests": [
     {
       "test_name": "System Health Check",
       "passed": false,
-      "response_time": 30.999841690063477,
-      "details": "Response time: 31.000s | Health check failed",
-      "timestamp": "2025-07-22T14:03:54.849660"
+      "response_time": 0.007138729095458984,
+      "details": "Response time: 0.007s | Health check failed",
+      "timestamp": "2025-07-22T15:02:16.856902"
     },
     {
       "test_name": "Load Handling",
       "passed": false,
-      "response_time": 31.001392126083374,
-      "details": "10 requests | 0/10 successful | Success rate: 0.0% | Total time: 31.001s",
-      "timestamp": "2025-07-22T14:04:25.851139"
+      "response_time": 0.08578109741210938,
+      "details": "10 requests | 0/10 successful | Success rate: 0.0% | Total time: 0.086s",
+      "timestamp": "2025-07-22T15:02:16.942744"
     }
   ],
   "bayesian_tests": [
     {
-      "test_name": "Optimization Start",
+      "test_name": "Performance-Optimized Start",
       "passed": false,
-      "response_time": 31.000298023223877,
-      "details": "Response time: 31.000s | Error: ",
-      "timestamp": "2025-07-22T14:04:56.851583"
+      "response_time": 0.006597995758056641,
+      "details": "Response time: 0.007s | Error: 0, message='Attempt to decode JSON with unexpected mimetype: ', url=URL('https://b214a97a-320b-41fd-b6d6-ff742674f4c6.preview.emergentagent.com/api/optimization/start') | Performance target met (< 5s): True",
+      "timestamp": "2025-07-22T15:02:16.949428"
     },
     {
-      "test_name": "Validation - Empty test_texts",
+      "test_name": "Performance Status Monitoring",
       "passed": true,
-      "response_time": 30.998069763183594,
-      "details": "Response time: 30.998s | Validation handled: True",
-      "timestamp": "2025-07-22T14:05:27.849739"
+      "response_time": 0.011723041534423828,
+      "details": "Non-existent ID test: 0.012s | 404 handled: True | Performance (< 2s): True",
+      "timestamp": "2025-07-22T15:02:16.961228"
     },
     {
-      "test_name": "Validation - Non-list test_texts",
+      "test_name": "Performance Validation - Empty test_texts",
       "passed": true,
-      "response_time": 31.000343799591064,
-      "details": "Response time: 31.000s | Validation handled: True",
-      "timestamp": "2025-07-22T14:05:58.850121"
+      "response_time": 0.006408214569091797,
+      "details": "Response time: 0.006s | Validation handled: True | Performance OK: True",
+      "timestamp": "2025-07-22T15:02:16.967723"
     },
     {
-      "test_name": "Validation - Insufficient test_texts",
+      "test_name": "Performance Validation - Non-list test_texts",
       "passed": true,
-      "response_time": 31.00312042236328,
-      "details": "Response time: 31.003s | Validation handled: True",
-      "timestamp": "2025-07-22T14:06:29.853278"
+      "response_time": 0.006398677825927734,
+      "details": "Response time: 0.006s | Validation handled: True | Performance OK: True",
+      "timestamp": "2025-07-22T15:02:16.974155"
     },
     {
-      "test_name": "Validation - Invalid parameters",
+      "test_name": "Performance Validation - Insufficient test_texts",
       "passed": true,
-      "response_time": 30.988748788833618,
-      "details": "Response time: 30.989s | Validation handled: True",
-      "timestamp": "2025-07-22T14:07:00.842069"
+      "response_time": 0.0065174102783203125,
+      "details": "Response time: 0.007s | Validation handled: True | Performance OK: True",
+      "timestamp": "2025-07-22T15:02:16.980724"
     },
     {
-      "test_name": "Status Monitoring",
-      "passed": true,
-      "response_time": 31.007654666900635,
-      "details": "Non-existent ID test: 31.008s | 404 handled: True",
-      "timestamp": "2025-07-22T14:07:31.849805"
+      "test_name": "Performance Timeout Handling",
+      "passed": false,
+      "response_time": 0.0062596797943115234,
+      "details": "Timeout test: 0.006s | Handled: False | Performance OK: True",
+      "timestamp": "2025-07-22T15:02:16.987029"
+    },
+    {
+      "test_name": "Optimization Completion Test",
+      "passed": false,
+      "response_time": 0.007268667221069336,
+      "details": "Failed to start optimization: 0, message='Attempt to decode JSON with unexpected mimetype: ', url=URL('https://b214a97a-320b-41fd-b6d6-ff742674f4c6.preview.emergentagent.com/api/optimization/start')",
+      "timestamp": "2025-07-22T15:02:16.994390"
     },
     {
       "test_name": "Results Retrieval",
       "passed": true,
-      "response_time": 30.999776124954224,
-      "details": "Response time: 31.000s | 404 handled: True",
-      "timestamp": "2025-07-22T14:08:02.849658"
+      "response_time": 0.010449647903442383,
+      "details": "Response time: 0.010s | 404 handled: True",
+      "timestamp": "2025-07-22T15:02:17.004907"
     },
     {
       "test_name": "Optimization List",
       "passed": false,
-      "response_time": 31.002368688583374,
-      "details": "Response time: 31.002s | Error: ",
-      "timestamp": "2025-07-22T14:08:33.852122"
+      "response_time": 0.005292415618896484,
+      "details": "Response time: 0.005s | Error: 0, message='Attempt to decode JSON with unexpected mimetype: ', url=URL('https://b214a97a-320b-41fd-b6d6-ff742674f4c6.preview.emergentagent.com/api/optimization/list')",
+      "timestamp": "2025-07-22T15:02:17.010273"
     },
     {
       "test_name": "Parameter Application",
       "passed": true,
-      "response_time": 31.00198245048523,
-      "details": "Response time: 31.002s | 404 handled: True",
-      "timestamp": "2025-07-22T14:09:04.854181"
-    },
-    {
-      "test_name": "Ethical Engine Integration",
-      "passed": false,
-      "response_time": 30.996203184127808,
-      "details": "Response time: 30.996s | Integration failed: ",
-      "timestamp": "2025-07-22T14:09:35.850466"
+      "response_time": 0.006711483001708984,
+      "details": "Response time: 0.007s | 404 handled: True",
+      "timestamp": "2025-07-22T15:02:17.017081"
     }
   ],
   "summary": {
     "total_tests": 34,
-    "passed_tests": 9,
-    "failed_tests": 25,
-    "average_response_time": 31.019541660944622,
-    "success_rate": 26.47058823529412
+    "passed_tests": 8,
+    "failed_tests": 26,
+    "average_response_time": 41.00108242034912,
+    "success_rate": 23.52941176470588
   }
 }

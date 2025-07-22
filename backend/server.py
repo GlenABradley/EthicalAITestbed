@@ -89,15 +89,16 @@ from unified_configuration_manager import (
     UnifiedConfiguration
 )
 
-# 🎯 Import Bayesian cluster optimization system
-from bayesian_cluster_optimizer import (
-    BayesianClusterOptimizer,
-    OptimizationParameters,
-    OptimizationResult,
-    create_bayesian_optimizer,
-    OptimizationScale,
-    AcquisitionFunction
-)
+# 🎯 Import Bayesian cluster optimization system - LIGHTWEIGHT VERSION ONLY
+# Heavy bayesian_cluster_optimizer import removed to fix 26s startup delay
+# from bayesian_cluster_optimizer import (
+#     BayesianClusterOptimizer,
+#     OptimizationParameters,
+#     OptimizationResult,
+#     create_bayesian_optimizer,
+#     OptimizationScale,
+#     AcquisitionFunction
+# )
 from lightweight_bayesian_optimizer import LightweightOptimizationConfig, start_lightweight_optimization, get_optimization_status as get_lightweight_optimization_status, OptimizationStatus, list_all_optimizations, cleanup_completed_optimizations
 
 # 🎓 PROFESSOR'S NOTE: Backward Compatibility Imports
