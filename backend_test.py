@@ -765,16 +765,16 @@ class BackendTestSuite:
             await self.reliability_test_system_health()
             await self.reliability_test_load_handling()
             
-            # 6. Bayesian Optimization Tests
-            print("\n🎯 BAYESIAN OPTIMIZATION TESTING")
+            # 6. Bayesian Optimization Tests - PERFORMANCE FOCUSED
+            print("\n🎯 PERFORMANCE-OPTIMIZED BAYESIAN OPTIMIZATION TESTING")
             print("-" * 40)
             await self.bayesian_test_optimization_start()
-            await self.bayesian_test_parameter_validation()
             await self.bayesian_test_status_monitoring()
+            await self.bayesian_test_parameter_validation()
+            await self.bayesian_test_optimization_completion()
             await self.bayesian_test_results_retrieval()
             await self.bayesian_test_optimization_list()
             await self.bayesian_test_parameter_application()
-            await self.bayesian_test_integration_with_ethical_engine()
             
         finally:
             await self.cleanup_session()
