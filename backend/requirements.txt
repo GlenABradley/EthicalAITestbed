@@ -15,7 +15,8 @@ pandas>=2.2.0
 spacy
 textstat
 python-multipart>=0.0.9
-aiofiles
+aiofiles==23.2.1
+websockets==12.0
 pydantic>=2.6.4
 scipy>=1.11.0
 matplotlib
