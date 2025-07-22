@@ -921,7 +921,7 @@ def create_integrated_app():
             
             for idx, output in enumerate(model_outputs):
                 if evaluator:
-                    evaluation = evaluator.evaluate(output)
+                    evaluation = evaluator.evaluate_text(output)
                     
                     if evaluation.overall_ethical:
                         behavior_analysis["ethical_outputs"] += 1
