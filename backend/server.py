@@ -1497,7 +1497,7 @@ async def get_optimization_status(optimization_id: str):
     
     try:
         # Check if optimization exists in the lightweight system
-        optimization_result = get_optimization_status(optimization_id)
+        optimization_result = get_lightweight_optimization_status(optimization_id)
         
         if not optimization_result:
             raise HTTPException(
