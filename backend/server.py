@@ -827,7 +827,7 @@ def create_integrated_app():
     @api_router.post("/ml/training-guidance", response_model=MLGuidanceResponse)
     async def provide_training_guidance(request: MLTrainingBatchRequest):
         """
-        Provide real-time ethical guidance during ML training.
+        Provide real-time ethical guidance during ML training using advanced intervention logic.
         
         Analyzes training batches in real-time and provides guidance on whether
         to continue training, along with ethical adjustments and warnings.
@@ -837,8 +837,7 @@ def create_integrated_app():
             
             # Evaluate batch data
             batch_evaluations = []
-            total_violations = 0
-            ethical_examples = 0
+            ethical_scores = []
             warnings = []
             
             for idx, example in enumerate(request.batch_data):
@@ -846,63 +845,96 @@ def create_integrated_app():
                     evaluation = evaluator.evaluate_text(example)
                     batch_evaluations.append(evaluation)
                     
-                    if evaluation.overall_ethical:
-                        ethical_examples += 1
-                    else:
-                        total_violations += evaluation.minimal_violation_count
-                        if evaluation.minimal_violation_count > 3:
-                            warnings.append(f"Batch item {idx}: {evaluation.minimal_violation_count} violations detected")
+                    # Calculate ethical score based on autonomy dimensions
+                    autonomy_score = sum(evaluation.autonomy_dimensions.values()) / len(evaluation.autonomy_dimensions)
+                    ethical_scores.append(autonomy_score)
+                    
+                    # Check for severe violations
+                    if not evaluation.overall_ethical and evaluation.minimal_violation_count > 3:
+                        warnings.append(f"Batch item {idx}: {evaluation.minimal_violation_count} serious violations detected")
             
-            # Calculate ethical score for this batch
-            ethical_score = ethical_examples / max(len(request.batch_data), 1)
+            # Use advanced intervention evaluation
+            training_phase = TrainingPhase(request.training_step // 100 if request.training_step < 500 else "fine_tuning")
+            intervention_analysis = ml_ethics_engine.evaluate_training_intervention(
+                batch_evaluations, 
+                ethical_scores,
+                training_phase
+            )
             
-            # Determine if training should continue
-            continue_training = True
-            intervention_required = False
+            # Generate advanced training adjustments using the ML Ethics Engine
+            if ethical_scores:
+                avg_ethical_score = sum(ethical_scores) / len(ethical_scores)
+                
+                # Create a representative ML vector for the batch
+                sample_evaluation = batch_evaluations[0] if batch_evaluations else None
+                if sample_evaluation:
+                    ml_vectors = ml_ethics_engine.convert_evaluation_to_ml_vectors(
+                        sample_evaluation,
+                        dataset_type=DatasetType.UNCURATED,  # Assume uncurated for real-time batches
+                        training_phase=training_phase
+                    )
+                    
+                    training_adjustments = ml_ethics_engine.generate_training_adjustments(
+                        ml_vectors,
+                        avg_ethical_score,
+                        training_phase=training_phase,
+                        current_loss=request.loss_value,
+                        training_step=request.training_step
+                    )
+                    
+                    adjustments = training_adjustments.to_dict()
+                else:
+                    # Fallback adjustments
+                    adjustments = {
+                        "batch_weight": max(0.1, avg_ethical_score),
+                        "gradient_scaling": 0.5 + (0.5 * avg_ethical_score),
+                        "dropout_increase": 0.1 + (0.2 * (1.0 - avg_ethical_score)),
+                        "attention_focus": avg_ethical_score,
+                        "loss_reweighting": 1.0 + (2.0 * (1.0 - avg_ethical_score))
+                    }
+            else:
+                avg_ethical_score = 0.0
+                adjustments = {"error": "No evaluations available"}
             
-            # Decision logic based on ethical score and violations
-            if ethical_score < 0.3:
-                continue_training = False
-                intervention_required = True
-                warnings.append("CRITICAL: Batch ethical score too low - training halted")
-            elif ethical_score < 0.5:
-                warnings.append("WARNING: Low ethical score in batch - proceed with caution")
-            elif total_violations > len(request.batch_data) * 2:
-                warnings.append("WARNING: High violation density in batch")
+            # Combine warnings from intervention analysis
+            if "recommendations" in intervention_analysis:
+                warnings.extend(intervention_analysis["recommendations"])
             
-            # Generate training adjustments
-            adjustments = {
-                "batch_weight": max(0.1, ethical_score),  # Weight this batch by its ethical score
-                "gradient_scaling": 0.5 + (0.5 * ethical_score),  # Scale gradients based on ethics
-                "dropout_increase": 0.1 + (0.2 * (1.0 - ethical_score)),  # More dropout for unethical batches
-                "attention_focus": ethical_score,  # Focus attention on ethical content
-                "loss_reweighting": 1.0 + (2.0 * (1.0 - ethical_score))  # Increase loss for unethical content
-            }
-            
-            # Training step specific guidance
+            # Training step specific guidance with advanced logic
             if request.training_step > 0:
                 if request.loss_value and request.loss_value > 2.0:
                     warnings.append("High loss detected - ethical constraints may be too strict")
                 elif request.loss_value and request.loss_value < 0.1:
                     warnings.append("Very low loss - model may be overfitting to unethical patterns")
+                    
+                # Advanced step-based recommendations
+                if request.training_step > 1000 and avg_ethical_score < 0.6:
+                    warnings.append("Late training stage with low ethical score - consider early stopping")
+                elif request.training_step < 100 and avg_ethical_score < 0.4:
+                    warnings.append("Early training with very low ethical score - data filtering recommended")
             
             processing_time = time.time() - start_time
             
-            # Add processing time info to adjustments
-            adjustments["processing_time"] = processing_time
-            adjustments["evaluation_count"] = len(batch_evaluations)
+            # Add processing metadata to adjustments
+            adjustments.update({
+                "processing_time": processing_time,
+                "evaluation_count": len(batch_evaluations),
+                "intervention_analysis": intervention_analysis,
+                "batch_size": len(request.batch_data),
+                "training_phase_detected": training_phase.value
+            })
             
             return MLGuidanceResponse(
-                continue_training=continue_training,
-                ethical_score=ethical_score,
-                warnings=warnings,
+                continue_training=intervention_analysis.get("continue_training", True),
+                ethical_score=avg_ethical_score,
+                warnings=warnings[:10],  # Limit warnings to prevent response overflow
                 adjustments=adjustments,
-                intervention_required=intervention_required
+                intervention_required=intervention_analysis.get("intervention_required", False)
             )
             
         except Exception as e:
-            logger.error(f"ML training guidance failed: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"Training guidance failed: {str(e)}")
+            logger.error(f"Enhanced ML training guidance failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Enhanced training guidance failed: {str(e)}")
     
     @api_router.post("/ml/model-behavior-eval")
     async def evaluate_model_behavior(request: Dict[str, Any]):
