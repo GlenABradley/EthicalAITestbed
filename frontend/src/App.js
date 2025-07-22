@@ -154,7 +154,7 @@ function App() {
       // Parameters updated successfully
     })
     .catch(error => console.error('Parameter update error:', error));
-  };
+  }, [parameters]);
 
   // New functions for learning system
   const submitFeedback = (evaluationId, feedbackScore, userComment = '') => {
