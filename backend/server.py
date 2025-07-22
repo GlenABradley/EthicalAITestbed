@@ -110,6 +110,18 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
+# Global instance of ethical engine to avoid reinitialization
+_global_ethical_engine = None
+
+def get_cached_ethical_engine():
+    """Get or create a cached instance of the ethical engine."""
+    global _global_ethical_engine
+    if _global_ethical_engine is None:
+        from ethical_engine import EthicalEvaluator
+        logger.info("Initializing global ethical engine instance...")
+        _global_ethical_engine = EthicalEvaluator()
+        logger.info("✅ Global ethical engine initialized")
+    return _global_ethical_engine
 
 # 🔧 Load environment configuration
 ROOT_DIR = Path(__file__).parent
