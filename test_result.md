@@ -318,8 +318,9 @@ test_plan:
     - "Bayesian Optimization Status Monitoring"
     - "Bayesian Optimization Results Retrieval"
     - "Bayesian Optimization Parameter Validation"
+    - "Bayesian Optimization List Endpoint"
   test_all: false
-  test_priority: "bayesian_optimization_focus"
+  test_priority: "bayesian_optimization_critical"
 
 agent_communication:
   - agent: "testing"
