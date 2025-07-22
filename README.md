@@ -62,11 +62,11 @@ This version represents the culmination of exhaustive refactoring following Clea
 - **Citation System**: Framework for academic references supporting evaluations (structure exists, implementation needed)
 
 ### **🔬 Mathematical Rigor**
-- **Orthogonal Vector Analysis**: Gram-Schmidt orthogonalization for independent perspectives
-- **Vector Projections**: s_P(i,j) = x_{i:j} · p_P for precise scoring
-- **Confidence Scoring**: Statistical analysis of evaluation certainty
-- **Minimal Span Detection**: Efficient O(n²) dynamic programming
-- **Uncertainty Quantification**: Bootstrap variance for routing decisions
+- **Orthogonal Vector Analysis**: Gram-Schmidt orthogonalization framework for independent perspectives (mathematical structure needs implementation)
+- **Vector Projections**: s_P(i,j) = x_{i:j} · p_P mathematical framework for precise scoring (implementation needed)
+- **Confidence Scoring**: Statistical analysis framework for evaluation certainty (basic implementation exists, advanced statistics needed)
+- **Minimal Span Detection**: Efficient O(n²) dynamic programming framework (algorithm structure needs implementation)
+- **Uncertainty Quantification**: Bootstrap variance framework for routing decisions (statistical methods need implementation)
 
 ### **🏗️ Production Features**
 - **Authentication**: JWT-based security framework (structure exists, needs implementation)
