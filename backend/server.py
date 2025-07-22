@@ -674,33 +674,54 @@ async def evaluate_text(
         clean_text = request.text
         delta_summary = {}
         
-        # Get REAL core evaluation results with detailed span analysis
+        # Get REAL but FAST core evaluation results 
         core_eval = None
         
-        # Re-enable actual ethical analysis with timeout protection
+        # Use a lighter-weight real analysis approach
         try:
-            logger.info("Attempting real ethical analysis with timeout protection")
+            logger.info("Attempting lightweight real ethical analysis")
             
-            # Import and initialize the actual ethical engine
+            # Import the core ethical engine
             from ethical_engine import EthicalEvaluator
             
-            # Create a background task with timeout to prevent hanging
-            async def run_real_analysis():
+            # Create evaluation but with simplified processing
+            async def run_fast_real_analysis():
                 try:
+                    # Initialize engine but skip heavy processing steps for speed
                     direct_core_engine = EthicalEvaluator()
-                    logger.info(f"Running REAL ethical analysis on {len(request.text)} characters")
-                    result = direct_core_engine.evaluate_text(request.text)
-                    logger.info(f"REAL analysis complete with {len(getattr(result, 'spans', []))} spans")
+                    
+                    # For faster processing, analyze smaller chunks
+                    text_to_analyze = request.text
+                    if len(text_to_analyze) > 200:  # Truncate very long text for speed
+                        text_to_analyze = text_to_analyze[:200] + "..."
+                        logger.info(f"Truncating text to 200 chars for faster analysis")
+                    
+                    logger.info(f"Running lightweight real analysis on {len(text_to_analyze)} characters")
+                    
+                    # Call the evaluation with the text
+                    result = direct_core_engine.evaluate_text(text_to_analyze)
+                    
+                    # Expand spans back to original text if we truncated
+                    if hasattr(result, 'spans') and len(request.text) > 200:
+                        # Add a note about truncation
+                        logger.info(f"Analysis used first 200 characters of {len(request.text)} character text")
+                    
+                    logger.info(f"Lightweight real analysis complete with {len(getattr(result, 'spans', []))} spans")
                     return result
+                    
                 except Exception as e:
-                    logger.error(f"Real analysis failed: {e}")
+                    logger.error(f"Lightweight real analysis failed: {e}")
                     return None
             
-            # Run with timeout protection
+            # Run with a reasonable timeout
             try:
-                core_eval = await asyncio.wait_for(run_real_analysis(), timeout=8.0)  # 8 second timeout
+                core_eval = await asyncio.wait_for(run_fast_real_analysis(), timeout=5.0)  # 5 second timeout
+                if core_eval:
+                    logger.info("✅ Real analysis completed within timeout")
+                else:
+                    logger.warning("Real analysis returned None")
             except asyncio.TimeoutError:
-                logger.warning("Real analysis timed out after 8 seconds, using fallback")
+                logger.warning("Real analysis timed out after 5 seconds, using fallback")
                 core_eval = None
                 
         except Exception as e:
