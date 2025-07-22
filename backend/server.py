@@ -720,9 +720,11 @@ async def evaluate_text(
                 logger.error(f"❌ Direct engine also failed: {e2}")
                 core_eval = None
         
-        # If we have detailed core evaluation with spans
+        # If we have FULL ethical evaluation with comprehensive spans
         if core_eval and hasattr(core_eval, 'spans') and core_eval.spans:
-            # Convert spans to frontend-compatible format
+            logger.info("🎯 Processing FULL evaluation results with comprehensive span analysis")
+            
+            # Convert comprehensive spans to frontend-compatible format
             spans = []
             minimal_spans = []
             
@@ -747,7 +749,7 @@ async def evaluate_text(
             
             evaluation_details = {
                 "overall_ethical": core_eval.overall_ethical,
-                "processing_time": result.processing_time,
+                "processing_time": getattr(core_eval, 'processing_time', result.processing_time),
                 "minimal_violation_count": len(minimal_spans),
                 "spans": spans,
                 "minimal_spans": minimal_spans,
@@ -761,9 +763,9 @@ async def evaluate_text(
                 "changes_made": len(minimal_spans) > 0
             }
             
-            logger.info(f"Created detailed evaluation with {len(spans)} spans, {len(minimal_spans)} violations")
+            logger.info(f"🏆 Full evaluation processed: {len(spans)} spans, {len(minimal_spans)} violations")
         
-        # Fallback: if no detailed analysis, create mock structure for frontend compatibility
+        # Fallback: create comprehensive mock for unsupported cases
         if not evaluation_details:
             logger.info("Creating mock detailed evaluation structure for frontend compatibility")
             
