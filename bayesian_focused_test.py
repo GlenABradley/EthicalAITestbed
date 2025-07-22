@@ -26,7 +26,7 @@ from datetime import datetime
 from typing import Dict, Any, Tuple
 
 # Backend URL from environment
-BACKEND_URL = "https://b214a97a-320b-41fd-b6d6-ff742674f4c6.preview.emergentagent.com"
+BACKEND_URL = "https://efb05ca6-d049-4715-907b-1090362ca79b.preview.emergentagent.com"
 API_BASE = f"{BACKEND_URL}/api"
 
 class BayesianOptimizationTester:

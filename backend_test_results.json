@@ -182,7 +182,7 @@
       "test_name": "Performance-Optimized Start",
       "passed": false,
       "response_time": 0.006597995758056641,
-      "details": "Response time: 0.007s | Error: 0, message='Attempt to decode JSON with unexpected mimetype: ', url=URL('https://b214a97a-320b-41fd-b6d6-ff742674f4c6.preview.emergentagent.com/api/optimization/start') | Performance target met (< 5s): True",
+      "details": "Response time: 0.007s | Error: 0, message='Attempt to decode JSON with unexpected mimetype: ', url=URL('https://efb05ca6-d049-4715-907b-1090362ca79b.preview.emergentagent.com/api/optimization/start') | Performance target met (< 5s): True",
       "timestamp": "2025-07-22T15:02:16.949428"
     },
     {
@@ -224,7 +224,7 @@
       "test_name": "Optimization Completion Test",
       "passed": false,
       "response_time": 0.007268667221069336,
-      "details": "Failed to start optimization: 0, message='Attempt to decode JSON with unexpected mimetype: ', url=URL('https://b214a97a-320b-41fd-b6d6-ff742674f4c6.preview.emergentagent.com/api/optimization/start')",
+      "details": "Failed to start optimization: 0, message='Attempt to decode JSON with unexpected mimetype: ', url=URL('https://efb05ca6-d049-4715-907b-1090362ca79b.preview.emergentagent.com/api/optimization/start')",
       "timestamp": "2025-07-22T15:02:16.994390"
     },
     {
@@ -238,7 +238,7 @@
       "test_name": "Optimization List",
       "passed": false,
       "response_time": 0.005292415618896484,
-      "details": "Response time: 0.005s | Error: 0, message='Attempt to decode JSON with unexpected mimetype: ', url=URL('https://b214a97a-320b-41fd-b6d6-ff742674f4c6.preview.emergentagent.com/api/optimization/list')",
+      "details": "Response time: 0.005s | Error: 0, message='Attempt to decode JSON with unexpected mimetype: ', url=URL('https://efb05ca6-d049-4715-907b-1090362ca79b.preview.emergentagent.com/api/optimization/list')",
       "timestamp": "2025-07-22T15:02:17.010273"
     },
     {
