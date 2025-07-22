@@ -49,19 +49,22 @@ This version implements a refactored architecture with clean separation of conce
 
 ## System Architecture
 
-### Backend Components
+**Complete Structure:** See [FILELIST.md](./FILELIST.md) for comprehensive file listing and navigation guide.
+
+### Core Backend Components (Simplified View)
 ```
 /backend/
-├── unified_ethical_orchestrator.py      # Central coordination component
-├── unified_configuration_manager.py     # Configuration management
-├── server.py                           # FastAPI application
-├── enhanced_ethics_pipeline.py          # Multi-layer analysis pipeline
-├── knowledge_integration_layer.py       # External knowledge framework
-├── realtime_streaming_engine.py         # WebSocket streaming
-└── production_features.py               # Authentication and monitoring
+├── server.py                           # Main FastAPI application entry
+├── ethical_engine.py                   # Core ethical evaluation logic
+├── unified_ethical_orchestrator.py     # Central coordination component
+├── bayesian_cluster_optimizer.py       # Bayesian optimization (heavy)
+├── lightweight_bayesian_optimizer.py   # Bayesian optimization (lightweight)
+├── enhanced_ethics_pipeline.py         # Multi-layer analysis pipeline
+├── realtime_streaming_engine.py        # WebSocket streaming
+└── production_features.py              # Authentication and monitoring
 ```
 
-### Frontend Components
+### Core Frontend Components (Simplified View)
 ```
 /frontend/src/
 ├── App.js                              # Main React application
