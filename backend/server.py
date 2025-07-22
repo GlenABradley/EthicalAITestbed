@@ -61,6 +61,11 @@ from concurrent.futures import ThreadPoolExecutor
 # Import existing ethical evaluation system
 from ethical_engine import EthicalEvaluator, EthicalParameters, EthicalEvaluation, create_learning_entry_async
 
+# ML Ethics Integration imports
+import json
+import numpy as np
+from typing import Union
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
