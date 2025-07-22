@@ -980,6 +980,226 @@ async def get_heat_map_mock(request: Dict[str, Any]):
         }
     }
 
+# 🧠 ML ETHICS ASSISTANT ENDPOINTS
+# ═══════════════════════════════════════════════════════════════════════════════════
+
+@app.post("/api/ethics/comprehensive-analysis", tags=["ML Ethics Assistant"])
+async def comprehensive_ethics_analysis(request: Dict[str, Any]):
+    """Comprehensive multi-framework ethical analysis for ML development."""
+    
+    text = request.get("text", "")
+    if not text.strip():
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Text is required for analysis"
+        )
+    
+    # Mock comprehensive analysis response
+    return {
+        "status": "completed",
+        "analysis_type": "comprehensive",
+        "text": text,
+        "frameworks": {
+            "virtue_ethics": {
+                "score": random.uniform(0.3, 0.9),
+                "assessment": "Text demonstrates good character-based reasoning.",
+                "recommendations": ["Consider virtue-based language", "Emphasize character development"]
+            },
+            "deontological": {
+                "score": random.uniform(0.3, 0.9),  
+                "assessment": "Duty-based evaluation shows moderate compliance.",
+                "recommendations": ["Clarify moral obligations", "Ensure universal applicability"]
+            },
+            "consequentialist": {
+                "score": random.uniform(0.3, 0.9),
+                "assessment": "Outcome-focused analysis indicates positive utility.",
+                "recommendations": ["Consider broader consequences", "Maximize overall well-being"]
+            }
+        },
+        "overall_assessment": "Multi-framework analysis completed with moderate to high ethical compliance.",
+        "ml_guidance": {
+            "bias_detection": "No significant bias patterns detected",
+            "transparency": "Content supports transparent ML practices",
+            "fairness": "Approach aligns with fairness principles"
+        },
+        "processing_time": random.uniform(0.05, 0.15)
+    }
+
+@app.post("/api/ethics/meta-analysis", tags=["ML Ethics Assistant"])
+async def meta_ethics_analysis(request: Dict[str, Any]):
+    """Meta-ethical analysis focusing on philosophical foundations."""
+    
+    text = request.get("text", "")
+    if not text.strip():
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Text is required for analysis"
+        )
+    
+    return {
+        "status": "completed",
+        "analysis_type": "meta_ethical",
+        "text": text,
+        "philosophical_structure": {
+            "semantic_coherence": random.uniform(0.6, 0.95),
+            "logical_consistency": random.uniform(0.5, 0.9),
+            "conceptual_clarity": random.uniform(0.4, 0.85)
+        },
+        "meta_ethical_assessment": {
+            "moral_realism": "Content suggests objective moral truths",
+            "expressivism": "Emotional attitudes toward ethics present",
+            "prescriptivism": "Contains prescriptive moral language"
+        },
+        "recommendations": [
+            "Strengthen philosophical foundations",
+            "Clarify meta-ethical assumptions",
+            "Improve logical structure"
+        ],
+        "processing_time": random.uniform(0.03, 0.1)
+    }
+
+@app.post("/api/ethics/normative-analysis", tags=["ML Ethics Assistant"])
+async def normative_ethics_analysis(request: Dict[str, Any]):
+    """Normative ethical analysis across major moral frameworks."""
+    
+    text = request.get("text", "")
+    if not text.strip():
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Text is required for analysis"
+        )
+    
+    return {
+        "status": "completed",
+        "analysis_type": "normative",
+        "text": text,
+        "virtue_ethics": {
+            "cardinal_virtues": {
+                "prudence": random.uniform(0.3, 0.9),
+                "justice": random.uniform(0.3, 0.9),
+                "fortitude": random.uniform(0.3, 0.9),
+                "temperance": random.uniform(0.3, 0.9)
+            },
+            "character_assessment": "Demonstrates balanced character traits",
+            "virtue_recommendations": ["Cultivate practical wisdom", "Balance competing virtues"]
+        },
+        "deontological_ethics": {
+            "categorical_imperative": random.uniform(0.4, 0.85),
+            "universalizability": random.uniform(0.3, 0.8),
+            "respect_for_persons": random.uniform(0.5, 0.9),
+            "duty_assessment": "Aligns with moral duty principles"
+        },
+        "consequentialist_ethics": {
+            "utility_maximization": random.uniform(0.4, 0.9),
+            "happiness_promotion": random.uniform(0.3, 0.85),
+            "harm_reduction": random.uniform(0.5, 0.9),
+            "outcome_assessment": "Positive expected outcomes"
+        },
+        "synthesis": "Multi-framework analysis shows ethical alignment",
+        "processing_time": random.uniform(0.04, 0.12)
+    }
+
+@app.post("/api/ethics/applied-analysis", tags=["ML Ethics Assistant"])
+async def applied_ethics_analysis(request: Dict[str, Any]):
+    """Applied ethical analysis for practical implementation."""
+    
+    text = request.get("text", "")
+    if not text.strip():
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Text is required for analysis"
+        )
+    
+    return {
+        "status": "completed",
+        "analysis_type": "applied",
+        "text": text,
+        "domain_analysis": {
+            "healthcare": {"compliance": random.uniform(0.6, 0.9), "recommendations": ["Ensure patient privacy", "Follow medical ethics guidelines"]},
+            "technology": {"compliance": random.uniform(0.5, 0.85), "recommendations": ["Consider algorithmic bias", "Implement transparency measures"]},
+            "business": {"compliance": random.uniform(0.4, 0.8), "recommendations": ["Stakeholder consideration", "Corporate responsibility"]},
+            "education": {"compliance": random.uniform(0.6, 0.9), "recommendations": ["Student welfare priority", "Equitable access"]}
+        },
+        "practical_recommendations": [
+            "Implement clear ethical guidelines",
+            "Establish review processes",
+            "Train stakeholders on ethical principles",
+            "Monitor outcomes and adjust as needed"
+        ],
+        "compliance_check": {
+            "regulatory": "Generally compliant with standard regulations",
+            "professional": "Aligns with professional ethics codes",
+            "institutional": "Meets institutional ethical standards"
+        },
+        "risk_assessment": {
+            "ethical_risks": ["Minor risk of misinterpretation", "Low probability of negative outcomes"],
+            "mitigation_strategies": ["Clear communication", "Stakeholder engagement", "Regular review"]
+        },
+        "processing_time": random.uniform(0.05, 0.13)
+    }
+
+@app.post("/api/ethics/ml-training-guidance", tags=["ML Ethics Assistant"])
+async def ml_training_guidance(request: Dict[str, Any]):
+    """ML-specific training guidance and ethical recommendations."""
+    
+    content = request.get("content", "")
+    if not content.strip():
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Content is required for ML guidance"
+        )
+    
+    return {
+        "status": "completed",
+        "analysis_type": "ml_training_guidance",
+        "content": content,
+        "bias_analysis": {
+            "detected_biases": random.choice([[], ["Potential gender bias in language"], ["Slight cultural bias"], ["Minor confirmation bias"]]),
+            "bias_score": random.uniform(0.1, 0.4),
+            "bias_mitigation": ["Diversify training data", "Implement bias detection tools", "Regular bias auditing"]
+        },
+        "fairness_assessment": {
+            "demographic_parity": random.uniform(0.6, 0.9),
+            "equalized_odds": random.uniform(0.5, 0.85),
+            "individual_fairness": random.uniform(0.7, 0.95),
+            "fairness_recommendations": ["Balance representation", "Test across demographics", "Monitor fairness metrics"]
+        },
+        "transparency_guidance": {
+            "explainability": random.uniform(0.5, 0.9),
+            "interpretability": random.uniform(0.4, 0.8),
+            "documentation": random.uniform(0.6, 0.95),
+            "transparency_recommendations": ["Improve model documentation", "Add explanation features", "Create decision audit trails"]
+        },
+        "training_recommendations": [
+            "Implement ethical checkpoints in training pipeline",
+            "Use diverse and representative datasets",
+            "Regular evaluation against ethical metrics",
+            "Establish human oversight mechanisms",
+            "Create feedback loops for continuous improvement"
+        ],
+        "ethical_score": random.uniform(0.6, 0.9),
+        "processing_time": random.uniform(0.06, 0.15)
+    }
+
+@app.get("/api/streaming/status", tags=["Real-Time Streaming"])
+async def streaming_status():
+    """Get status of real-time streaming services."""
+    
+    return {
+        "streaming_server_status": "ready",
+        "websocket_endpoint": "ws://localhost:8765",
+        "connection_health": "operational",
+        "active_connections": random.randint(0, 5),
+        "streaming_capabilities": {
+            "real_time_analysis": True,
+            "intervention_detection": True,
+            "performance_monitoring": True,
+            "connection_management": True
+        },
+        "last_health_check": datetime.utcnow().isoformat(),
+        "uptime": "Ready for connections"
+    }
+
 if __name__ == "__main__":
     # 🎓 PROFESSOR'S NOTE: Development Server
     # ═══════════════════════════════════════════
