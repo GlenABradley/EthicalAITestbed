@@ -1118,12 +1118,11 @@ async def comprehensive_ethics_analysis(request: Dict[str, Any]):
         )
     
     try:
-        # Use the real ethical engine for comprehensive analysis
-        from ethical_engine import EthicalEvaluator
-        ethical_engine = EthicalEvaluator()
+        # Use the cached ethical engine for comprehensive analysis
+        cached_engine = get_cached_ethical_engine()
         
-        # Run real ethical evaluation
-        evaluation = ethical_engine.evaluate_text(text)
+        # Run real ethical evaluation using cached engine
+        evaluation = cached_engine.evaluate_text(text)
         
         # Extract real framework scores from the evaluation
         virtue_score = getattr(evaluation, 'virtue_ethical_score', 0.5)
