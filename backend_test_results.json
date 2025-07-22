@@ -1,0 +1,187 @@
+{
+  "smoke_tests": [
+    {
+      "test_name": "Health Endpoint",
+      "passed": true,
+      "response_time": 0.13431143760681152,
+      "details": "Response time: 0.134s | Status: healthy | Orchestrator: True | Database: True",
+      "timestamp": "2025-07-22T11:42:54.156696"
+    },
+    {
+      "test_name": "Parameters Endpoint",
+      "passed": true,
+      "response_time": 0.012085914611816406,
+      "details": "Response time: 0.012s | Parameters count: 10 | Has thresholds: True",
+      "timestamp": "2025-07-22T11:42:54.168893"
+    },
+    {
+      "test_name": "Evaluate Endpoint",
+      "passed": true,
+      "response_time": 0.01239323616027832,
+      "details": "Response time: 0.012s | Ethical: True | Confidence: 0.600 | Request ID: 33e3094c...",
+      "timestamp": "2025-07-22T11:42:54.181414"
+    },
+    {
+      "test_name": "Heat Map Endpoint",
+      "passed": true,
+      "response_time": 0.051505088806152344,
+      "details": "Response time: 0.052s | Evaluations: 4 | Text length: 48",
+      "timestamp": "2025-07-22T11:42:54.233087"
+    }
+  ],
+  "performance_tests": [
+    {
+      "test_name": "Response Time - Short text",
+      "passed": true,
+      "response_time": 0.013962030410766602,
+      "details": "Text length: 12 chars | Response time: 0.014s | Confidence: 0.600",
+      "timestamp": "2025-07-22T11:42:54.247191"
+    },
+    {
+      "test_name": "Response Time - Medium text",
+      "passed": true,
+      "response_time": 0.01009988784790039,
+      "details": "Text length: 136 chars | Response time: 0.010s | Confidence: 0.600",
+      "timestamp": "2025-07-22T11:42:54.257381"
+    },
+    {
+      "test_name": "Response Time - Long text",
+      "passed": true,
+      "response_time": 0.051175594329833984,
+      "details": "Text length: 1699 chars | Response time: 0.051s | Confidence: 0.600",
+      "timestamp": "2025-07-22T11:42:54.308651"
+    },
+    {
+      "test_name": "Average Response Time",
+      "passed": true,
+      "response_time": 0.02507917086283366,
+      "details": "Average response time: 0.025s | Claimed: 0.055s",
+      "timestamp": "2025-07-22T11:42:54.308729"
+    },
+    {
+      "test_name": "Concurrent Requests",
+      "passed": true,
+      "response_time": 0.06727123260498047,
+      "details": "5 concurrent requests | 5/5 successful | Total time: 0.067s",
+      "timestamp": "2025-07-22T11:42:54.376062"
+    }
+  ],
+  "content_tests": [
+    {
+      "test_name": "Diverse Content Test 1",
+      "passed": true,
+      "response_time": 0.007740497589111328,
+      "details": "Text 1 | Response time: 0.008s | Ethical: True | Confidence: 0.600",
+      "timestamp": "2025-07-22T11:42:54.383906"
+    },
+    {
+      "test_name": "Diverse Content Test 2",
+      "passed": true,
+      "response_time": 0.04821038246154785,
+      "details": "Text 2 | Response time: 0.048s | Ethical: True | Confidence: 0.600",
+      "timestamp": "2025-07-22T11:42:54.432214"
+    },
+    {
+      "test_name": "Diverse Content Test 3",
+      "passed": true,
+      "response_time": 0.008410930633544922,
+      "details": "Text 3 | Response time: 0.008s | Ethical: True | Confidence: 0.600",
+      "timestamp": "2025-07-22T11:42:54.440716"
+    },
+    {
+      "test_name": "Diverse Content Test 4",
+      "passed": true,
+      "response_time": 0.04912519454956055,
+      "details": "Text 4 | Response time: 0.049s | Ethical: True | Confidence: 0.600",
+      "timestamp": "2025-07-22T11:42:54.489922"
+    },
+    {
+      "test_name": "Diverse Content Test 5",
+      "passed": true,
+      "response_time": 0.00858616828918457,
+      "details": "Text 5 | Response time: 0.009s | Ethical: True | Confidence: 0.600",
+      "timestamp": "2025-07-22T11:42:54.498617"
+    },
+    {
+      "test_name": "Edge Case - Empty text",
+      "passed": true,
+      "response_time": 0.008019208908081055,
+      "details": "Response time: 0.008s | Text length: 0 | Expected validation failure",
+      "timestamp": "2025-07-22T11:42:54.506752"
+    },
+    {
+      "test_name": "Edge Case - Single character",
+      "passed": true,
+      "response_time": 0.007918119430541992,
+      "details": "Response time: 0.008s | Text length: 1 | Handled gracefully",
+      "timestamp": "2025-07-22T11:42:54.514743"
+    },
+    {
+      "test_name": "Edge Case - Special characters",
+      "passed": true,
+      "response_time": 0.0494692325592041,
+      "details": "Response time: 0.049s | Text length: 26 | Handled gracefully",
+      "timestamp": "2025-07-22T11:42:54.564312"
+    },
+    {
+      "test_name": "Edge Case - Very long text",
+      "passed": true,
+      "response_time": 0.008219242095947266,
+      "details": "Response time: 0.008s | Text length: 10000 | Handled gracefully",
+      "timestamp": "2025-07-22T11:42:54.572608"
+    },
+    {
+      "test_name": "Edge Case - Unicode text",
+      "passed": true,
+      "response_time": 0.007877349853515625,
+      "details": "Response time: 0.008s | Text length: 25 | Handled gracefully",
+      "timestamp": "2025-07-22T11:42:54.580555"
+    }
+  ],
+  "integration_tests": [
+    {
+      "test_name": "Parameter Updates",
+      "passed": true,
+      "response_time": 0.0561528205871582,
+      "details": "Get: 0.008s | Update: 0.048s | Both operations successful",
+      "timestamp": "2025-07-22T11:42:54.636858"
+    },
+    {
+      "test_name": "Learning Statistics",
+      "passed": true,
+      "response_time": 0.007164955139160156,
+      "details": "Response time: 0.007s | Total evaluations: 0 | Learning enabled: True | Has metrics: True",
+      "timestamp": "2025-07-22T11:42:54.644124"
+    },
+    {
+      "test_name": "Error Handling",
+      "passed": true,
+      "response_time": 0.008154630661010742,
+      "details": "Response time: 0.008s | Graceful error handling: True",
+      "timestamp": "2025-07-22T11:42:54.652376"
+    }
+  ],
+  "reliability_tests": [
+    {
+      "test_name": "System Health Check",
+      "passed": true,
+      "response_time": 0.008500814437866211,
+      "details": "Response time: 0.009s | Status: healthy | Orchestrator: True | Database: True",
+      "timestamp": "2025-07-22T11:42:54.661004"
+    },
+    {
+      "test_name": "Load Handling",
+      "passed": true,
+      "response_time": 0.07563638687133789,
+      "details": "10 requests | 10/10 successful | Success rate: 100.0% | Total time: 0.076s",
+      "timestamp": "2025-07-22T11:42:54.736707"
+    }
+  ],
+  "summary": {
+    "total_tests": 24,
+    "passed_tests": 24,
+    "failed_tests": 0,
+    "average_response_time": 0.02507917086283366,
+    "success_rate": 100.0
+  }
+}
