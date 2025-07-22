@@ -572,6 +572,404 @@ def create_integrated_app():
             }
         }
     
+    # ============================================================================
+    # ML ETHICS API - PHASE 1 IMPLEMENTATION
+    # ============================================================================
+    
+    # ML Ethics Request/Response Models
+    class MLTrainingDataRequest(BaseModel):
+        """Request model for ML training data evaluation."""
+        training_data: List[str] = Field(..., description="List of training examples to evaluate")
+        dataset_type: str = Field(default="uncurated", description="Type of dataset: 'curated' or 'uncurated'")
+        model_type: str = Field(default="general", description="Type of model being trained")
+        training_phase: str = Field(default="initial", description="Training phase: 'initial', 'fine-tuning', 'reinforcement'")
+        
+    class MLEthicalVectorResponse(BaseModel):
+        """Response model for ML ethical vectors."""
+        ethical_vectors: Dict[str, List[float]] = Field(..., description="Ethical guidance vectors for ML")
+        training_adjustments: Dict[str, Union[float, List[float]]] = Field(..., description="Training parameter adjustments")
+        recommendations: List[str] = Field(..., description="Ethical recommendations for training")
+        risk_assessment: Dict[str, float] = Field(..., description="Risk scores for different ethical dimensions")
+        
+    class MLTrainingBatchRequest(BaseModel):
+        """Request model for real-time training batch evaluation."""
+        batch_data: List[str] = Field(..., description="Current training batch data")
+        model_state: Optional[Dict[str, Any]] = Field(default=None, description="Current model state information")
+        training_step: int = Field(default=0, description="Current training step")
+        loss_value: Optional[float] = Field(default=None, description="Current loss value")
+        
+    class MLGuidanceResponse(BaseModel):
+        """Response model for ML training guidance."""
+        continue_training: bool = Field(..., description="Whether to continue training with this batch")
+        ethical_score: float = Field(..., description="Overall ethical score (0-1)")
+        warnings: List[str] = Field(..., description="Ethical warnings for this batch")
+        adjustments: Dict[str, Any] = Field(..., description="Recommended adjustments")
+        intervention_required: bool = Field(..., description="Whether immediate intervention is needed")
+        
+    # ML Ethics API Endpoints
+    
+    @api_router.post("/ml/training-data-eval", response_model=Dict[str, Any])
+    async def evaluate_training_data(request: MLTrainingDataRequest):
+        """
+        Evaluate training data for ethical implications.
+        
+        This endpoint analyzes datasets for ethical issues before ML training,
+        providing guidance for data curation and model training decisions.
+        """
+        try:
+            start_time = time.time()
+            
+            # Evaluate each training example
+            evaluations = []
+            ethical_issues = []
+            risk_scores = {
+                "autonomy_violations": 0.0,
+                "bias_potential": 0.0,
+                "harm_risk": 0.0,
+                "fairness_concerns": 0.0,
+                "transparency_issues": 0.0
+            }
+            
+            for idx, example in enumerate(request.training_data):
+                if evaluator:
+                    # Use existing evaluator for each example
+                    evaluation_result = evaluator.evaluate(example)
+                    
+                    evaluations.append({
+                        "example_index": idx,
+                        "text": example[:100] + "..." if len(example) > 100 else example,
+                        "ethical_status": evaluation_result.overall_ethical,
+                        "violation_count": evaluation_result.minimal_violation_count,
+                        "autonomy_score": sum(evaluation_result.autonomy_dimensions.values()) / len(evaluation_result.autonomy_dimensions),
+                        "ethical_principles": evaluation_result.ethical_principles,
+                        "recommendations": []
+                    })
+                    
+                    # Accumulate risk scores
+                    if not evaluation_result.overall_ethical:
+                        ethical_issues.append(f"Example {idx}: {evaluation_result.minimal_violation_count} violations")
+                        risk_scores["harm_risk"] += 0.2
+                        
+                    # Analyze for ML-specific risks
+                    text_lower = example.lower()
+                    if any(word in text_lower for word in ["bias", "discriminat", "unfair"]):
+                        risk_scores["bias_potential"] += 0.3
+                    if any(word in text_lower for word in ["manipulat", "deceiv", "mislead"]):
+                        risk_scores["autonomy_violations"] += 0.25
+                    if any(word in text_lower for word in ["opaque", "hidden", "secret"]):
+                        risk_scores["transparency_issues"] += 0.15
+                        
+            # Normalize risk scores
+            data_count = max(len(request.training_data), 1)
+            for key in risk_scores:
+                risk_scores[key] = min(risk_scores[key] / data_count, 1.0)
+                
+            # Generate recommendations based on dataset type and risk scores
+            recommendations = []
+            if request.dataset_type == "uncurated":
+                recommendations.append("Consider additional curation for uncurated dataset")
+                if risk_scores["bias_potential"] > 0.3:
+                    recommendations.append("High bias risk detected - implement bias mitigation techniques")
+                if risk_scores["harm_risk"] > 0.4:
+                    recommendations.append("Significant harm risk - consider filtering harmful examples")
+            
+            if risk_scores["autonomy_violations"] > 0.2:
+                recommendations.append("Autonomy violations detected - review examples for manipulation patterns")
+                
+            if not recommendations:
+                recommendations.append("Dataset appears ethically sound for training")
+                
+            processing_time = time.time() - start_time
+            
+            return {
+                "dataset_analysis": {
+                    "total_examples": len(request.training_data),
+                    "ethical_examples": sum(1 for ev in evaluations if ev["ethical_status"]),
+                    "problematic_examples": len(ethical_issues),
+                    "dataset_type": request.dataset_type,
+                    "overall_ethical_score": sum(1 for ev in evaluations if ev["ethical_status"]) / len(evaluations) if evaluations else 0.0
+                },
+                "risk_assessment": risk_scores,
+                "recommendations": recommendations,
+                "ethical_issues": ethical_issues[:10],  # Limit to first 10 issues
+                "sample_evaluations": evaluations[:5],  # Sample of evaluations
+                "processing_time": round(processing_time, 3),
+                "timestamp": datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"ML training data evaluation failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Training data evaluation failed: {str(e)}")
+    
+    @api_router.post("/ml/ethical-vectors", response_model=MLEthicalVectorResponse)
+    async def generate_ethical_vectors(request: MLTrainingDataRequest):
+        """
+        Generate ethical guidance vectors for ML training.
+        
+        Converts ethical evaluations into actionable vectors that can guide
+        ML model training, loss functions, and behavioral adjustments.
+        """
+        try:
+            start_time = time.time()
+            
+            # Initialize vector collections
+            autonomy_vectors = []
+            harm_prevention_vectors = []
+            fairness_vectors = []
+            transparency_vectors = []
+            
+            # Evaluate training data and extract ethical vectors
+            for example in request.training_data:
+                if evaluator:
+                    evaluation = evaluator.evaluate(example)
+                    
+                    # Convert autonomy dimensions to vectors (D1-D5)
+                    autonomy_dim_values = list(evaluation.autonomy_dimensions.values())
+                    autonomy_vectors.append(autonomy_dim_values)
+                    
+                    # Generate harm prevention vectors based on ethical principles
+                    harm_vector = [
+                        1.0 - evaluation.ethical_principles.get("non_aggression", 1.0),
+                        1.0 - evaluation.ethical_principles.get("harm_prevention", 1.0),
+                        evaluation.ethical_principles.get("safety", 0.0)
+                    ]
+                    harm_prevention_vectors.append(harm_vector)
+                    
+                    # Fairness vectors based on bias detection
+                    fairness_vector = [
+                        evaluation.ethical_principles.get("fairness", 0.5),
+                        evaluation.ethical_principles.get("equality", 0.5),
+                        1.0 - evaluation.ethical_principles.get("discrimination", 0.0)
+                    ]
+                    fairness_vectors.append(fairness_vector)
+                    
+                    # Transparency vectors
+                    transparency_vector = [
+                        evaluation.ethical_principles.get("transparency", 0.5),
+                        evaluation.ethical_principles.get("explainability", 0.5),
+                        evaluation.ethical_principles.get("openness", 0.5)
+                    ]
+                    transparency_vectors.append(transparency_vector)
+            
+            # Average vectors across all examples
+            def average_vectors(vector_list):
+                if not vector_list:
+                    return [0.0]
+                return [sum(col) / len(vector_list) for col in zip(*vector_list)]
+            
+            avg_autonomy = average_vectors(autonomy_vectors)
+            avg_harm_prevention = average_vectors(harm_prevention_vectors) 
+            avg_fairness = average_vectors(fairness_vectors)
+            avg_transparency = average_vectors(transparency_vectors)
+            
+            # Calculate training adjustments based on ethical analysis
+            ethical_score_avg = sum(len([v for v in vec if v > 0.5]) for vec in autonomy_vectors) / max(len(autonomy_vectors), 1)
+            
+            training_adjustments = {
+                "loss_function_modifier": 0.1 + (0.3 * (1.0 - ethical_score_avg)),  # Increase loss weight for unethical content
+                "gradient_steering": avg_autonomy,  # Use autonomy vectors for gradient adjustment
+                "attention_weights": avg_transparency,  # Focus attention on transparent content
+                "regularization_strength": 0.05 + (0.2 * (1.0 - ethical_score_avg)),  # Stronger regularization for problematic data
+                "learning_rate_modifier": max(0.5, 1.0 - (0.5 * (1.0 - ethical_score_avg)))  # Reduce learning rate for unethical examples
+            }
+            
+            # Generate recommendations
+            recommendations = []
+            if ethical_score_avg < 0.6:
+                recommendations.append(f"Dataset ethical score is {ethical_score_avg:.2f} - consider additional ethical filtering")
+            if request.training_phase == "fine-tuning":
+                recommendations.append("Fine-tuning phase: Apply stronger ethical constraints")
+            if request.dataset_type == "uncurated":
+                recommendations.append("Uncurated dataset: Implement continuous ethical monitoring during training")
+                
+            recommendations.append("Use provided vectors to guide training towards ethical behavior")
+            
+            # Risk assessment
+            risk_assessment = {
+                "autonomy_risk": 1.0 - (sum(avg_autonomy) / max(len(avg_autonomy), 1)),
+                "harm_risk": sum(avg_harm_prevention) / max(len(avg_harm_prevention), 1),
+                "bias_risk": 1.0 - (sum(avg_fairness) / max(len(avg_fairness), 1)),
+                "transparency_risk": 1.0 - (sum(avg_transparency) / max(len(avg_transparency), 1)),
+                "overall_risk": (1.0 - ethical_score_avg)
+            }
+            
+            processing_time = time.time() - start_time
+            
+            return MLEthicalVectorResponse(
+                ethical_vectors={
+                    "autonomy_preservation": avg_autonomy,
+                    "harm_prevention": avg_harm_prevention,
+                    "fairness_guidance": avg_fairness,
+                    "transparency_weights": avg_transparency
+                },
+                training_adjustments=training_adjustments,
+                recommendations=recommendations,
+                risk_assessment=risk_assessment
+            )
+            
+        except Exception as e:
+            logger.error(f"Ethical vector generation failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Ethical vector generation failed: {str(e)}")
+    
+    @api_router.post("/ml/training-guidance", response_model=MLGuidanceResponse)
+    async def provide_training_guidance(request: MLTrainingBatchRequest):
+        """
+        Provide real-time ethical guidance during ML training.
+        
+        Analyzes training batches in real-time and provides guidance on whether
+        to continue training, along with ethical adjustments and warnings.
+        """
+        try:
+            start_time = time.time()
+            
+            # Evaluate batch data
+            batch_evaluations = []
+            total_violations = 0
+            ethical_examples = 0
+            warnings = []
+            
+            for idx, example in enumerate(request.batch_data):
+                if evaluator:
+                    evaluation = evaluator.evaluate(example)
+                    batch_evaluations.append(evaluation)
+                    
+                    if evaluation.overall_ethical:
+                        ethical_examples += 1
+                    else:
+                        total_violations += evaluation.minimal_violation_count
+                        if evaluation.minimal_violation_count > 3:
+                            warnings.append(f"Batch item {idx}: {evaluation.minimal_violation_count} violations detected")
+            
+            # Calculate ethical score for this batch
+            ethical_score = ethical_examples / max(len(request.batch_data), 1)
+            
+            # Determine if training should continue
+            continue_training = True
+            intervention_required = False
+            
+            # Decision logic based on ethical score and violations
+            if ethical_score < 0.3:
+                continue_training = False
+                intervention_required = True
+                warnings.append("CRITICAL: Batch ethical score too low - training halted")
+            elif ethical_score < 0.5:
+                warnings.append("WARNING: Low ethical score in batch - proceed with caution")
+            elif total_violations > len(request.batch_data) * 2:
+                warnings.append("WARNING: High violation density in batch")
+            
+            # Generate training adjustments
+            adjustments = {
+                "batch_weight": max(0.1, ethical_score),  # Weight this batch by its ethical score
+                "gradient_scaling": 0.5 + (0.5 * ethical_score),  # Scale gradients based on ethics
+                "dropout_increase": 0.1 + (0.2 * (1.0 - ethical_score)),  # More dropout for unethical batches
+                "attention_focus": ethical_score,  # Focus attention on ethical content
+                "loss_reweighting": 1.0 + (2.0 * (1.0 - ethical_score))  # Increase loss for unethical content
+            }
+            
+            # Training step specific guidance
+            if request.training_step > 0:
+                if request.loss_value and request.loss_value > 2.0:
+                    warnings.append("High loss detected - ethical constraints may be too strict")
+                elif request.loss_value and request.loss_value < 0.1:
+                    warnings.append("Very low loss - model may be overfitting to unethical patterns")
+            
+            processing_time = time.time() - start_time
+            
+            # Add processing time info to adjustments
+            adjustments["processing_time"] = processing_time
+            adjustments["evaluation_count"] = len(batch_evaluations)
+            
+            return MLGuidanceResponse(
+                continue_training=continue_training,
+                ethical_score=ethical_score,
+                warnings=warnings,
+                adjustments=adjustments,
+                intervention_required=intervention_required
+            )
+            
+        except Exception as e:
+            logger.error(f"ML training guidance failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Training guidance failed: {str(e)}")
+    
+    @api_router.post("/ml/model-behavior-eval")
+    async def evaluate_model_behavior(request: Dict[str, Any]):
+        """
+        Evaluate trained model behavior for ethical compliance.
+        
+        Tests model outputs against ethical standards and provides
+        recommendations for model adjustment or retraining.
+        """
+        try:
+            start_time = time.time()
+            
+            model_outputs = request.get("model_outputs", [])
+            test_prompts = request.get("test_prompts", [])
+            model_info = request.get("model_info", {})
+            
+            if not model_outputs:
+                raise HTTPException(status_code=400, detail="model_outputs required")
+            
+            # Evaluate each model output
+            behavior_analysis = {
+                "total_outputs": len(model_outputs),
+                "ethical_outputs": 0,
+                "problematic_outputs": 0,
+                "violation_details": [],
+                "behavioral_patterns": [],
+                "recommendations": []
+            }
+            
+            for idx, output in enumerate(model_outputs):
+                if evaluator:
+                    evaluation = evaluator.evaluate(output)
+                    
+                    if evaluation.overall_ethical:
+                        behavior_analysis["ethical_outputs"] += 1
+                    else:
+                        behavior_analysis["problematic_outputs"] += 1
+                        behavior_analysis["violation_details"].append({
+                            "output_index": idx,
+                            "violations": evaluation.minimal_violation_count,
+                            "prompt": test_prompts[idx] if idx < len(test_prompts) else "N/A",
+                            "output_sample": output[:200] + "..." if len(output) > 200 else output
+                        })
+            
+            # Calculate behavioral scores
+            ethical_ratio = behavior_analysis["ethical_outputs"] / behavior_analysis["total_outputs"]
+            
+            # Generate behavioral pattern analysis
+            if ethical_ratio < 0.6:
+                behavior_analysis["behavioral_patterns"].append("Model shows concerning ethical patterns")
+                behavior_analysis["recommendations"].extend([
+                    "Consider retraining with additional ethical constraints",
+                    "Implement output filtering for production deployment",
+                    "Add ethical fine-tuning phase"
+                ])
+            elif ethical_ratio < 0.8:
+                behavior_analysis["behavioral_patterns"].append("Model shows mixed ethical behavior")
+                behavior_analysis["recommendations"].extend([
+                    "Fine-tune model with ethical feedback",
+                    "Monitor model outputs in production"
+                ])
+            else:
+                behavior_analysis["behavioral_patterns"].append("Model demonstrates good ethical alignment")
+                behavior_analysis["recommendations"].append("Model appears ready for ethical deployment")
+            
+            behavior_analysis["ethical_score"] = ethical_ratio
+            behavior_analysis["processing_time"] = time.time() - start_time
+            behavior_analysis["model_info"] = model_info
+            behavior_analysis["timestamp"] = datetime.now().isoformat()
+            
+            return behavior_analysis
+            
+        except Exception as e:
+            logger.error(f"Model behavior evaluation failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Model behavior evaluation failed: {str(e)}")
+    
+    # ============================================================================
+    # END ML ETHICS API - PHASE 1
+    # ============================================================================
+    
     # Include API router
     app.include_router(api_router)
     
