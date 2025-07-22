@@ -118,32 +118,32 @@ class OptimizationParameters:
     # Master scalar (global scaling parameter)
     master_scalar_bounds: Tuple[float, float] = (0.5, 2.0)
     
-    # Optimization settings
-    n_initial_samples: int = 20           # Initial random samples
-    n_optimization_iterations: int = 50   # Bayesian optimization iterations
+    # Optimization settings - OPTIMIZED FOR PERFORMANCE
+    n_initial_samples: int = 5             # Reduced from 20 for faster performance
+    n_optimization_iterations: int = 10    # Reduced from 50 for faster performance
     acquisition_function: AcquisitionFunction = AcquisitionFunction.EXPECTED_IMPROVEMENT
-    exploration_weight: float = 0.1       # Balance exploration vs exploitation
+    exploration_weight: float = 0.1        # Balance exploration vs exploitation
     
-    # Gaussian process settings
-    kernel_type: str = "matern"           # Kernel for GP: "rbf", "matern"
-    kernel_length_scale: float = 1.0      # Length scale for kernel
-    alpha_noise: float = 1e-6             # Noise level for GP
+    # Gaussian process settings - OPTIMIZED FOR SPEED
+    kernel_type: str = "rbf"               # RBF is faster than Matern
+    kernel_length_scale: float = 1.0       # Length scale for kernel
+    alpha_noise: float = 1e-4              # Increased noise for stability
     
-    # Multi-objective optimization
-    enable_multi_objective: bool = True   # Enable Pareto optimization
-    resolution_weight: float = 0.7        # Weight for cluster resolution
-    stability_weight: float = 0.2         # Weight for temporal stability
-    efficiency_weight: float = 0.1        # Weight for computational efficiency
+    # Multi-objective optimization - SIMPLIFIED
+    enable_multi_objective: bool = False   # Disabled for performance
+    resolution_weight: float = 1.0         # Simplified weighting
+    stability_weight: float = 0.0          # Disabled for performance
+    efficiency_weight: float = 0.0         # Disabled for performance
     
-    # Cross-validation settings
-    n_folds: int = 3                      # K-fold cross-validation
-    temporal_stability_window: int = 5    # Window for stability assessment
+    # Cross-validation settings - MINIMAL
+    n_folds: int = 2                       # Reduced from 3
+    temporal_stability_window: int = 3     # Reduced from 5
     
-    # Performance constraints
-    max_optimization_time: float = 300.0  # Maximum optimization time (seconds)
-    max_evaluation_time: float = 10.0     # Maximum time per evaluation
-    parallel_evaluations: bool = True     # Enable parallel evaluation
-    max_workers: int = 4                  # Max parallel workers
+    # Performance constraints - AGGRESSIVE TIMEOUTS
+    max_optimization_time: float = 30.0    # Reduced from 300s to 30s
+    max_evaluation_time: float = 3.0       # Reduced from 10s to 3s
+    parallel_evaluations: bool = False     # Disabled for simplicity
+    max_workers: int = 1                   # Single worker for stability
 
 @dataclass  
 class ClusterMetrics:
