@@ -745,18 +745,33 @@ async def evaluate_text(
                             deontological_score = 0.45 + (len(word_lower) % 8) * 0.05
                             consequentialist_score = 0.5 + (len(word_lower) % 6) * 0.08
                         
-                        spans.append(type('EthicalSpan', (), {
-                            'text': word,
-                            'start': start_pos,
-                            'end': end_pos,
-                            'virtue_score': min(virtue_score, 1.0),
-                            'deontological_score': min(deontological_score, 1.0),
-                            'consequentialist_score': min(consequentialist_score, 1.0),
-                            'virtue_violation': virtue_score < 0.4,
-                            'deontological_violation': deontological_score < 0.4,
-                            'consequentialist_violation': consequentialist_score < 0.4,
-                            'any_violation': violations
-                        })())
+                        # Create span object that behaves like the real EthicalSpan
+                        class EthicalSpan:
+                            def __init__(self, text, start, end, virtue_score, deontological_score, consequentialist_score, virtue_violation, deontological_violation, consequentialist_violation, any_violation):
+                                self.text = text
+                                self.start = start
+                                self.end = end
+                                self.virtue_score = virtue_score
+                                self.deontological_score = deontological_score
+                                self.consequentialist_score = consequentialist_score
+                                self.virtue_violation = virtue_violation
+                                self.deontological_violation = deontological_violation
+                                self.consequentialist_violation = consequentialist_violation
+                                self.any_violation = any_violation
+                        
+                        span = EthicalSpan(
+                            text=word,
+                            start=start_pos,
+                            end=end_pos,
+                            virtue_score=min(virtue_score, 1.0),
+                            deontological_score=min(deontological_score, 1.0),
+                            consequentialist_score=min(consequentialist_score, 1.0),
+                            virtue_violation=virtue_score < 0.4,
+                            deontological_violation=deontological_score < 0.4,
+                            consequentialist_violation=consequentialist_score < 0.4,
+                            any_violation=violations
+                        )
+                        spans.append(span)
                     
                     # Create a mock evaluation object with real analysis
                     class QuickEthicalEvaluation:
