@@ -355,6 +355,18 @@ function App() {
               🧠 ML Ethics Assistant
             </button>
             <button
+              onClick={() => handleTabSwitch('streaming')}
+              onMouseDown={(e) => handleTabSwitchNative(e, 'streaming')}
+              data-tab="streaming"
+              className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                activeTab === 'streaming'
+                  ? 'bg-green-500 text-white'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              🚀 Real-Time Streaming
+            </button>
+            <button
               onClick={() => handleTabSwitch('parameters')}
               onMouseDown={(e) => handleTabSwitchNative(e, 'parameters')}
               data-tab="parameters"
