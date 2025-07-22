@@ -171,9 +171,9 @@ sudo supervisorctl restart frontend
 - `POST /api/heat-map-visualization` - Complete heat-map analysis
 
 ### **Advanced Features**
-- `GET /api/learning-stats` - Learning system statistics
-- `POST /api/feedback` - Submit evaluation feedback
-- `GET /api/performance-metrics` - Performance monitoring data
+- `GET /api/learning-stats` - Learning system statistics (operational)
+- `POST /api/feedback` - Submit evaluation feedback framework
+- `GET /api/performance-metrics` - Performance monitoring data framework
 
 ## **Technical Specifications**
 
