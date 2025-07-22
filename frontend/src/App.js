@@ -68,8 +68,8 @@ function App() {
     }
   };
 
-  // Simplified evaluation function - direct implementation
-  const handleEvaluate = () => {
+  // Memoized event handlers to prevent re-rendering issues
+  const handleEvaluate = useCallback(() => {
     console.log('🔥 BUTTON CLICKED - handleEvaluate called!');
     
     if (!inputText.trim()) {
@@ -113,9 +113,17 @@ function App() {
       setLoading(false);
       console.log('🏁 Evaluation finished');
     });
-  };
+  }, [inputText, parameters]);
 
-  const updateParameter = (key, value) => {
+  // Alternative click handler using native DOM events as fallback
+  const handleEvaluateNative = useCallback((event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    console.log('🎯 NATIVE EVENT HANDLER CALLED');
+    handleEvaluate();
+  }, [handleEvaluate]);
+
+  const updateParameter = useCallback((key, value) => {
     // Handle different parameter types properly
     let processedValue;
     
