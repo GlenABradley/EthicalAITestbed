@@ -66,6 +66,12 @@ import json
 import numpy as np
 from typing import Union
 
+# Import the advanced ML Ethics Vector Engine
+from ml_ethics_engine import (
+    MLEthicsVectorEngine, MLEthicalVector, MLTrainingAdjustments,
+    DatasetType, TrainingPhase, ml_ethics_engine
+)
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
