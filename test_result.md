@@ -222,13 +222,16 @@ backend:
     implemented: true
     working: false
     file: "backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: false
     status_history:
       - working: false
         agent: "testing"
         comment: "❌ TIMEOUT ISSUE: GET /api/optimization/status/{id} endpoint implemented but times out (11s). Should be quick for status checks but experiencing performance issues. Even non-existent ID queries timeout, indicating system-level performance problem rather than optimization complexity."
+      - working: false
+        agent: "testing"
+        comment: "❌ STATUS MONITORING STILL FAILING: Performance optimizations have not resolved the timeout issue. Status endpoint times out at 11.0s, failing to meet the < 2 second performance requirement. Even simple 404 responses for non-existent optimization IDs timeout, confirming this is a system-level performance bottleneck, not related to optimization complexity. The endpoint should be lightweight but is experiencing the same timeout issues as the compute-intensive optimization start endpoint."
 
   - task: "Bayesian Optimization Results Retrieval"
     implemented: true
