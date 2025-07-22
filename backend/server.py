@@ -708,12 +708,15 @@ async def evaluate_text(
                 if len(word_clean) >= 3:  # Only analyze meaningful words
                     
                     # Real ethical scoring based on content
-                    if word_clean in ethical_keywords['unethical']:
+                    is_unethical = any(keyword in word_clean for keyword in ethical_keywords['unethical'])
+                    is_ethical = any(keyword in word_clean for keyword in ethical_keywords['ethical'])
+                    
+                    if is_unethical:
                         virtue_score = 0.2
                         deontological_score = 0.15
                         consequentialist_score = 0.1
                         any_violation = True
-                    elif word_clean in ethical_keywords['ethical']:
+                    elif is_ethical:
                         virtue_score = 0.9
                         deontological_score = 0.85
                         consequentialist_score = 0.95
