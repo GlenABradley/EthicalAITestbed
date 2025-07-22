@@ -1,5 +1,721 @@
 #!/usr/bin/env python3
 """
+🧪 UNIFIED ETHICAL AI SERVER TESTING SUITE 🧪
+═══════════════════════════════════════════════════════════════════════════════════
+
+🎓 PROFESSOR'S COMPREHENSIVE TESTING LECTURE:
+════════════════════════════════════════════════
+
+This testing suite validates the newly refactored unified ethical AI server 
+architecture following MIT-professor level testing standards. We test:
+
+1. **NEW UNIFIED ARCHITECTURE COMPONENTS**:
+   - unified_ethical_orchestrator.py - The crown jewel orchestrator
+   - unified_configuration_manager.py - Configuration management system  
+   - unified_server.py - Modern FastAPI server
+
+2. **ARCHITECTURE HIGHLIGHTS TESTING**:
+   - Clean Architecture principles with dependency injection
+   - Comprehensive MIT-professor level documentation
+   - Unified configuration system with environment overrides
+   - Backward compatibility maintained for existing endpoints
+   - Modern FastAPI patterns with lifespan management
+
+3. **KEY TESTING AREAS**:
+   - Test the new /api/evaluate endpoint with unified orchestrator
+   - Verify /api/health provides comprehensive system health information
+   - Check backward compatibility endpoints
+   - Test configuration system initialization
+   - Verify unified orchestrator integration
+
+Author: Testing Agent - Unified Architecture Validation
+Version: 10.0.0 - Phase 9.5 Exhaustive Refactor Testing
+"""
+
+import asyncio
+import json
+import logging
+import time
+import uuid
+from datetime import datetime
+from typing import Dict, List, Any, Optional
+import sys
+import os
+from pathlib import Path
+
+# Add backend directory to path
+sys.path.insert(0, str(Path(__file__).parent / 'backend'))
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Test configuration
+BACKEND_URL = os.getenv('REACT_APP_BACKEND_URL', 'https://6bd3bc7b-f41e-4bd1-a876-175f126bec59.preview.emergentagent.com')
+API_BASE = f"{BACKEND_URL}/api"
+
+class UnifiedArchitectureTestSuite:
+    """
+    🎓 UNIFIED ARCHITECTURE TEST SUITE:
+    ═══════════════════════════════════════
+    
+    Comprehensive testing of the newly refactored unified ethical AI server
+    architecture, validating all components and integration points.
+    """
+    
+    def __init__(self):
+        self.test_results = []
+        self.total_tests = 0
+        self.passed_tests = 0
+        self.failed_tests = 0
+        self.start_time = time.time()
+        
+        # Import test modules
+        try:
+            import requests
+            self.requests = requests
+            self.requests_available = True
+        except ImportError:
+            logger.error("❌ requests library not available")
+            self.requests_available = False
+            
+        # Test data
+        self.test_texts = {
+            "ethical": "Thank you for your help, I appreciate your assistance.",
+            "unethical": "You are stupid and worthless, and you should die.",
+            "neutral": "The weather is nice today.",
+            "complex": "We should consider the ethical implications of AI development while ensuring technological progress.",
+            "empty": "",
+            "long": "This is a longer text that contains multiple sentences and ideas. " * 20
+        }
+    
+    def log_test_result(self, test_name: str, success: bool, details: str = "", response_time: float = 0.0):
+        """Log individual test results."""
+        self.total_tests += 1
+        if success:
+            self.passed_tests += 1
+            status = "✅ PASS"
+        else:
+            self.failed_tests += 1
+            status = "❌ FAIL"
+        
+        result = {
+            "test_name": test_name,
+            "success": success,
+            "details": details,
+            "response_time": response_time,
+            "timestamp": datetime.now().isoformat()
+        }
+        self.test_results.append(result)
+        
+        logger.info(f"{status} | {test_name} | {response_time:.3f}s | {details}")
+    
+    async def test_unified_server_health(self):
+        """
+        🏥 TEST: Unified Server Health Check
+        ═══════════════════════════════════════
+        
+        Tests the new /api/health endpoint to ensure it provides comprehensive
+        system health information including orchestrator status, database
+        connectivity, and performance metrics.
+        """
+        logger.info("🏥 Testing Unified Server Health Check...")
+        
+        try:
+            start_time = time.time()
+            response = self.requests.get(f"{API_BASE}/health", timeout=10)
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                health_data = response.json()
+                
+                # Validate health response structure
+                required_fields = [
+                    "status", "timestamp", "uptime_seconds", 
+                    "orchestrator_healthy", "database_connected", 
+                    "configuration_valid", "performance_metrics", 
+                    "features_available"
+                ]
+                
+                missing_fields = [field for field in required_fields if field not in health_data]
+                
+                if not missing_fields:
+                    # Check specific unified architecture features
+                    features = health_data.get("features_available", {})
+                    unified_features = [
+                        "unified_orchestrator", "database", "configuration"
+                    ]
+                    
+                    available_features = [f for f in unified_features if features.get(f, False)]
+                    
+                    self.log_test_result(
+                        "Unified Server Health Check",
+                        True,
+                        f"Status: {health_data['status']}, Features: {len(available_features)}/{len(unified_features)} available",
+                        response_time
+                    )
+                else:
+                    self.log_test_result(
+                        "Unified Server Health Check",
+                        False,
+                        f"Missing required fields: {missing_fields}",
+                        response_time
+                    )
+            else:
+                self.log_test_result(
+                    "Unified Server Health Check",
+                    False,
+                    f"HTTP {response.status_code}: {response.text[:200]}",
+                    response_time
+                )
+                
+        except Exception as e:
+            self.log_test_result(
+                "Unified Server Health Check",
+                False,
+                f"Request failed: {str(e)}",
+                0.0
+            )
+    
+    async def test_unified_evaluate_endpoint(self):
+        """
+        🎯 TEST: Unified Evaluation Endpoint
+        ═══════════════════════════════════════
+        
+        Tests the new /api/evaluate endpoint with the unified orchestrator
+        to ensure it properly processes requests and returns comprehensive
+        ethical evaluations.
+        """
+        logger.info("🎯 Testing Unified Evaluation Endpoint...")
+        
+        for text_type, text_content in self.test_texts.items():
+            if text_type == "empty":  # Skip empty text for main evaluation
+                continue
+                
+            try:
+                start_time = time.time()
+                
+                # Create unified evaluation request
+                request_data = {
+                    "text": text_content,
+                    "context": {
+                        "domain": "general",
+                        "cultural_context": "western"
+                    },
+                    "parameters": {
+                        "confidence_threshold": 0.7,
+                        "explanation_level": "detailed"
+                    },
+                    "mode": "production",
+                    "priority": "normal"
+                }
+                
+                response = self.requests.post(
+                    f"{API_BASE}/evaluate",
+                    json=request_data,
+                    timeout=30
+                )
+                response_time = time.time() - start_time
+                
+                if response.status_code == 200:
+                    eval_result = response.json()
+                    
+                    # Validate unified response structure
+                    required_fields = [
+                        "request_id", "overall_ethical", "confidence_score",
+                        "processing_time", "timestamp", "version",
+                        "analysis_results", "explanation", "cache_hit",
+                        "optimization_used"
+                    ]
+                    
+                    missing_fields = [field for field in required_fields if field not in eval_result]
+                    
+                    if not missing_fields:
+                        # Check analysis results structure
+                        analysis = eval_result.get("analysis_results", {})
+                        analysis_layers = ["meta_ethical", "normative", "applied"]
+                        available_layers = [layer for layer in analysis_layers if layer in analysis]
+                        
+                        self.log_test_result(
+                            f"Unified Evaluation - {text_type.title()} Text",
+                            True,
+                            f"Ethical: {eval_result['overall_ethical']}, Confidence: {eval_result['confidence_score']:.3f}, Layers: {len(available_layers)}/3",
+                            response_time
+                        )
+                    else:
+                        self.log_test_result(
+                            f"Unified Evaluation - {text_type.title()} Text",
+                            False,
+                            f"Missing fields: {missing_fields}",
+                            response_time
+                        )
+                else:
+                    self.log_test_result(
+                        f"Unified Evaluation - {text_type.title()} Text",
+                        False,
+                        f"HTTP {response.status_code}: {response.text[:200]}",
+                        response_time
+                    )
+                    
+            except Exception as e:
+                self.log_test_result(
+                    f"Unified Evaluation - {text_type.title()} Text",
+                    False,
+                    f"Request failed: {str(e)}",
+                    0.0
+                )
+    
+    async def test_backward_compatibility_endpoints(self):
+        """
+        🔄 TEST: Backward Compatibility Endpoints
+        ═════════════════════════════════════════════
+        
+        Tests that existing endpoints (/api/parameters, /api/learning-stats,
+        /api/heat-map-mock) maintain backward compatibility while working
+        with the new unified architecture.
+        """
+        logger.info("🔄 Testing Backward Compatibility Endpoints...")
+        
+        # Test /api/parameters endpoint
+        try:
+            start_time = time.time()
+            response = self.requests.get(f"{API_BASE}/parameters", timeout=10)
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                params = response.json()
+                expected_params = [
+                    "virtue_threshold", "deontological_threshold", 
+                    "consequentialist_threshold", "virtue_weight",
+                    "deontological_weight", "consequentialist_weight"
+                ]
+                
+                available_params = [p for p in expected_params if p in params]
+                
+                self.log_test_result(
+                    "Backward Compatibility - Parameters",
+                    len(available_params) >= 3,
+                    f"Parameters available: {len(available_params)}/{len(expected_params)}",
+                    response_time
+                )
+            else:
+                self.log_test_result(
+                    "Backward Compatibility - Parameters",
+                    False,
+                    f"HTTP {response.status_code}",
+                    response_time
+                )
+        except Exception as e:
+            self.log_test_result(
+                "Backward Compatibility - Parameters",
+                False,
+                f"Request failed: {str(e)}",
+                0.0
+            )
+        
+        # Test /api/learning-stats endpoint
+        try:
+            start_time = time.time()
+            response = self.requests.get(f"{API_BASE}/learning-stats", timeout=10)
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                stats = response.json()
+                expected_fields = [
+                    "total_evaluations", "total_feedback", "learning_enabled",
+                    "performance_metrics", "last_updated"
+                ]
+                
+                available_fields = [f for f in expected_fields if f in stats]
+                
+                self.log_test_result(
+                    "Backward Compatibility - Learning Stats",
+                    len(available_fields) >= 3,
+                    f"Stats fields: {len(available_fields)}/{len(expected_fields)}",
+                    response_time
+                )
+            else:
+                self.log_test_result(
+                    "Backward Compatibility - Learning Stats",
+                    False,
+                    f"HTTP {response.status_code}",
+                    response_time
+                )
+        except Exception as e:
+            self.log_test_result(
+                "Backward Compatibility - Learning Stats",
+                False,
+                f"Request failed: {str(e)}",
+                0.0
+            )
+        
+        # Test /api/heat-map-mock endpoint
+        try:
+            start_time = time.time()
+            response = self.requests.post(
+                f"{API_BASE}/heat-map-mock",
+                json={"text": "This is a test for heat map visualization."},
+                timeout=10
+            )
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                heatmap = response.json()
+                expected_structure = [
+                    "evaluations", "overallGrades", "textLength", "originalEvaluation"
+                ]
+                
+                available_structure = [s for s in expected_structure if s in heatmap]
+                
+                # Check evaluations structure
+                evaluations = heatmap.get("evaluations", {})
+                eval_types = ["short", "medium", "long", "stochastic"]
+                available_types = [t for t in eval_types if t in evaluations]
+                
+                self.log_test_result(
+                    "Backward Compatibility - Heat Map Mock",
+                    len(available_structure) >= 3 and len(available_types) >= 3,
+                    f"Structure: {len(available_structure)}/4, Types: {len(available_types)}/4",
+                    response_time
+                )
+            else:
+                self.log_test_result(
+                    "Backward Compatibility - Heat Map Mock",
+                    False,
+                    f"HTTP {response.status_code}",
+                    response_time
+                )
+        except Exception as e:
+            self.log_test_result(
+                "Backward Compatibility - Heat Map Mock",
+                False,
+                f"Request failed: {str(e)}",
+                0.0
+            )
+    
+    async def test_configuration_system(self):
+        """
+        🔧 TEST: Configuration System Integration
+        ═════════════════════════════════════════════
+        
+        Tests the unified configuration system by checking parameter updates
+        and configuration validation through the API.
+        """
+        logger.info("🔧 Testing Configuration System Integration...")
+        
+        # Test parameter updates
+        try:
+            start_time = time.time()
+            
+            update_params = {
+                "virtue_weight": 0.4,
+                "deontological_weight": 0.3,
+                "consequentialist_weight": 0.3,
+                "optimization_level": "balanced"
+            }
+            
+            response = self.requests.post(
+                f"{API_BASE}/update-parameters",
+                json=update_params,
+                timeout=10
+            )
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                result = response.json()
+                
+                if "message" in result and "parameters" in result:
+                    self.log_test_result(
+                        "Configuration System - Parameter Update",
+                        True,
+                        f"Update acknowledged: {result.get('message', 'Success')}",
+                        response_time
+                    )
+                else:
+                    self.log_test_result(
+                        "Configuration System - Parameter Update",
+                        False,
+                        "Invalid response structure",
+                        response_time
+                    )
+            else:
+                self.log_test_result(
+                    "Configuration System - Parameter Update",
+                    False,
+                    f"HTTP {response.status_code}: {response.text[:200]}",
+                    response_time
+                )
+                
+        except Exception as e:
+            self.log_test_result(
+                "Configuration System - Parameter Update",
+                False,
+                f"Request failed: {str(e)}",
+                0.0
+            )
+    
+    async def test_performance_characteristics(self):
+        """
+        ⚡ TEST: Performance Characteristics
+        ═══════════════════════════════════════
+        
+        Tests the performance characteristics of the unified architecture
+        to ensure it meets or exceeds the performance of the previous system.
+        """
+        logger.info("⚡ Testing Performance Characteristics...")
+        
+        # Performance test with multiple concurrent requests
+        test_text = "This is a performance test for the unified ethical AI system."
+        concurrent_requests = 3
+        
+        async def single_evaluation():
+            try:
+                start_time = time.time()
+                response = self.requests.post(
+                    f"{API_BASE}/evaluate",
+                    json={
+                        "text": test_text,
+                        "mode": "production",
+                        "priority": "normal"
+                    },
+                    timeout=15
+                )
+                response_time = time.time() - start_time
+                return response.status_code == 200, response_time
+            except Exception:
+                return False, 0.0
+        
+        # Run concurrent evaluations
+        start_time = time.time()
+        tasks = []
+        
+        for i in range(concurrent_requests):
+            # Simulate concurrent requests with small delays
+            await asyncio.sleep(0.1)
+            success, req_time = await asyncio.get_event_loop().run_in_executor(
+                None, lambda: asyncio.run(single_evaluation())
+            )
+            tasks.append((success, req_time))
+        
+        total_time = time.time() - start_time
+        successful_requests = sum(1 for success, _ in tasks if success)
+        avg_response_time = sum(req_time for _, req_time in tasks) / len(tasks) if tasks else 0
+        
+        self.log_test_result(
+            "Performance - Concurrent Evaluations",
+            successful_requests >= concurrent_requests * 0.8,  # 80% success rate
+            f"Success: {successful_requests}/{concurrent_requests}, Avg: {avg_response_time:.3f}s",
+            total_time
+        )
+        
+        # Test response time consistency
+        response_times = [req_time for _, req_time in tasks if req_time > 0]
+        if response_times:
+            max_time = max(response_times)
+            min_time = min(response_times)
+            time_variance = max_time - min_time
+            
+            self.log_test_result(
+                "Performance - Response Time Consistency",
+                time_variance < 5.0,  # Less than 5 second variance
+                f"Min: {min_time:.3f}s, Max: {max_time:.3f}s, Variance: {time_variance:.3f}s",
+                avg_response_time
+            )
+    
+    async def test_error_handling_and_graceful_degradation(self):
+        """
+        🛡️ TEST: Error Handling and Graceful Degradation
+        ═════════════════════════════════════════════════════
+        
+        Tests the system's ability to handle errors gracefully and provide
+        meaningful responses even when components fail.
+        """
+        logger.info("🛡️ Testing Error Handling and Graceful Degradation...")
+        
+        # Test empty text handling
+        try:
+            start_time = time.time()
+            response = self.requests.post(
+                f"{API_BASE}/evaluate",
+                json={"text": ""},
+                timeout=10
+            )
+            response_time = time.time() - start_time
+            
+            # Should return 400 or handle gracefully
+            if response.status_code in [400, 422]:
+                self.log_test_result(
+                    "Error Handling - Empty Text",
+                    True,
+                    f"Properly rejected empty text with HTTP {response.status_code}",
+                    response_time
+                )
+            elif response.status_code == 200:
+                # If it returns 200, check if it's a graceful degradation
+                result = response.json()
+                if "error" in result.get("explanation", "").lower():
+                    self.log_test_result(
+                        "Error Handling - Empty Text",
+                        True,
+                        "Graceful degradation with error explanation",
+                        response_time
+                    )
+                else:
+                    self.log_test_result(
+                        "Error Handling - Empty Text",
+                        False,
+                        "Empty text not properly handled",
+                        response_time
+                    )
+            else:
+                self.log_test_result(
+                    "Error Handling - Empty Text",
+                    False,
+                    f"Unexpected HTTP {response.status_code}",
+                    response_time
+                )
+        except Exception as e:
+            self.log_test_result(
+                "Error Handling - Empty Text",
+                False,
+                f"Request failed: {str(e)}",
+                0.0
+            )
+        
+        # Test malformed request handling
+        try:
+            start_time = time.time()
+            response = self.requests.post(
+                f"{API_BASE}/evaluate",
+                json={"invalid_field": "test"},
+                timeout=10
+            )
+            response_time = time.time() - start_time
+            
+            # Should return 422 (validation error)
+            if response.status_code == 422:
+                self.log_test_result(
+                    "Error Handling - Malformed Request",
+                    True,
+                    "Properly rejected malformed request",
+                    response_time
+                )
+            else:
+                self.log_test_result(
+                    "Error Handling - Malformed Request",
+                    False,
+                    f"HTTP {response.status_code} instead of 422",
+                    response_time
+                )
+        except Exception as e:
+            self.log_test_result(
+                "Error Handling - Malformed Request",
+                False,
+                f"Request failed: {str(e)}",
+                0.0
+            )
+    
+    async def run_all_tests(self):
+        """
+        🚀 RUN ALL TESTS:
+        ═════════════════════
+        
+        Execute the complete test suite for the unified ethical AI server
+        architecture and generate comprehensive results.
+        """
+        logger.info("🚀 Starting Unified Architecture Test Suite...")
+        logger.info(f"🎯 Testing against: {API_BASE}")
+        
+        if not self.requests_available:
+            logger.error("❌ Cannot run tests - requests library not available")
+            return
+        
+        # Execute all test categories
+        await self.test_unified_server_health()
+        await self.test_unified_evaluate_endpoint()
+        await self.test_backward_compatibility_endpoints()
+        await self.test_configuration_system()
+        await self.test_performance_characteristics()
+        await self.test_error_handling_and_graceful_degradation()
+        
+        # Generate final report
+        self.generate_test_report()
+    
+    def generate_test_report(self):
+        """Generate comprehensive test report."""
+        total_time = time.time() - self.start_time
+        success_rate = (self.passed_tests / self.total_tests * 100) if self.total_tests > 0 else 0
+        
+        logger.info("\n" + "="*80)
+        logger.info("🏛️ UNIFIED ETHICAL AI SERVER ARCHITECTURE TEST REPORT")
+        logger.info("="*80)
+        logger.info(f"📊 OVERALL RESULTS:")
+        logger.info(f"   Total Tests: {self.total_tests}")
+        logger.info(f"   Passed: {self.passed_tests} ✅")
+        logger.info(f"   Failed: {self.failed_tests} ❌")
+        logger.info(f"   Success Rate: {success_rate:.1f}%")
+        logger.info(f"   Total Time: {total_time:.2f}s")
+        logger.info("")
+        
+        # Categorize results
+        categories = {}
+        for result in self.test_results:
+            category = result["test_name"].split(" - ")[0]
+            if category not in categories:
+                categories[category] = {"passed": 0, "failed": 0, "total": 0}
+            
+            categories[category]["total"] += 1
+            if result["success"]:
+                categories[category]["passed"] += 1
+            else:
+                categories[category]["failed"] += 1
+        
+        logger.info("📋 RESULTS BY CATEGORY:")
+        for category, stats in categories.items():
+            cat_success_rate = (stats["passed"] / stats["total"] * 100) if stats["total"] > 0 else 0
+            status = "✅" if cat_success_rate >= 80 else "⚠️" if cat_success_rate >= 60 else "❌"
+            logger.info(f"   {status} {category}: {stats['passed']}/{stats['total']} ({cat_success_rate:.1f}%)")
+        
+        logger.info("")
+        
+        # Show failed tests
+        failed_tests = [r for r in self.test_results if not r["success"]]
+        if failed_tests:
+            logger.info("❌ FAILED TESTS:")
+            for test in failed_tests:
+                logger.info(f"   • {test['test_name']}: {test['details']}")
+            logger.info("")
+        
+        # Performance summary
+        response_times = [r["response_time"] for r in self.test_results if r["response_time"] > 0]
+        if response_times:
+            avg_response_time = sum(response_times) / len(response_times)
+            max_response_time = max(response_times)
+            logger.info("⚡ PERFORMANCE SUMMARY:")
+            logger.info(f"   Average Response Time: {avg_response_time:.3f}s")
+            logger.info(f"   Maximum Response Time: {max_response_time:.3f}s")
+            logger.info("")
+        
+        # Final assessment
+        if success_rate >= 90:
+            logger.info("🎉 EXCELLENT: Unified architecture is working exceptionally well!")
+        elif success_rate >= 80:
+            logger.info("✅ GOOD: Unified architecture is working well with minor issues.")
+        elif success_rate >= 60:
+            logger.info("⚠️ ACCEPTABLE: Unified architecture has some issues that need attention.")
+        else:
+            logger.info("❌ CRITICAL: Unified architecture has significant issues requiring immediate attention.")
+        
+        logger.info("="*80)
+
+async def main():
+    """Main test execution function."""
+    test_suite = UnifiedArchitectureTestSuite()
+    await test_suite.run_all_tests()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+"""
 Comprehensive Backend Testing for Ethical AI Developer Testbed
 Focus: Phase 5 Enhanced Ethics Pipeline Testing with Philosophical Foundations
 
