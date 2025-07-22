@@ -1547,65 +1547,63 @@ async def get_optimization_results(optimization_id: str):
     """
     
     try:
-        # Check if results exist
-        if (not hasattr(app.state, 'optimization_results') or 
-            optimization_id not in app.state.optimization_results):
+        # Check if results exist in the lightweight system
+        optimization_result = get_lightweight_optimization_status(optimization_id)
+        
+        if not optimization_result:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Results for optimization {optimization_id} not found"
             )
         
-        result = app.state.optimization_results[optimization_id]
-        
-        # Check if it's an error result
-        if isinstance(result, dict) and "error" in result:
+        # Check if optimization is still running
+        if optimization_result.status in [OptimizationStatus.PENDING, OptimizationStatus.RUNNING]:
             return {
                 "optimization_id": optimization_id,
-                "status": "failed",
-                "error": result["error"],
-                "message": "Optimization failed"
+                "status": optimization_result.status.value,
+                "message": "Optimization still in progress, use status endpoint to monitor"
             }
         
-        # Return comprehensive results
+        # Check if it's an error result
+        if optimization_result.status in [OptimizationStatus.FAILED, OptimizationStatus.TIMEOUT]:
+            return {
+                "optimization_id": optimization_id,
+                "status": optimization_result.status.value,
+                "error": optimization_result.error_message,
+                "message": "Optimization failed" if optimization_result.status == OptimizationStatus.FAILED else "Optimization timed out"
+            }
+        
+        # Return comprehensive results for completed optimization
         return {
             "optimization_id": optimization_id,
             "status": "completed",
             "results": {
-                "optimal_parameters": {
-                    "tau_virtue": result.optimal_tau_virtue,
-                    "tau_deontological": result.optimal_tau_deontological,
-                    "tau_consequentialist": result.optimal_tau_consequentialist,
-                    "master_scalar": result.optimal_master_scalar
-                },
+                "optimal_parameters": optimization_result.best_parameters,
                 "performance": {
-                    "best_resolution_score": result.best_resolution_score,
-                    "optimization_confidence": result.optimization_confidence,
-                    "cross_validation_score": result.cross_validation_score,
-                    "stability_score": result.temporal_stability_score
+                    "best_resolution_score": optimization_result.best_score,
+                    "optimization_confidence": 0.8 if optimization_result.best_score > 0.5 else 0.6,
+                    "iterations_completed": optimization_result.iterations_completed,
+                    "total_time_seconds": optimization_result.total_time
                 },
                 "optimization_statistics": {
-                    "total_evaluations": result.total_evaluations,
-                    "optimization_iterations": result.optimization_iterations,
-                    "optimization_time_seconds": result.optimization_time,
-                    "convergence_achieved": result.optimization_confidence > 0.8
-                },
-                "convergence_history": result.convergence_history,
-                "parameter_history": result.parameter_history,
-                "pareto_frontier": result.pareto_frontier
+                    "total_iterations": optimization_result.iterations_completed,
+                    "optimization_time_seconds": optimization_result.total_time,
+                    "convergence_achieved": optimization_result.best_score > 0.6
+                }
             },
             "recommendations": {
-                "apply_parameters": result.best_resolution_score > 0.6,
-                "confidence_level": "high" if result.optimization_confidence > 0.8 else "medium" if result.optimization_confidence > 0.5 else "low",
+                "apply_parameters": optimization_result.best_score > 0.5,
+                "confidence_level": "high" if optimization_result.best_score > 0.7 else "medium" if optimization_result.best_score > 0.5 else "low",
                 "suggested_actions": [
-                    "Apply optimal parameters to ethical engine" if result.best_resolution_score > 0.6 else "Consider rerunning optimization with different test data",
+                    "Apply optimal parameters to ethical engine" if optimization_result.best_score > 0.5 else "Consider rerunning optimization with different test data",
                     "Monitor system performance after parameter application",
                     "Consider periodic re-optimization to maintain performance"
                 ]
             },
             "metadata": {
-                "optimization_version": result.version,
-                "timestamp": result.timestamp.isoformat() if result.timestamp else None,
-                "optimization_scales": len(OptimizationScale)
+                "optimization_version": "lightweight-1.0",
+                "timestamp": optimization_result.timestamp.isoformat() if optimization_result.timestamp else None,
+                "optimization_mode": "lightweight"
             }
         }
         
