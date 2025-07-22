@@ -203,6 +203,78 @@ backend:
         agent: "testing"
         comment: "✅ Fast response times confirmed. All API calls complete in < 1 second (target met). Average response time: 0.024s. No timeout issues detected. System performance exceeds requirements."
 
+  - task: "Bayesian Optimization Start Endpoint"
+    implemented: true
+    working: false
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "❌ CRITICAL PERFORMANCE ISSUE: POST /api/optimization/start endpoint implemented with comprehensive 7-stage Bayesian optimization system but times out (10-11s). System includes sophisticated Gaussian Process optimization, multi-objective Pareto analysis, and cross-validation. All dependencies available (scikit-learn, scipy, torch). Issue: Computationally intensive implementation causes timeout. Needs performance optimization or async background processing."
+
+  - task: "Bayesian Optimization Status Monitoring"
+    implemented: true
+    working: false
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "❌ TIMEOUT ISSUE: GET /api/optimization/status/{id} endpoint implemented but times out (11s). Should be quick for status checks but experiencing performance issues. Even non-existent ID queries timeout, indicating system-level performance problem rather than optimization complexity."
+
+  - task: "Bayesian Optimization Results Retrieval"
+    implemented: true
+    working: false
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "❌ TIMEOUT ISSUE: GET /api/optimization/results/{id} endpoint implemented but times out (11s). Should handle non-existent IDs quickly with 404 responses but experiencing system-wide performance issues affecting all Bayesian optimization endpoints."
+
+  - task: "Bayesian Optimization Parameter Application"
+    implemented: true
+    working: false
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "❌ TIMEOUT ISSUE: POST /api/optimization/apply/{id} endpoint implemented but times out. Part of comprehensive Bayesian optimization system that needs performance optimization for production use."
+
+  - task: "Bayesian Optimization List Endpoint"
+    implemented: true
+    working: false
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "❌ TIMEOUT ISSUE: GET /api/optimization/list endpoint implemented but times out (10.5s). Should be quick to list optimizations but affected by system-wide performance issues in Bayesian optimization module."
+
+  - task: "Bayesian Optimization Parameter Validation"
+    implemented: true
+    working: false
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "❌ CRITICAL ISSUE: Parameter validation for Bayesian optimization endpoints times out (11s). Even simple validation requests (empty texts, insufficient texts) timeout, indicating the system initialization or validation logic has performance bottlenecks that need immediate attention."
+
 frontend:
   - task: "Frontend Testing"
     implemented: true
