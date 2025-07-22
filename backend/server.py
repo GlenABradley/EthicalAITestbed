@@ -1627,28 +1627,27 @@ async def apply_optimization_results(optimization_id: str):
     """
     
     try:
-        # Check if results exist
-        if (not hasattr(app.state, 'optimization_results') or 
-            optimization_id not in app.state.optimization_results):
+        # Check if results exist in the lightweight system
+        optimization_result = get_lightweight_optimization_status(optimization_id)
+        
+        if not optimization_result:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Results for optimization {optimization_id} not found"
             )
         
-        result = app.state.optimization_results[optimization_id]
-        
-        # Check if it's an error result
-        if isinstance(result, dict) and "error" in result:
+        # Check if it's not completed yet
+        if optimization_result.status != OptimizationStatus.COMPLETED:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot apply results from failed optimization"
+                detail="Cannot apply results from incomplete or failed optimization"
             )
         
         # Check if results are good enough to apply
-        if result.best_resolution_score < 0.3:
+        if optimization_result.best_score < 0.3:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Optimization score too low ({result.best_resolution_score:.3f}) to apply safely"
+                detail=f"Optimization score too low ({optimization_result.best_score:.3f}) to apply safely"
             )
         
         # Get ethical engine and apply parameters
@@ -1662,31 +1661,26 @@ async def apply_optimization_results(optimization_id: str):
         }
         
         # Apply optimized parameters
-        ethical_engine.parameters.virtue_threshold = result.optimal_tau_virtue
-        ethical_engine.parameters.deontological_threshold = result.optimal_tau_deontological
-        ethical_engine.parameters.consequentialist_threshold = result.optimal_tau_consequentialist
+        best_params = optimization_result.best_parameters
+        ethical_engine.parameters.virtue_threshold = best_params.get("tau_virtue", 0.15)
+        ethical_engine.parameters.deontological_threshold = best_params.get("tau_deontological", 0.15)
+        ethical_engine.parameters.consequentialist_threshold = best_params.get("tau_consequentialist", 0.15)
         
-        logger.info(f"✅ Applied optimization {optimization_id} parameters")
-        logger.info(f"   τ_virtue: {result.optimal_tau_virtue:.4f}")
-        logger.info(f"   τ_deontological: {result.optimal_tau_deontological:.4f}")
-        logger.info(f"   τ_consequentialist: {result.optimal_tau_consequentialist:.4f}")
-        logger.info(f"   μ_master: {result.optimal_master_scalar:.4f}")
+        logger.info(f"✅ Applied lightweight optimization {optimization_id} parameters")
+        logger.info(f"   τ_virtue: {best_params.get('tau_virtue', 0.15):.4f}")
+        logger.info(f"   τ_deontological: {best_params.get('tau_deontological', 0.15):.4f}")
+        logger.info(f"   τ_consequentialist: {best_params.get('tau_consequentialist', 0.15):.4f}")
         
         return {
             "status": "applied",
             "optimization_id": optimization_id,
             "message": "Optimized parameters successfully applied to ethical engine",
-            "applied_parameters": {
-                "tau_virtue": result.optimal_tau_virtue,
-                "tau_deontological": result.optimal_tau_deontological,
-                "tau_consequentialist": result.optimal_tau_consequentialist,
-                "master_scalar": result.optimal_master_scalar
-            },
+            "applied_parameters": best_params,
             "previous_parameters": original_params,
             "optimization_quality": {
-                "resolution_score": result.best_resolution_score,
-                "confidence": result.optimization_confidence,
-                "recommended": result.best_resolution_score > 0.6
+                "resolution_score": optimization_result.best_score,
+                "confidence": "high" if optimization_result.best_score > 0.7 else "medium",
+                "recommended": optimization_result.best_score > 0.5
             },
             "next_steps": [
                 "Monitor evaluation performance with new parameters",
