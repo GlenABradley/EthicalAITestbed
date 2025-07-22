@@ -1418,13 +1418,11 @@ async def start_cluster_optimization(
                 detail="At least 2 test texts required for optimization"
             )
         
-        # Configure optimization parameters - PERFORMANCE OPTIMIZED
-        optimization_config = OptimizationParameters(
-            n_initial_samples=min(request.get("n_initial_samples", 3), 5),  # Max 5 for performance  
-            n_optimization_iterations=min(request.get("n_optimization_iterations", 5), 10),  # Max 10 for performance
-            max_optimization_time=min(request.get("max_optimization_time", 30.0), 60.0),  # Max 60s
-            parallel_evaluations=False,  # Disabled for stability
-            max_workers=1  # Single worker for stability
+        # Configure optimization parameters - LIGHTWEIGHT VERSION
+        optimization_config = LightweightOptimizationConfig(
+            n_random_samples=min(request.get("n_initial_samples", 3), 5),  # Max 5 for performance  
+            n_iterations=min(request.get("n_optimization_iterations", 3), 5),  # Max 5 for performance
+            max_time_seconds=min(request.get("max_optimization_time", 15.0), 30.0),  # Max 30s
         )
         
         # Create optimization ID
