@@ -830,7 +830,7 @@ def create_integrated_app():
             
             for idx, example in enumerate(request.batch_data):
                 if evaluator:
-                    evaluation = evaluator.evaluate(example)
+                    evaluation = evaluator.evaluate_text(example)
                     batch_evaluations.append(evaluation)
                     
                     if evaluation.overall_ethical:
