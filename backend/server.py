@@ -1495,44 +1495,37 @@ async def get_optimization_status(optimization_id: str):
     """
     
     try:
-        # Check if optimization exists
-        if (not hasattr(app.state, 'optimizers') or 
-            optimization_id not in app.state.optimizers):
-            
-            # Check if completed
-            if (hasattr(app.state, 'optimization_results') and 
-                optimization_id in app.state.optimization_results):
-                return {
-                    "optimization_id": optimization_id,
-                    "status": "completed",
-                    "message": "Optimization completed, use results endpoint"
-                }
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Optimization {optimization_id} not found"
-                )
+        # Check if optimization exists in the lightweight system
+        optimization_result = get_optimization_status(optimization_id)
         
-        # Get optimizer instance
-        optimizer = app.state.optimizers[optimization_id]
+        if not optimization_result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Optimization {optimization_id} not found"
+            )
         
-        # Get current status
-        summary = optimizer.get_optimization_summary()
-        
+        # Convert lightweight result to API format
         return {
             "optimization_id": optimization_id,
-            "status": "running" if summary.get("optimization_status") == "not_optimized" else summary.get("optimization_status", "running"),
+            "status": optimization_result.status.value,
             "progress": {
-                "current_evaluations": optimizer.evaluation_count,
-                "total_evaluations_planned": optimizer.params.n_initial_samples + optimizer.params.n_optimization_iterations,
-                "current_best_score": optimizer.best_result.best_resolution_score if optimizer.best_result else 0.0,
-                "optimization_time_elapsed": time.time() - optimizer.optimization_start_time if optimizer.optimization_start_time else 0.0,
-                "max_time_allowed": optimizer.params.max_optimization_time
+                "current_iterations": optimization_result.iterations_completed,
+                "total_iterations_planned": 8,  # n_random_samples + n_iterations
+                "current_best_score": optimization_result.best_score,
+                "optimization_time_elapsed": optimization_result.total_time,
+                "progress_percent": optimization_result.progress_percent
             },
-            "current_parameters": summary.get("best_parameters", {}),
-            "performance_metrics": summary.get("performance_metrics", {}),
-            "scale_analysis": summary.get("scale_analysis", {}),
-            "estimated_time_remaining": max(0, optimizer.params.max_optimization_time - (time.time() - optimizer.optimization_start_time if optimizer.optimization_start_time else 0))
+            "current_parameters": optimization_result.best_parameters,
+            "performance_metrics": {
+                "best_resolution_score": optimization_result.best_score,
+                "iterations_completed": optimization_result.iterations_completed,
+                "total_time_seconds": optimization_result.total_time
+            },
+            "scale_analysis": {
+                "optimization_mode": "lightweight",
+                "simplified_clustering": True
+            },
+            "estimated_time_remaining": max(0, 15.0 - optimization_result.total_time) if optimization_result.status.value == "running" else 0
         }
         
     except HTTPException:
