@@ -35,6 +35,18 @@ class EthicalEvaluationTester:
         self.passed_tests = []
         self.performance_metrics = []
         
+        # Phase 5 specific test scenarios
+        self.philosophical_test_cases = {
+            "kantian_test": "If everyone lied whenever convenient, communication would become meaningless and lying would be self-defeating",
+            "utilitarian_test": "This policy will increase overall happiness for 1000 people but cause moderate suffering for 10 people",
+            "virtue_ethics_test": "A person demonstrates courage by standing up for their principles despite social pressure",
+            "ai_ethics_test": "Our machine learning model uses demographic data to make hiring decisions",
+            "digital_ethics_test": "This app collects user location data for advertising purposes without explicit consent",
+            "complex_dilemma": "A self-driving car must choose between hitting one person or swerving to hit three people",
+            "naturalistic_fallacy": "Violence is natural in evolution, therefore violence is morally good",
+            "fact_value_distinction": "Studies show that meditation reduces stress, therefore everyone ought to meditate"
+        }
+        
     def log_result(self, test_name: str, success: bool, message: str, details: Dict = None):
         """Log test result"""
         result = {
