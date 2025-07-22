@@ -1348,3 +1348,749 @@ class AppliedEthicsAnalysis:
             result["ai_ethics"] = self.ai_ethics.to_dict()
             
         return result
+
+class AppliedEthicsEvaluator:
+    """
+    Evaluator for applied ethics across multiple specialized domains.
+    
+    Implements domain-specific ethical analysis based on established
+    research frameworks and professional ethical standards.
+    """
+    
+    def __init__(self):
+        """Initialize applied ethics evaluation framework."""
+        self.digital_ethics_framework = self._initialize_digital_ethics()
+        self.ai_ethics_framework = self._initialize_ai_ethics()
+        self.domain_detection_patterns = self._initialize_domain_patterns()
+        
+        logger.info("Applied ethics evaluator initialized with domain-specific frameworks")
+    
+    def _initialize_digital_ethics(self) -> Dict[str, Any]:
+        """Initialize digital ethics evaluation framework."""
+        return {
+            "privacy_indicators": {
+                "positive": ["privacy", "confidential", "secure", "protected", "encrypted"],
+                "negative": ["exposed", "public", "leaked", "shared", "tracked"]
+            },
+            "autonomy_indicators": {
+                "positive": ["choice", "control", "consent", "opt-in", "voluntary"],
+                "negative": ["forced", "automatic", "mandatory", "default", "unavoidable"]
+            },
+            "transparency_indicators": {
+                "positive": ["transparent", "open", "clear", "explained", "disclosed"],
+                "negative": ["hidden", "opaque", "secret", "undisclosed", "black box"]
+            },
+            "power_indicators": {
+                "positive": ["democratic", "decentralized", "distributed", "equal access"],
+                "negative": ["monopoly", "concentrated", "gatekeeping", "exclusive"]
+            }
+        }
+    
+    def _initialize_ai_ethics(self) -> Dict[str, Any]:
+        """Initialize AI ethics evaluation framework.""" 
+        return {
+            "fairness_indicators": {
+                "positive": ["fair", "equitable", "unbiased", "inclusive", "representative"],
+                "negative": ["biased", "discriminatory", "unfair", "exclusive", "prejudiced"]
+            },
+            "safety_indicators": {
+                "positive": ["safe", "tested", "verified", "robust", "reliable"],
+                "negative": ["unsafe", "untested", "risky", "unpredictable", "harmful"]
+            },
+            "accountability_indicators": {
+                "positive": ["accountable", "responsible", "traceable", "auditable"],
+                "negative": ["unaccountable", "anonymous", "untraceable", "opaque"]
+            },
+            "human_oversight_indicators": {
+                "positive": ["human oversight", "human control", "human review", "supervised"],
+                "negative": ["fully automated", "no oversight", "unsupervised", "autonomous"]
+            }
+        }
+    
+    def _initialize_domain_patterns(self) -> Dict[AppliedEthicsDomain, List[str]]:
+        """Initialize patterns for detecting relevant applied ethics domains."""
+        return {
+            AppliedEthicsDomain.DIGITAL_ETHICS: [
+                "data", "privacy", "digital", "online", "internet", "platform", "social media",
+                "algorithm", "tracking", "surveillance", "cyber", "electronic", "network"
+            ],
+            AppliedEthicsDomain.AI_ETHICS: [
+                "artificial intelligence", "machine learning", "ai", "ml", "algorithm", 
+                "neural network", "deep learning", "automation", "robot", "intelligent system"
+            ],
+            AppliedEthicsDomain.BIOETHICS: [
+                "medical", "health", "patient", "treatment", "research", "clinical", 
+                "genetic", "biotechnology", "pharmaceutical", "therapy"
+            ],
+            AppliedEthicsDomain.ENVIRONMENTAL_ETHICS: [
+                "environment", "climate", "pollution", "sustainability", "ecology",
+                "natural resources", "conservation", "emissions", "carbon"
+            ],
+            AppliedEthicsDomain.BUSINESS_ETHICS: [
+                "business", "corporate", "company", "profit", "stakeholder", "shareholder",
+                "commerce", "trade", "market", "economy", "financial"
+            ],
+            AppliedEthicsDomain.RESEARCH_ETHICS: [
+                "research", "study", "experiment", "scientific", "academic", "publication",
+                "peer review", "methodology", "data collection", "subjects"
+            ]
+        }
+    
+    async def evaluate_applied_ethics(self, content: str, context: Optional[Dict[str, Any]] = None) -> AppliedEthicsAnalysis:
+        """
+        Perform comprehensive applied ethics analysis.
+        
+        Identifies relevant domains and applies domain-specific analysis.
+        """
+        try:
+            # Detect applicable domains
+            applicable_domains, domain_relevance = await self._detect_applicable_domains(content)
+            
+            # Initialize analysis structure
+            analysis = AppliedEthicsAnalysis(
+                applicable_domains=applicable_domains,
+                domain_relevance_scores=domain_relevance,
+                contextual_factors=context or {}
+            )
+            
+            # Perform domain-specific analysis
+            if AppliedEthicsDomain.DIGITAL_ETHICS in applicable_domains:
+                analysis.digital_ethics = await self._analyze_digital_ethics(content)
+            
+            if AppliedEthicsDomain.AI_ETHICS in applicable_domains:
+                analysis.ai_ethics = await self._analyze_ai_ethics(content)
+            
+            # Generate practical recommendations
+            analysis.practical_recommendations = await self._generate_practical_recommendations(
+                content, applicable_domains, analysis
+            )
+            
+            return analysis
+            
+        except Exception as e:
+            logger.error(f"Applied ethics evaluation failed: {e}")
+            return AppliedEthicsAnalysis(
+                contextual_factors={"error": str(e)},
+                practical_recommendations=[f"Analysis failed: {e}"]
+            )
+    
+    async def _detect_applicable_domains(self, content: str) -> Tuple[List[AppliedEthicsDomain], Dict[str, float]]:
+        """Detect which applied ethics domains are relevant to the content."""
+        content_lower = content.lower()
+        applicable_domains = []
+        relevance_scores = {}
+        
+        for domain, patterns in self.domain_detection_patterns.items():
+            matches = sum(1 for pattern in patterns if pattern in content_lower)
+            relevance_score = min(1.0, matches * 0.2)  # Max score of 1.0
+            
+            relevance_scores[domain.value] = relevance_score
+            
+            if relevance_score > 0.3:  # Threshold for domain applicability
+                applicable_domains.append(domain)
+        
+        return applicable_domains, relevance_scores
+    
+    async def _analyze_digital_ethics(self, content: str) -> DigitalEthicsAnalysis:
+        """Perform digital ethics analysis."""
+        content_lower = content.lower()
+        framework = self.digital_ethics_framework
+        
+        # Privacy assessment
+        privacy_positive = sum(0.2 for ind in framework["privacy_indicators"]["positive"] if ind in content_lower)
+        privacy_negative = sum(0.2 for ind in framework["privacy_indicators"]["negative"] if ind in content_lower)
+        privacy_assessment = max(0.0, min(1.0, 0.5 + privacy_positive - privacy_negative))
+        
+        # Digital autonomy assessment
+        autonomy_positive = sum(0.2 for ind in framework["autonomy_indicators"]["positive"] if ind in content_lower)
+        autonomy_negative = sum(0.2 for ind in framework["autonomy_indicators"]["negative"] if ind in content_lower)
+        digital_autonomy = max(0.0, min(1.0, 0.5 + autonomy_positive - autonomy_negative))
+        
+        # Algorithmic transparency
+        trans_positive = sum(0.2 for ind in framework["transparency_indicators"]["positive"] if ind in content_lower)
+        trans_negative = sum(0.2 for ind in framework["transparency_indicators"]["negative"] if ind in content_lower)
+        algorithmic_transparency = max(0.0, min(1.0, 0.5 + trans_positive - trans_negative))
+        
+        # Power distribution analysis
+        power_positive = sum(0.2 for ind in framework["power_indicators"]["positive"] if ind in content_lower)
+        power_negative = sum(0.2 for ind in framework["power_indicators"]["negative"] if ind in content_lower)
+        platform_power_analysis = max(0.0, min(1.0, 0.5 + power_positive - power_negative))
+        
+        # Data sovereignty (simplified assessment)
+        data_control_indicators = ["own", "control", "manage", "decide", "govern"]
+        data_exploitation_indicators = ["sell", "monetize", "exploit", "harvest", "extract"]
+        
+        sovereignty_positive = sum(0.2 for ind in data_control_indicators if ind in content_lower)
+        sovereignty_negative = sum(0.2 for ind in data_exploitation_indicators if ind in content_lower)
+        data_sovereignty = max(0.0, min(1.0, 0.5 + sovereignty_positive - sovereignty_negative))
+        
+        # Digital divide impact
+        access_indicators = ["access", "available", "inclusive", "universal", "open"]
+        exclusion_indicators = ["exclusive", "limited", "restricted", "paywall", "premium"]
+        
+        access_score = sum(0.2 for ind in access_indicators if ind in content_lower)
+        exclusion_score = sum(0.2 for ind in exclusion_indicators if ind in content_lower)
+        digital_divide_impact = max(0.0, min(1.0, 0.5 + access_score - exclusion_score))
+        
+        # Surveillance concerns (higher score = lower concern)
+        surveillance_indicators = ["surveillance", "monitoring", "tracking", "watching", "observing"]
+        privacy_protection = ["private", "anonymous", "encrypted", "secure", "protected"]
+        
+        surveillance_risk = sum(0.3 for ind in surveillance_indicators if ind in content_lower)
+        privacy_protection_score = sum(0.2 for ind in privacy_protection if ind in content_lower)
+        surveillance_concerns = max(0.0, min(1.0, 0.5 + privacy_protection_score - surveillance_risk))
+        
+        return DigitalEthicsAnalysis(
+            privacy_assessment=privacy_assessment,
+            data_sovereignty=data_sovereignty,
+            digital_autonomy=digital_autonomy,
+            algorithmic_transparency=algorithmic_transparency,
+            digital_divide_impact=digital_divide_impact,
+            surveillance_concerns=surveillance_concerns,
+            platform_power_analysis=platform_power_analysis
+        )
+    
+    async def _analyze_ai_ethics(self, content: str) -> AIEthicsAnalysis:
+        """Perform AI ethics analysis."""
+        content_lower = content.lower()
+        framework = self.ai_ethics_framework
+        
+        # Fairness assessment
+        fair_positive = sum(0.2 for ind in framework["fairness_indicators"]["positive"] if ind in content_lower)
+        fair_negative = sum(0.2 for ind in framework["fairness_indicators"]["negative"] if ind in content_lower)
+        fairness_assessment = max(0.0, min(1.0, 0.5 + fair_positive - fair_negative))
+        
+        # Safety assessment  
+        safety_positive = sum(0.2 for ind in framework["safety_indicators"]["positive"] if ind in content_lower)
+        safety_negative = sum(0.2 for ind in framework["safety_indicators"]["negative"] if ind in content_lower)
+        safety_assurance = max(0.0, min(1.0, 0.5 + safety_positive - safety_negative))
+        
+        # Accountability assessment
+        account_positive = sum(0.2 for ind in framework["accountability_indicators"]["positive"] if ind in content_lower)
+        account_negative = sum(0.2 for ind in framework["accountability_indicators"]["negative"] if ind in content_lower)
+        accountability_measures = max(0.0, min(1.0, 0.5 + account_positive - account_negative))
+        
+        # Human oversight assessment
+        human_positive = sum(0.2 for ind in framework["human_oversight_indicators"]["positive"] if ind in content_lower)
+        human_negative = sum(0.2 for ind in framework["human_oversight_indicators"]["negative"] if ind in content_lower)
+        human_oversight = max(0.0, min(1.0, 0.5 + human_positive - human_negative))
+        
+        # Transparency level (using same indicators as digital ethics)
+        trans_indicators = ["transparent", "explainable", "interpretable", "understandable", "clear"]
+        opacity_indicators = ["black box", "opaque", "mysterious", "unclear", "hidden"]
+        
+        transparency_score = sum(0.2 for ind in trans_indicators if ind in content_lower)
+        opacity_score = sum(0.2 for ind in opacity_indicators if ind in content_lower)
+        transparency_level = max(0.0, min(1.0, 0.5 + transparency_score - opacity_score))
+        
+        # Bias mitigation
+        bias_mitigation_indicators = ["debias", "fair", "unbiased", "corrected", "mitigated"]
+        bias_indicators = ["biased", "discriminatory", "prejudiced", "skewed", "unfair"]
+        
+        mitigation_score = sum(0.2 for ind in bias_mitigation_indicators if ind in content_lower)
+        bias_score = sum(0.2 for ind in bias_indicators if ind in content_lower)
+        bias_mitigation = max(0.0, min(1.0, 0.5 + mitigation_score - bias_score))
+        
+        # Value alignment
+        alignment_indicators = ["aligned", "values", "human-centered", "beneficial", "helpful"]
+        misalignment_indicators = ["misaligned", "harmful", "dangerous", "problematic", "concerning"]
+        
+        alignment_score = sum(0.2 for ind in alignment_indicators if ind in content_lower)
+        misalignment_score = sum(0.2 for ind in misalignment_indicators if ind in content_lower)
+        value_alignment = max(0.0, min(1.0, 0.5 + alignment_score - misalignment_score))
+        
+        # Robustness assessment
+        robustness_indicators = ["robust", "reliable", "stable", "consistent", "tested"]
+        fragility_indicators = ["fragile", "unreliable", "unstable", "inconsistent", "untested"]
+        
+        robustness_score = sum(0.2 for ind in robustness_indicators if ind in content_lower)
+        fragility_score = sum(0.2 for ind in fragility_indicators if ind in content_lower)
+        robustness_assessment = max(0.0, min(1.0, 0.5 + robustness_score - fragility_score))
+        
+        return AIEthicsAnalysis(
+            fairness_assessment=fairness_assessment,
+            accountability_measures=accountability_measures,
+            transparency_level=transparency_level,
+            safety_assurance=safety_assurance,
+            human_oversight=human_oversight,
+            bias_mitigation=bias_mitigation,
+            value_alignment=value_alignment,
+            robustness_assessment=robustness_assessment
+        )
+    
+    async def _generate_practical_recommendations(self, 
+                                                content: str,
+                                                domains: List[AppliedEthicsDomain],
+                                                analysis: AppliedEthicsAnalysis) -> List[str]:
+        """Generate practical recommendations based on domain analysis."""
+        recommendations = []
+        
+        # Digital ethics recommendations
+        if AppliedEthicsDomain.DIGITAL_ETHICS in domains and analysis.digital_ethics:
+            digital = analysis.digital_ethics
+            
+            if digital.privacy_assessment < 0.6:
+                recommendations.append("Strengthen privacy protections and data minimization practices")
+            
+            if digital.digital_autonomy < 0.6:
+                recommendations.append("Enhance user control and meaningful consent mechanisms")
+            
+            if digital.algorithmic_transparency < 0.6:
+                recommendations.append("Improve algorithmic transparency and explainability")
+            
+            if digital.surveillance_concerns < 0.6:
+                recommendations.append("Address surveillance concerns with privacy-by-design principles")
+        
+        # AI ethics recommendations
+        if AppliedEthicsDomain.AI_ETHICS in domains and analysis.ai_ethics:
+            ai = analysis.ai_ethics
+            
+            if ai.fairness_assessment < 0.6:
+                recommendations.append("Implement fairness testing and bias mitigation strategies")
+            
+            if ai.safety_assurance < 0.6:
+                recommendations.append("Enhance AI safety measures and robustness testing")
+            
+            if ai.human_oversight < 0.6:
+                recommendations.append("Establish appropriate human oversight and control mechanisms")
+            
+            if ai.transparency_level < 0.6:
+                recommendations.append("Improve AI system interpretability and explainability")
+            
+            if ai.accountability_measures < 0.6:
+                recommendations.append("Strengthen accountability frameworks and audit trails")
+        
+        # General recommendations if no specific issues found
+        if not recommendations:
+            recommendations.append("Continue monitoring ethical considerations in ongoing development")
+        
+        return recommendations
+
+# ============================================================================
+# ENHANCED ETHICS PIPELINE ORCHESTRATOR
+# ============================================================================
+
+@dataclass
+class EnhancedEthicsAnalysis:
+    """
+    Comprehensive ethics analysis integrating all pipeline layers.
+    """
+    meta_ethics: MetaEthicalAnalysis
+    normative_ethics: NormativeEthicsAnalysis
+    applied_ethics: AppliedEthicsAnalysis
+    
+    # Integration metrics
+    overall_consistency: float               # Cross-layer consistency [0,1]
+    ethical_confidence: float               # Confidence in analysis [0,1]
+    complexity_score: float                 # Ethical complexity measure [0,1]
+    
+    # Synthesis
+    synthesized_judgment: str               # Overall ethical assessment
+    primary_concerns: List[str]             # Top ethical concerns identified
+    actionable_recommendations: List[str]   # Prioritized recommendations
+    
+    # Metadata
+    processing_time: float
+    analysis_depth: str                     # "surface", "standard", "comprehensive"
+    
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "meta_ethics": self.meta_ethics.to_dict(),
+            "normative_ethics": self.normative_ethics.to_dict(),
+            "applied_ethics": self.applied_ethics.to_dict(),
+            "overall_consistency": self.overall_consistency,
+            "ethical_confidence": self.ethical_confidence,
+            "complexity_score": self.complexity_score,
+            "synthesized_judgment": self.synthesized_judgment,
+            "primary_concerns": self.primary_concerns,
+            "actionable_recommendations": self.actionable_recommendations,
+            "processing_time": self.processing_time,
+            "analysis_depth": self.analysis_depth
+        }
+
+class EnhancedEthicsPipelineOrchestrator:
+    """
+    Orchestrates comprehensive multi-layered ethical analysis.
+    
+    Integrates meta-ethical, normative, and applied ethical frameworks
+    to provide holistic ethical evaluation with philosophical rigor.
+    """
+    
+    def __init__(self, ethical_evaluator=None, ml_ethics_engine=None):
+        """Initialize the enhanced ethics pipeline orchestrator."""
+        self.ethical_evaluator = ethical_evaluator
+        self.ml_ethics_engine = ml_ethics_engine
+        
+        # Initialize component analyzers
+        self.meta_ethics_analyzer = MetaEthicsAnalyzer()
+        self.normative_evaluator = NormativeEthicsEvaluator()
+        self.applied_evaluator = AppliedEthicsEvaluator()
+        
+        # Performance tracking
+        self.analysis_history = deque(maxlen=1000)
+        self.performance_metrics = defaultdict(list)
+        
+        # Concurrency control
+        self.semaphore = asyncio.Semaphore(5)  # Limit concurrent analyses
+        
+        logger.info("Enhanced ethics pipeline orchestrator initialized with three-layer architecture")
+    
+    async def analyze_comprehensive_ethics(self, 
+                                         content: str, 
+                                         context: Optional[Dict[str, Any]] = None,
+                                         analysis_depth: str = "standard") -> EnhancedEthicsAnalysis:
+        """
+        Perform comprehensive three-layer ethical analysis.
+        
+        Args:
+            content: Content to analyze
+            context: Optional contextual information
+            analysis_depth: "surface", "standard", or "comprehensive"
+            
+        Returns:
+            EnhancedEthicsAnalysis with integrated multi-layer results
+        """
+        start_time = time.time()
+        
+        try:
+            async with self.semaphore:
+                # Layer 1: Meta-ethical analysis
+                meta_ethics = await self.meta_ethics_analyzer.analyze_meta_ethical_structure(content, context)
+                
+                # Layer 2: Normative ethical analysis  
+                normative_ethics = await self.normative_evaluator.evaluate_normative_ethics(content, context)
+                
+                # Layer 3: Applied ethical analysis
+                applied_ethics = await self.applied_evaluator.evaluate_applied_ethics(content, context)
+                
+                # Cross-layer integration
+                overall_consistency = await self._assess_overall_consistency(meta_ethics, normative_ethics, applied_ethics)
+                ethical_confidence = await self._calculate_ethical_confidence(meta_ethics, normative_ethics, applied_ethics)
+                complexity_score = await self._assess_complexity(meta_ethics, normative_ethics, applied_ethics)
+                
+                # Synthesis
+                synthesized_judgment = await self._synthesize_judgment(meta_ethics, normative_ethics, applied_ethics)
+                primary_concerns = await self._identify_primary_concerns(meta_ethics, normative_ethics, applied_ethics)
+                actionable_recommendations = await self._prioritize_recommendations(normative_ethics, applied_ethics)
+                
+                processing_time = time.time() - start_time
+                
+                analysis = EnhancedEthicsAnalysis(
+                    meta_ethics=meta_ethics,
+                    normative_ethics=normative_ethics,
+                    applied_ethics=applied_ethics,
+                    overall_consistency=overall_consistency,
+                    ethical_confidence=ethical_confidence,
+                    complexity_score=complexity_score,
+                    synthesized_judgment=synthesized_judgment,
+                    primary_concerns=primary_concerns,
+                    actionable_recommendations=actionable_recommendations,
+                    processing_time=processing_time,
+                    analysis_depth=analysis_depth
+                )
+                
+                # Update performance tracking
+                self.analysis_history.append({
+                    "timestamp": time.time(),
+                    "processing_time": processing_time,
+                    "content_length": len(content),
+                    "consistency": overall_consistency,
+                    "confidence": ethical_confidence,
+                    "complexity": complexity_score
+                })
+                
+                return analysis
+                
+        except Exception as e:
+            logger.error(f"Enhanced ethics analysis failed: {e}")
+            processing_time = time.time() - start_time
+            
+            # Return minimal analysis with error information
+            return self._create_error_analysis(str(e), processing_time, analysis_depth)
+    
+    async def _assess_overall_consistency(self, 
+                                        meta: MetaEthicalAnalysis,
+                                        normative: NormativeEthicsAnalysis,
+                                        applied: AppliedEthicsAnalysis) -> float:
+        """Assess consistency across all analytical layers."""
+        consistency_factors = []
+        
+        # Meta-ethical consistency with normative frameworks
+        if meta.semantic_coherence > 0.8 and normative.framework_convergence > 0.8:
+            consistency_factors.append(0.9)
+        elif meta.semantic_coherence > 0.6 and normative.framework_convergence > 0.6:
+            consistency_factors.append(0.7)
+        else:
+            consistency_factors.append(0.4)
+        
+        # Normative-applied consistency
+        if normative.framework_convergence > 0.7:
+            consistency_factors.append(0.8)
+        else:
+            consistency_factors.append(0.5)
+        
+        # Universalizability and applied recommendations consistency
+        if meta.universalizability_test and normative.deontological.categorical_imperative_test:
+            consistency_factors.append(0.85)
+        else:
+            consistency_factors.append(0.6)
+        
+        return sum(consistency_factors) / len(consistency_factors)
+    
+    async def _calculate_ethical_confidence(self,
+                                          meta: MetaEthicalAnalysis,
+                                          normative: NormativeEthicsAnalysis, 
+                                          applied: AppliedEthicsAnalysis) -> float:
+        """Calculate confidence in the overall ethical analysis."""
+        confidence_factors = []
+        
+        # Meta-ethical confidence
+        confidence_factors.append(meta.semantic_coherence)
+        
+        # Normative framework convergence as confidence indicator
+        confidence_factors.append(normative.framework_convergence)
+        
+        # Applied domain relevance as confidence indicator
+        domain_relevance = applied.domain_relevance_scores
+        if domain_relevance:
+            avg_relevance = sum(domain_relevance.values()) / len(domain_relevance)
+            confidence_factors.append(avg_relevance)
+        else:
+            confidence_factors.append(0.5)
+        
+        # Action guidance strength as confidence indicator
+        confidence_factors.append(meta.action_guidance_strength)
+        
+        return sum(confidence_factors) / len(confidence_factors)
+    
+    async def _assess_complexity(self,
+                               meta: MetaEthicalAnalysis,
+                               normative: NormativeEthicsAnalysis,
+                               applied: AppliedEthicsAnalysis) -> float:
+        """Assess the ethical complexity of the content."""
+        complexity_factors = []
+        
+        # Number of ethical properties attributed
+        complexity_factors.append(len(meta.property_attributions) * 0.1)
+        
+        # Framework disagreement increases complexity
+        complexity_factors.append(1.0 - normative.framework_convergence)
+        
+        # Number of applicable domains
+        complexity_factors.append(len(applied.applicable_domains) * 0.15)
+        
+        # Modal properties complexity
+        modal_count = sum(1 for v in meta.modal_properties.values() if v)
+        complexity_factors.append(modal_count * 0.1)
+        
+        # Ethical dilemma presence
+        if normative.ethical_dilemma_type and normative.ethical_dilemma_type != "analysis_error":
+            complexity_factors.append(0.8)
+        else:
+            complexity_factors.append(0.2)
+        
+        total_complexity = sum(complexity_factors)
+        return min(1.0, total_complexity)
+    
+    async def _synthesize_judgment(self,
+                                 meta: MetaEthicalAnalysis,
+                                 normative: NormativeEthicsAnalysis,
+                                 applied: AppliedEthicsAnalysis) -> str:
+        """Synthesize overall ethical judgment from all layers."""
+        
+        # Check for clear positive indicators
+        positive_indicators = [
+            meta.universalizability_test,
+            meta.semantic_coherence > 0.8,
+            normative.deontological.categorical_imperative_test,
+            normative.consequentialist.utility_calculation > 0.3,
+            normative.virtue_ethics.eudaimonic_contribution > 0.7,
+            normative.framework_convergence > 0.8
+        ]
+        
+        # Check for clear negative indicators
+        negative_indicators = [
+            not meta.naturalistic_fallacy_check,
+            meta.semantic_coherence < 0.3,
+            normative.consequentialist.utility_calculation < -0.3,
+            normative.ethical_dilemma_type == "universal_conflict",
+            normative.framework_convergence < 0.3
+        ]
+        
+        positive_count = sum(positive_indicators)
+        negative_count = sum(negative_indicators)
+        
+        if positive_count >= 4 and negative_count <= 1:
+            return "ETHICALLY_SOUND: Analysis indicates strong ethical foundation across multiple frameworks"
+        elif positive_count >= 3 and negative_count <= 2:
+            return "ETHICALLY_ACCEPTABLE: Analysis shows general ethical acceptability with minor concerns"
+        elif positive_count <= 2 and negative_count >= 3:
+            return "ETHICALLY_PROBLEMATIC: Analysis reveals significant ethical concerns requiring attention"
+        elif negative_count >= 4:
+            return "ETHICALLY_UNACCEPTABLE: Analysis indicates serious ethical violations across frameworks"
+        else:
+            return "ETHICALLY_AMBIGUOUS: Mixed ethical indicators require additional consideration and context"
+    
+    async def _identify_primary_concerns(self,
+                                       meta: MetaEthicalAnalysis,
+                                       normative: NormativeEthicsAnalysis,
+                                       applied: AppliedEthicsAnalysis) -> List[str]:
+        """Identify primary ethical concerns from analysis."""
+        concerns = []
+        
+        # Meta-ethical concerns
+        if not meta.naturalistic_fallacy_check:
+            concerns.append("Potential naturalistic fallacy in ethical reasoning")
+        
+        if meta.semantic_coherence < 0.5:
+            concerns.append("Low semantic coherence in ethical claims")
+        
+        if meta.action_guidance_strength < 0.3:
+            concerns.append("Weak prescriptive force - unclear action guidance")
+        
+        # Normative concerns
+        if not normative.deontological.categorical_imperative_test:
+            concerns.append("Fails Kantian universalizability test")
+        
+        if not normative.deontological.humanity_formula_test:
+            concerns.append("Potential instrumentalization of persons")
+        
+        if normative.consequentialist.utility_calculation < -0.2:
+            concerns.append("Net negative utility from consequentialist perspective")
+        
+        if normative.virtue_ethics.eudaimonic_contribution < 0.4:
+            concerns.append("Limited contribution to human flourishing")
+        
+        # Framework convergence concerns
+        if normative.framework_convergence < 0.4:
+            concerns.append("Significant disagreement between ethical frameworks")
+        
+        # Applied ethics concerns
+        if applied.digital_ethics and applied.digital_ethics.privacy_assessment < 0.5:
+            concerns.append("Digital privacy concerns identified")
+        
+        if applied.ai_ethics and applied.ai_ethics.fairness_assessment < 0.5:
+            concerns.append("AI fairness and bias concerns identified")
+        
+        return concerns[:10]  # Return top 10 concerns
+    
+    async def _prioritize_recommendations(self,
+                                        normative: NormativeEthicsAnalysis,
+                                        applied: AppliedEthicsAnalysis) -> List[str]:
+        """Prioritize actionable recommendations from analysis."""
+        recommendations = []
+        
+        # High priority recommendations from normative analysis
+        if normative.ethical_dilemma_type:
+            recommendations.append(f"Address ethical dilemma: {normative.resolution_recommendation}")
+        
+        if normative.framework_convergence < 0.6:
+            recommendations.append("Seek additional ethical consultation for framework conflicts")
+        
+        # Applied ethics recommendations (already prioritized)
+        recommendations.extend(applied.practical_recommendations)
+        
+        # Deontological recommendations
+        if normative.deontological.autonomy_respect < 0.6:
+            recommendations.append("Strengthen respect for human autonomy and rational agency")
+        
+        # Consequentialist recommendations  
+        if normative.consequentialist.aggregate_welfare < 0.6:
+            recommendations.append("Consider broader welfare implications and stakeholder impacts")
+        
+        # Virtue ethics recommendations
+        if normative.virtue_ethics.eudaimonic_contribution < 0.6:
+            recommendations.append("Enhance contribution to human flourishing and character development")
+        
+        return recommendations[:15]  # Return top 15 recommendations
+    
+    def _create_error_analysis(self, error_msg: str, processing_time: float, analysis_depth: str) -> EnhancedEthicsAnalysis:
+        """Create minimal analysis structure for error cases."""
+        return EnhancedEthicsAnalysis(
+            meta_ethics=MetaEthicalAnalysis(
+                claim_structure={"error": error_msg},
+                property_attributions=[],
+                fact_value_relations=[],
+                semantic_coherence=0.0,
+                modal_properties={},
+                universalizability_test=False,
+                naturalistic_fallacy_check=False,
+                action_guidance_strength=0.0
+            ),
+            normative_ethics=NormativeEthicsAnalysis(
+                deontological=DeontologicalAnalysis(
+                    categorical_imperative_test=False,
+                    humanity_formula_test=False,
+                    autonomy_respect=0.0,
+                    duty_identification=[],
+                    maxim_universalizability=0.0,
+                    rational_consistency=0.0
+                ),
+                consequentialist=ConsequentialistAnalysis(
+                    utility_calculation=0.0,
+                    positive_consequences=[],
+                    negative_consequences=[],
+                    affected_parties=[],
+                    aggregate_welfare=0.0,
+                    distribution_fairness=0.0,
+                    long_term_effects=0.0
+                ),
+                virtue_ethics=VirtueEthicsAnalysis(
+                    virtue_assessment={},
+                    vice_assessment={},
+                    golden_mean_analysis=0.0,
+                    eudaimonic_contribution=0.0,
+                    character_development=0.0,
+                    practical_wisdom=0.0
+                ),
+                framework_convergence=0.0,
+                ethical_dilemma_type="analysis_error",
+                resolution_recommendation=f"Analysis failed: {error_msg}"
+            ),
+            applied_ethics=AppliedEthicsAnalysis(
+                contextual_factors={"error": error_msg}
+            ),
+            overall_consistency=0.0,
+            ethical_confidence=0.0,
+            complexity_score=1.0,  # Errors are complex
+            synthesized_judgment=f"ANALYSIS_ERROR: {error_msg}",
+            primary_concerns=[f"Analysis system error: {error_msg}"],
+            actionable_recommendations=["Retry analysis or seek human ethical review"],
+            processing_time=processing_time,
+            analysis_depth=analysis_depth
+        )
+    
+    def get_performance_metrics(self) -> Dict[str, Any]:
+        """Get performance metrics for the enhanced ethics pipeline."""
+        if not self.analysis_history:
+            return {"status": "no_data", "message": "No analyses performed yet"}
+        
+        recent_analyses = list(self.analysis_history)[-100:]  # Last 100 analyses
+        
+        return {
+            "total_analyses": len(self.analysis_history),
+            "average_processing_time": sum(a["processing_time"] for a in recent_analyses) / len(recent_analyses),
+            "average_consistency": sum(a["consistency"] for a in recent_analyses) / len(recent_analyses),
+            "average_confidence": sum(a["confidence"] for a in recent_analyses) / len(recent_analyses),
+            "average_complexity": sum(a["complexity"] for a in recent_analyses) / len(recent_analyses),
+            "performance_trend": "stable" if len(recent_analyses) >= 10 else "insufficient_data"
+        }
+
+# Global enhanced ethics pipeline instance
+enhanced_ethics_pipeline: Optional[EnhancedEthicsPipelineOrchestrator] = None
+
+def get_enhanced_ethics_pipeline() -> Optional[EnhancedEthicsPipelineOrchestrator]:
+    """Get the global enhanced ethics pipeline orchestrator."""
+    return enhanced_ethics_pipeline
+
+def initialize_enhanced_ethics_pipeline(ethical_evaluator=None, ml_ethics_engine=None) -> EnhancedEthicsPipelineOrchestrator:
+    """Initialize the global enhanced ethics pipeline orchestrator."""
+    global enhanced_ethics_pipeline
+    
+    enhanced_ethics_pipeline = EnhancedEthicsPipelineOrchestrator(
+        ethical_evaluator=ethical_evaluator,
+        ml_ethics_engine=ml_ethics_engine
+    )
+    
+    logger.info("Global enhanced ethics pipeline orchestrator initialized")
+    return enhanced_ethics_pipeline
