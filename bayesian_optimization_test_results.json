@@ -1,0 +1,72 @@
+[
+  {
+    "test_name": "Optimization Start - Basic",
+    "passed": false,
+    "response_time": 60.695632457733154,
+    "details": "Status: 0 | Error: ",
+    "timestamp": "2025-07-22T14:00:21.849856"
+  },
+  {
+    "test_name": "Optimization Start - Minimal",
+    "passed": false,
+    "response_time": 60.9921600818634,
+    "details": "Status: 0 | Error: ",
+    "timestamp": "2025-07-22T14:01:22.842102"
+  },
+  {
+    "test_name": "Parameter Validation - Empty Texts",
+    "passed": true,
+    "response_time": 61.01096224784851,
+    "details": "Status: 0 | Validation handled: True",
+    "timestamp": "2025-07-22T14:02:23.853160"
+  },
+  {
+    "test_name": "Parameter Validation - Insufficient Texts",
+    "passed": true,
+    "response_time": 60.97035503387451,
+    "details": "Status: 0 | Validation handled: True",
+    "timestamp": "2025-07-22T14:03:24.823608"
+  },
+  {
+    "test_name": "Status Monitoring - Non-existent ID",
+    "passed": true,
+    "response_time": 61.02636003494263,
+    "details": "Status: 0 | 404 handled: True",
+    "timestamp": "2025-07-22T14:04:25.850069"
+  },
+  {
+    "test_name": "Status Monitoring - Real ID",
+    "passed": false,
+    "response_time": 0.0,
+    "details": "No optimization IDs available",
+    "timestamp": "2025-07-22T14:04:25.850134"
+  },
+  {
+    "test_name": "Results Retrieval - Non-existent ID",
+    "passed": true,
+    "response_time": 61.00030159950256,
+    "details": "Status: 0 | 404 handled: True",
+    "timestamp": "2025-07-22T14:05:26.850482"
+  },
+  {
+    "test_name": "Optimization List",
+    "passed": false,
+    "response_time": 61.00456357002258,
+    "details": "Status: 0 | Error: ",
+    "timestamp": "2025-07-22T14:06:27.855149"
+  },
+  {
+    "test_name": "Parameter Application - Non-existent ID",
+    "passed": true,
+    "response_time": 60.99449014663696,
+    "details": "Status: 0 | 404 handled: True",
+    "timestamp": "2025-07-22T14:07:28.849731"
+  },
+  {
+    "test_name": "Ethical Engine Integration",
+    "passed": false,
+    "response_time": 60.99637484550476,
+    "details": "Status: 0 | Error: ",
+    "timestamp": "2025-07-22T14:08:29.853149"
+  }
+]
