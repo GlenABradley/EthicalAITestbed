@@ -1,0 +1,44 @@
+[
+  {
+    "test_name": "Optimization List Endpoint",
+    "passed": false,
+    "response_time": 10.494951963424683,
+    "details": "Status: 408 | Timeout (endpoint exists but slow)",
+    "timestamp": "2025-07-22T14:09:34.851152"
+  },
+  {
+    "test_name": "Status Endpoint - Non-existent ID",
+    "passed": false,
+    "response_time": 11.000926733016968,
+    "details": "Status: 408 | Timeout (endpoint exists but slow)",
+    "timestamp": "2025-07-22T14:09:45.852143"
+  },
+  {
+    "test_name": "Results Endpoint - Non-existent ID",
+    "passed": false,
+    "response_time": 10.997431516647339,
+    "details": "Status: 408 | Timeout (endpoint exists but slow)",
+    "timestamp": "2025-07-22T14:09:56.849644"
+  },
+  {
+    "test_name": "Parameter Validation - Empty Texts",
+    "passed": false,
+    "response_time": 11.000060796737671,
+    "details": "Status: 408 | Timeout (validation should be quick)",
+    "timestamp": "2025-07-22T14:10:07.849799"
+  },
+  {
+    "test_name": "Parameter Validation - Insufficient Texts",
+    "passed": false,
+    "response_time": 11.002880573272705,
+    "details": "Status: 408 | Timeout (validation should be quick)",
+    "timestamp": "2025-07-22T14:10:18.852755"
+  },
+  {
+    "test_name": "Optimization Start - Timeout Behavior",
+    "passed": false,
+    "response_time": 11.002543449401855,
+    "details": "Status: 408 | Timeout - indicates computational complexity",
+    "timestamp": "2025-07-22T14:10:29.855373"
+  }
+]
