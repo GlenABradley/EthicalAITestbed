@@ -1373,6 +1373,422 @@ async def streaming_status():
         "uptime": "Ready for connections"
     }
 
+# 🎯 BAYESIAN CLUSTER OPTIMIZATION ENDPOINTS
+# ═══════════════════════════════════════════════════════════════
+# These endpoints provide access to the advanced 7-stage Bayesian
+# optimization system for maximizing cluster resolution at each scale.
+
+@app.post("/api/optimization/start", tags=["Bayesian Optimization"])
+async def start_cluster_optimization(
+    request: Dict[str, Any],
+    background_tasks: BackgroundTasks
+):
+    """
+    🚀 START BAYESIAN CLUSTER OPTIMIZATION
+    =====================================
+    
+    Initiate the 7-stage Bayesian optimization process to maximize
+    cluster resolution across all scales of ethical analysis.
+    
+    This endpoint starts the optimization process in the background
+    and returns an optimization ID for tracking progress.
+    """
+    
+    try:
+        # Extract optimization parameters
+        test_texts = request.get("test_texts", [
+            "This is a comprehensive ethical analysis test.",
+            "The system should detect various types of ethical patterns.",
+            "We need to optimize clustering at multiple scales.",
+            "Token, span, sentence, paragraph, document, cross-document, and meta-framework levels.",
+            "Bayesian optimization will find optimal tau scalars and master scalar."
+        ])
+        
+        # Validation
+        if not test_texts or not isinstance(test_texts, list):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="test_texts must be a non-empty list"
+            )
+        
+        if len(test_texts) < 2:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="At least 2 test texts required for optimization"
+            )
+        
+        # Configure optimization parameters
+        optimization_config = OptimizationParameters(
+            n_initial_samples=request.get("n_initial_samples", 10),  # Reduced for demo
+            n_optimization_iterations=request.get("n_optimization_iterations", 20),  # Reduced for demo
+            max_optimization_time=request.get("max_optimization_time", 180.0),  # 3 minutes max
+            parallel_evaluations=request.get("parallel_evaluations", True),
+            max_workers=request.get("max_workers", 2)  # Reduced for demo
+        )
+        
+        # Create optimization ID
+        optimization_id = f"opt_{int(time.time())}_{random.randint(1000, 9999)}"
+        
+        # Initialize optimizer in background
+        ethical_engine = get_cached_ethical_engine()
+        
+        async def run_optimization():
+            """Background task to run Bayesian optimization."""
+            try:
+                logger.info(f"🚀 Starting optimization {optimization_id}")
+                
+                # Create optimizer
+                optimizer = await create_bayesian_optimizer(
+                    ethical_engine, 
+                    optimization_config
+                )
+                
+                # Store optimizer for progress tracking
+                if not hasattr(app.state, 'optimizers'):
+                    app.state.optimizers = {}
+                app.state.optimizers[optimization_id] = optimizer
+                
+                # Run optimization
+                result = await optimizer.optimize_cluster_resolution(
+                    test_texts=test_texts,
+                    validation_texts=request.get("validation_texts")
+                )
+                
+                # Store result
+                if not hasattr(app.state, 'optimization_results'):
+                    app.state.optimization_results = {}
+                app.state.optimization_results[optimization_id] = result
+                
+                logger.info(f"✅ Optimization {optimization_id} completed")
+                logger.info(f"   🎯 Best score: {result.best_resolution_score:.4f}")
+                
+            except Exception as e:
+                logger.error(f"❌ Optimization {optimization_id} failed: {e}")
+                
+                # Store error result
+                if not hasattr(app.state, 'optimization_results'):
+                    app.state.optimization_results = {}
+                app.state.optimization_results[optimization_id] = {
+                    "error": str(e),
+                    "status": "failed",
+                    "optimization_id": optimization_id
+                }
+        
+        # Start optimization in background
+        background_tasks.add_task(run_optimization)
+        
+        return {
+            "status": "started",
+            "optimization_id": optimization_id,
+            "message": "7-stage Bayesian cluster optimization started",
+            "configuration": {
+                "initial_samples": optimization_config.n_initial_samples,
+                "optimization_iterations": optimization_config.n_optimization_iterations,
+                "max_time_seconds": optimization_config.max_optimization_time,
+                "parallel_evaluations": optimization_config.parallel_evaluations,
+                "optimization_scales": [scale.value for scale in OptimizationScale]
+            },
+            "estimated_completion_time": optimization_config.max_optimization_time,
+            "progress_endpoint": f"/api/optimization/status/{optimization_id}",
+            "results_endpoint": f"/api/optimization/results/{optimization_id}"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Failed to start optimization: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to start optimization: {str(e)}"
+        )
+
+@app.get("/api/optimization/status/{optimization_id}", tags=["Bayesian Optimization"])
+async def get_optimization_status(optimization_id: str):
+    """
+    📊 GET OPTIMIZATION STATUS
+    =========================
+    
+    Check the status and progress of a running Bayesian optimization.
+    """
+    
+    try:
+        # Check if optimization exists
+        if (not hasattr(app.state, 'optimizers') or 
+            optimization_id not in app.state.optimizers):
+            
+            # Check if completed
+            if (hasattr(app.state, 'optimization_results') and 
+                optimization_id in app.state.optimization_results):
+                return {
+                    "optimization_id": optimization_id,
+                    "status": "completed",
+                    "message": "Optimization completed, use results endpoint"
+                }
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Optimization {optimization_id} not found"
+                )
+        
+        # Get optimizer instance
+        optimizer = app.state.optimizers[optimization_id]
+        
+        # Get current status
+        summary = optimizer.get_optimization_summary()
+        
+        return {
+            "optimization_id": optimization_id,
+            "status": "running" if summary.get("optimization_status") == "not_optimized" else summary.get("optimization_status", "running"),
+            "progress": {
+                "current_evaluations": optimizer.evaluation_count,
+                "total_evaluations_planned": optimizer.params.n_initial_samples + optimizer.params.n_optimization_iterations,
+                "current_best_score": optimizer.best_result.best_resolution_score if optimizer.best_result else 0.0,
+                "optimization_time_elapsed": time.time() - optimizer.optimization_start_time if optimizer.optimization_start_time else 0.0,
+                "max_time_allowed": optimizer.params.max_optimization_time
+            },
+            "current_parameters": summary.get("best_parameters", {}),
+            "performance_metrics": summary.get("performance_metrics", {}),
+            "scale_analysis": summary.get("scale_analysis", {}),
+            "estimated_time_remaining": max(0, optimizer.params.max_optimization_time - (time.time() - optimizer.optimization_start_time if optimizer.optimization_start_time else 0))
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Failed to get optimization status: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get optimization status: {str(e)}"
+        )
+
+@app.get("/api/optimization/results/{optimization_id}", tags=["Bayesian Optimization"])
+async def get_optimization_results(optimization_id: str):
+    """
+    🎯 GET OPTIMIZATION RESULTS
+    ==========================
+    
+    Retrieve the complete results of a finished Bayesian optimization.
+    """
+    
+    try:
+        # Check if results exist
+        if (not hasattr(app.state, 'optimization_results') or 
+            optimization_id not in app.state.optimization_results):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Results for optimization {optimization_id} not found"
+            )
+        
+        result = app.state.optimization_results[optimization_id]
+        
+        # Check if it's an error result
+        if isinstance(result, dict) and "error" in result:
+            return {
+                "optimization_id": optimization_id,
+                "status": "failed",
+                "error": result["error"],
+                "message": "Optimization failed"
+            }
+        
+        # Return comprehensive results
+        return {
+            "optimization_id": optimization_id,
+            "status": "completed",
+            "results": {
+                "optimal_parameters": {
+                    "tau_virtue": result.optimal_tau_virtue,
+                    "tau_deontological": result.optimal_tau_deontological,
+                    "tau_consequentialist": result.optimal_tau_consequentialist,
+                    "master_scalar": result.optimal_master_scalar
+                },
+                "performance": {
+                    "best_resolution_score": result.best_resolution_score,
+                    "optimization_confidence": result.optimization_confidence,
+                    "cross_validation_score": result.cross_validation_score,
+                    "stability_score": result.temporal_stability_score
+                },
+                "optimization_statistics": {
+                    "total_evaluations": result.total_evaluations,
+                    "optimization_iterations": result.optimization_iterations,
+                    "optimization_time_seconds": result.optimization_time,
+                    "convergence_achieved": result.optimization_confidence > 0.8
+                },
+                "convergence_history": result.convergence_history,
+                "parameter_history": result.parameter_history,
+                "pareto_frontier": result.pareto_frontier
+            },
+            "recommendations": {
+                "apply_parameters": result.best_resolution_score > 0.6,
+                "confidence_level": "high" if result.optimization_confidence > 0.8 else "medium" if result.optimization_confidence > 0.5 else "low",
+                "suggested_actions": [
+                    "Apply optimal parameters to ethical engine" if result.best_resolution_score > 0.6 else "Consider rerunning optimization with different test data",
+                    "Monitor system performance after parameter application",
+                    "Consider periodic re-optimization to maintain performance"
+                ]
+            },
+            "metadata": {
+                "optimization_version": result.version,
+                "timestamp": result.timestamp.isoformat() if result.timestamp else None,
+                "optimization_scales": len(OptimizationScale)
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Failed to get optimization results: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get optimization results: {str(e)}"
+        )
+
+@app.post("/api/optimization/apply/{optimization_id}", tags=["Bayesian Optimization"])
+async def apply_optimization_results(optimization_id: str):
+    """
+    ⚡ APPLY OPTIMIZATION RESULTS
+    ============================
+    
+    Apply the optimized parameters from a completed Bayesian optimization
+    to the ethical evaluation engine.
+    """
+    
+    try:
+        # Check if results exist
+        if (not hasattr(app.state, 'optimization_results') or 
+            optimization_id not in app.state.optimization_results):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Results for optimization {optimization_id} not found"
+            )
+        
+        result = app.state.optimization_results[optimization_id]
+        
+        # Check if it's an error result
+        if isinstance(result, dict) and "error" in result:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot apply results from failed optimization"
+            )
+        
+        # Check if results are good enough to apply
+        if result.best_resolution_score < 0.3:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Optimization score too low ({result.best_resolution_score:.3f}) to apply safely"
+            )
+        
+        # Get ethical engine and apply parameters
+        ethical_engine = get_cached_ethical_engine()
+        
+        # Backup current parameters
+        original_params = {
+            "virtue_threshold": ethical_engine.parameters.virtue_threshold,
+            "deontological_threshold": ethical_engine.parameters.deontological_threshold,
+            "consequentialist_threshold": ethical_engine.parameters.consequentialist_threshold
+        }
+        
+        # Apply optimized parameters
+        ethical_engine.parameters.virtue_threshold = result.optimal_tau_virtue
+        ethical_engine.parameters.deontological_threshold = result.optimal_tau_deontological
+        ethical_engine.parameters.consequentialist_threshold = result.optimal_tau_consequentialist
+        
+        logger.info(f"✅ Applied optimization {optimization_id} parameters")
+        logger.info(f"   τ_virtue: {result.optimal_tau_virtue:.4f}")
+        logger.info(f"   τ_deontological: {result.optimal_tau_deontological:.4f}")
+        logger.info(f"   τ_consequentialist: {result.optimal_tau_consequentialist:.4f}")
+        logger.info(f"   μ_master: {result.optimal_master_scalar:.4f}")
+        
+        return {
+            "status": "applied",
+            "optimization_id": optimization_id,
+            "message": "Optimized parameters successfully applied to ethical engine",
+            "applied_parameters": {
+                "tau_virtue": result.optimal_tau_virtue,
+                "tau_deontological": result.optimal_tau_deontological,
+                "tau_consequentialist": result.optimal_tau_consequentialist,
+                "master_scalar": result.optimal_master_scalar
+            },
+            "previous_parameters": original_params,
+            "optimization_quality": {
+                "resolution_score": result.best_resolution_score,
+                "confidence": result.optimization_confidence,
+                "recommended": result.best_resolution_score > 0.6
+            },
+            "next_steps": [
+                "Monitor evaluation performance with new parameters",
+                "Consider running validation tests",
+                "Save parameters if performance is satisfactory"
+            ]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Failed to apply optimization results: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to apply optimization results: {str(e)}"
+        )
+
+@app.get("/api/optimization/list", tags=["Bayesian Optimization"])
+async def list_optimizations():
+    """
+    📋 LIST ALL OPTIMIZATIONS
+    ========================
+    
+    Get a list of all optimization processes (running and completed).
+    """
+    
+    try:
+        optimizations = []
+        
+        # Add running optimizations
+        if hasattr(app.state, 'optimizers'):
+            for opt_id, optimizer in app.state.optimizers.items():
+                summary = optimizer.get_optimization_summary()
+                optimizations.append({
+                    "optimization_id": opt_id,
+                    "status": "running",
+                    "current_best_score": optimizer.best_result.best_resolution_score if optimizer.best_result else 0.0,
+                    "evaluations": optimizer.evaluation_count,
+                    "start_time": optimizer.optimization_start_time,
+                    "estimated_completion": optimizer.optimization_start_time + optimizer.params.max_optimization_time if optimizer.optimization_start_time else None
+                })
+        
+        # Add completed optimizations
+        if hasattr(app.state, 'optimization_results'):
+            for opt_id, result in app.state.optimization_results.items():
+                if isinstance(result, dict) and "error" in result:
+                    optimizations.append({
+                        "optimization_id": opt_id,
+                        "status": "failed",
+                        "error": result["error"]
+                    })
+                else:
+                    optimizations.append({
+                        "optimization_id": opt_id,
+                        "status": "completed",
+                        "best_score": result.best_resolution_score,
+                        "optimization_time": result.optimization_time,
+                        "confidence": result.optimization_confidence,
+                        "completion_time": result.timestamp.isoformat() if result.timestamp else None
+                    })
+        
+        return {
+            "total_optimizations": len(optimizations),
+            "running": len([opt for opt in optimizations if opt["status"] == "running"]),
+            "completed": len([opt for opt in optimizations if opt["status"] == "completed"]),
+            "failed": len([opt for opt in optimizations if opt["status"] == "failed"]),
+            "optimizations": optimizations
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to list optimizations: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to list optimizations: {str(e)}"
+        )
+
 if __name__ == "__main__":
     # 🎓 PROFESSOR'S NOTE: Development Server
     # ═══════════════════════════════════════════
