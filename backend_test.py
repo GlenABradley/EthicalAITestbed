@@ -455,41 +455,48 @@ class BackendTestSuite:
     # ═══════════════════════════════════════════════════════════════════════════════════
     
     async def bayesian_test_optimization_start(self):
-        """Test starting a Bayesian optimization process."""
-        print("🚀 Testing Bayesian optimization start...")
+        """Test starting a PERFORMANCE-OPTIMIZED Bayesian optimization process."""
+        print("🚀 Testing PERFORMANCE-OPTIMIZED Bayesian optimization start...")
         
+        # Use the EXACT parameters from the review request for performance testing
         test_data = {
             "test_texts": [
-                "This text contains some ethical considerations about AI development.",
-                "We should ensure fairness and transparency in machine learning systems.",
-                "Privacy protection is crucial when handling personal data.",
-                "Algorithmic bias can lead to discriminatory outcomes.",
-                "Ethical guidelines should be integrated into software development processes."
+                "Quick test for optimized Bayesian cluster resolution.",
+                "Performance improvements should make this much faster."
             ],
-            "n_initial_samples": 5,
-            "n_optimization_iterations": 10,
-            "max_optimization_time": 60.0,
-            "parallel_evaluations": True,
-            "max_workers": 2
+            "n_initial_samples": 3,
+            "n_optimization_iterations": 5,
+            "max_optimization_time": 20.0,
+            "parallel_evaluations": False,
+            "max_workers": 1
         }
         
         success, response_time, result = await self.test_endpoint("POST", "/optimization/start", test_data)
         
         details = f"Response time: {response_time:.3f}s"
+        
+        # Check if response time meets performance requirements (< 5 seconds for start)
+        performance_met = response_time < 5.0
+        
         if success:
             optimization_id = result.get('optimization_id', '')
             details += f" | Optimization ID: {optimization_id[:12]}..."
             details += f" | Status: {result.get('status', 'unknown')}"
             details += f" | Config samples: {result.get('configuration', {}).get('initial_samples', 0)}"
+            details += f" | Performance target met (< 5s): {performance_met}"
             # Store optimization ID for later tests
             if not hasattr(self, 'optimization_ids'):
                 self.optimization_ids = []
             self.optimization_ids.append(optimization_id)
         else:
             details += f" | Error: {result.get('error', 'Unknown error')}"
+            details += f" | Performance target met (< 5s): {performance_met}"
         
-        self.log_test_result("bayesian_tests", "Optimization Start", success, response_time, details)
-        return success
+        # Success requires both API success AND performance target
+        overall_success = success and performance_met
+        
+        self.log_test_result("bayesian_tests", "Performance-Optimized Start", overall_success, response_time, details)
+        return overall_success
     
     async def bayesian_test_parameter_validation(self):
         """Test parameter validation for optimization requests."""
