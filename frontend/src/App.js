@@ -918,6 +918,10 @@ function App() {
               </div>
             </div>
           )}
+
+          {activeTab === 'ml-assistant' && (
+            <MLTrainingAssistant backendUrl={BACKEND_URL} />
+          )}
         </div>
       </div>
     </div>
