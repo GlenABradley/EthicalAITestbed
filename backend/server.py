@@ -2333,6 +2333,21 @@ def create_integrated_app():
         except Exception as e:
             logger.error(f"❌ Failed to initialize enhanced ethics pipeline: {e}")
             enhanced_ethics_orchestrator = None
+            
+        # Initialize Real-Time Streaming Server - Phase 7
+        try:
+            streaming_server = await initialize_streaming_server(host="0.0.0.0", port=8765)
+            logger.info("✅ Real-Time Ethics Streaming Server initialized with world-class architecture")
+            logger.info("   - WebSocket Architecture: Following Guillermo Rauch's Socket.IO patterns")
+            logger.info("   - Stream Processing: Jay Kreps' Kafka streaming paradigms") 
+            logger.info("   - Circuit Breaker: Pat Helland's resilience patterns")
+            logger.info("   - Backpressure Control: Reactive Streams specifications")
+            logger.info("   - Low-Latency Processing: Martin Thompson's mechanical sympathy principles")
+            logger.info("   - Event-Driven Messaging: Martin Kleppmann's distributed data patterns")
+            logger.info(f"   - Server listening on ws://0.0.0.0:8765")
+        except Exception as e:
+            logger.error(f"❌ Failed to initialize streaming server: {e}")
+            streaming_server = None
     
     @app.on_event("shutdown") 
     async def shutdown_event():
