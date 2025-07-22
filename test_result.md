@@ -276,13 +276,16 @@ backend:
     implemented: true
     working: false
     file: "backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: false
     status_history:
       - working: false
         agent: "testing"
         comment: "❌ CRITICAL ISSUE: Parameter validation for Bayesian optimization endpoints times out (11s). Even simple validation requests (empty texts, insufficient texts) timeout, indicating the system initialization or validation logic has performance bottlenecks that need immediate attention."
+      - working: false
+        agent: "testing"
+        comment: "❌ VALIDATION STILL FAILING: Performance optimizations have not resolved the fundamental timeout issue. Parameter validation requests still timeout, indicating the problem is not in the optimization algorithm itself but in the system initialization or module loading. Even requests that should fail fast due to validation errors (empty test_texts, insufficient test_texts) timeout at 10+ seconds, confirming a system-level bottleneck in the Bayesian optimization module."
 
 frontend:
   - task: "Frontend Testing"
