@@ -52,6 +52,7 @@ Engineering Excellence: Modern distributed systems patterns
 
 import asyncio
 import logging
+import random
 import time
 import uuid
 from contextlib import asynccontextmanager
