@@ -318,7 +318,9 @@ function App() {
         <div className="flex justify-center mb-8">
           <nav className="flex space-x-2 bg-white p-2 rounded-lg shadow">
             <button
-              onClick={() => setActiveTab('evaluate')}
+              onClick={() => handleTabSwitch('evaluate')}
+              onMouseDown={(e) => handleTabSwitchNative(e, 'evaluate')}
+              data-tab="evaluate"
               className={`px-4 py-2 rounded-md font-medium transition-colors ${
                 activeTab === 'evaluate'
                   ? 'bg-blue-500 text-white'
@@ -328,7 +330,9 @@ function App() {
               Evaluate Text
             </button>
             <button
-              onClick={() => setActiveTab('heatmap')}
+              onClick={() => handleTabSwitch('heatmap')}
+              onMouseDown={(e) => handleTabSwitchNative(e, 'heatmap')}
+              data-tab="heatmap"
               className={`px-4 py-2 rounded-md font-medium transition-colors ${
                 activeTab === 'heatmap'
                   ? 'bg-blue-500 text-white'
@@ -338,7 +342,9 @@ function App() {
               📊 Heat-Map
             </button>
             <button
-              onClick={() => setActiveTab('ml-assistant')}
+              onClick={() => handleTabSwitch('ml-assistant')}
+              onMouseDown={(e) => handleTabSwitchNative(e, 'ml-assistant')}
+              data-tab="ml-assistant"
               className={`px-4 py-2 rounded-md font-medium transition-colors ${
                 activeTab === 'ml-assistant'
                   ? 'bg-purple-500 text-white'
@@ -348,7 +354,9 @@ function App() {
               🧠 ML Ethics Assistant
             </button>
             <button
-              onClick={() => setActiveTab('parameters')}
+              onClick={() => handleTabSwitch('parameters')}
+              onMouseDown={(e) => handleTabSwitchNative(e, 'parameters')}
+              data-tab="parameters"
               className={`px-4 py-2 rounded-md font-medium transition-colors ${
                 activeTab === 'parameters'
                   ? 'bg-blue-500 text-white'
