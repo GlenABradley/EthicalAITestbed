@@ -1432,52 +1432,24 @@ async def start_cluster_optimization(
         ethical_engine = get_cached_ethical_engine()
         
         async def run_optimization():
-            """Background task to run Bayesian optimization."""
+            """Background task to run lightweight Bayesian optimization."""
             try:
-                logger.info(f"🚀 Starting optimization {optimization_id}")
+                logger.info(f"🚀 Starting lightweight optimization {optimization_id}")
                 
-                # Create optimizer with timeout protection
-                optimizer = await asyncio.wait_for(
-                    create_bayesian_optimizer(ethical_engine, optimization_config),
-                    timeout=5.0  # 5 second timeout for optimizer creation
+                # Start lightweight optimization
+                actual_opt_id = await start_lightweight_optimization(
+                    ethical_engine, 
+                    test_texts,
+                    optimization_config
                 )
                 
-                # Store optimizer for progress tracking
-                if not hasattr(app.state, 'optimizers'):
-                    app.state.optimizers = {}
-                app.state.optimizers[optimization_id] = optimizer
-                
-                # Run optimization with overall timeout
-                result = await asyncio.wait_for(
-                    optimizer.optimize_cluster_resolution(
-                        test_texts=test_texts,
-                        validation_texts=request.get("validation_texts")
-                    ),
-                    timeout=optimization_config.max_optimization_time + 10.0  # Extra 10s buffer
-                )
-                
-                # Store result
-                if not hasattr(app.state, 'optimization_results'):
-                    app.state.optimization_results = {}
-                app.state.optimization_results[optimization_id] = result
-                
-                logger.info(f"✅ Optimization {optimization_id} completed")
-                logger.info(f"   🎯 Best score: {result.best_resolution_score:.4f}")
-                
-            except asyncio.TimeoutError:
-                logger.error(f"❌ Optimization {optimization_id} timed out")
-                # Store timeout error
-                if not hasattr(app.state, 'optimization_results'):
-                    app.state.optimization_results = {}
-                app.state.optimization_results[optimization_id] = {
-                    "error": "Optimization timed out",
-                    "status": "timeout",
-                    "optimization_id": optimization_id
-                }
+                # The actual ID should match our generated ID since we use time-based generation
+                logger.info(f"✅ Lightweight optimization started: {actual_opt_id}")
                 
             except Exception as e:
-                logger.error(f"❌ Optimization {optimization_id} failed: {e}")
-                # Store error result
+                logger.error(f"❌ Lightweight optimization {optimization_id} failed: {e}")
+                
+                # Store error result using the lightweight system's format
                 if not hasattr(app.state, 'optimization_results'):
                     app.state.optimization_results = {}
                 app.state.optimization_results[optimization_id] = {
