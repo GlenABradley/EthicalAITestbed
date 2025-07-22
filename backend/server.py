@@ -881,7 +881,7 @@ if __name__ == "__main__":
     logger.info("🚀 Starting Unified Ethical AI Server in development mode...")
     
     uvicorn.run(
-        "unified_server:app",
+        "server:app",
         host="0.0.0.0",
         port=8001,
         reload=True,
