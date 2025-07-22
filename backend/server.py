@@ -91,6 +91,9 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
+# Global smart buffer instance for training data streams
+training_stream_buffer = None
+
 def create_integrated_app():
     """
     Create FastAPI app with integrated optimized and existing components.
