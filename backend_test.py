@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """
 Comprehensive Backend Testing for Ethical AI Developer Testbed
-Focus: Testing the fixed Ethical AI Developer Testbed backend after EthicalSpan has_violation() compatibility fix
+Focus: Phase 5 Enhanced Ethics Pipeline Testing with Philosophical Foundations
 
 This test suite specifically validates:
-1. Primary Evaluation Endpoint (/api/evaluate) with various text inputs
-2. Core Functionality - unethical content flagging and ethical content passing
-3. Response Structure validation
-4. Performance and system stability
-5. Integration between optimized and original evaluation engines
+1. Phase 5 Enhanced Ethics Pipeline - Comprehensive Analysis
+2. Meta-Ethical Analysis Framework (Kantian, Moorean, Humean)
+3. Normative Ethics Multi-Framework Analysis (Deontological, Consequentialist, Virtue)
+4. Applied Ethics Domain-Specific Analysis (Digital, AI Ethics)
+5. ML Training Ethical Guidance Integration
+6. Pipeline Status and Performance Monitoring
+7. Philosophical Rigor and Practical Utility Validation
 """
 
 import requests
