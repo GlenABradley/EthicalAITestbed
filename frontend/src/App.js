@@ -180,7 +180,7 @@ function App() {
       // Tab buttons
       const tabButtons = document.querySelectorAll('nav button');
       tabButtons.forEach((button, index) => {
-        const tabNames = ['evaluate', 'heatmap', 'ml-assistant', 'parameters'];
+        const tabNames = ['evaluate', 'heatmap', 'ml-assistant', 'streaming', 'parameters'];
         const tabName = tabNames[index];
         
         if (tabName) {
