@@ -1708,45 +1708,55 @@ async def list_optimizations():
     """
     
     try:
+        # Get all optimizations from the lightweight system
+        all_optimizations = list_all_optimizations()
+        
+        # Clean up old completed optimizations
+        cleanup_completed_optimizations()
+        
+        # Convert to API format
         optimizations = []
-        
-        # Add running optimizations
-        if hasattr(app.state, 'optimizers'):
-            for opt_id, optimizer in app.state.optimizers.items():
-                summary = optimizer.get_optimization_summary()
-                optimizations.append({
-                    "optimization_id": opt_id,
-                    "status": "running",
-                    "current_best_score": optimizer.best_result.best_resolution_score if optimizer.best_result else 0.0,
-                    "evaluations": optimizer.evaluation_count,
-                    "start_time": optimizer.optimization_start_time,
-                    "estimated_completion": optimizer.optimization_start_time + optimizer.params.max_optimization_time if optimizer.optimization_start_time else None
+        for opt in all_optimizations:
+            opt_info = {
+                "optimization_id": opt.optimization_id,
+                "status": opt.status.value,
+                "completion_time": opt.timestamp.isoformat() if opt.timestamp else None
+            }
+            
+            if opt.status == OptimizationStatus.RUNNING:
+                opt_info.update({
+                    "current_best_score": opt.best_score,
+                    "iterations": opt.iterations_completed,
+                    "elapsed_time": opt.total_time,
+                    "progress_percent": opt.progress_percent
                 })
+            elif opt.status == OptimizationStatus.COMPLETED:
+                opt_info.update({
+                    "best_score": opt.best_score,
+                    "total_iterations": opt.iterations_completed,
+                    "optimization_time": opt.total_time,
+                    "confidence": "high" if opt.best_score > 0.7 else "medium"
+                })
+            elif opt.status in [OptimizationStatus.FAILED, OptimizationStatus.TIMEOUT]:
+                opt_info.update({
+                    "error": opt.error_message,
+                    "elapsed_time": opt.total_time
+                })
+            
+            optimizations.append(opt_info)
         
-        # Add completed optimizations
-        if hasattr(app.state, 'optimization_results'):
-            for opt_id, result in app.state.optimization_results.items():
-                if isinstance(result, dict) and "error" in result:
-                    optimizations.append({
-                        "optimization_id": opt_id,
-                        "status": "failed",
-                        "error": result["error"]
-                    })
-                else:
-                    optimizations.append({
-                        "optimization_id": opt_id,
-                        "status": "completed",
-                        "best_score": result.best_resolution_score,
-                        "optimization_time": result.optimization_time,
-                        "confidence": result.optimization_confidence,
-                        "completion_time": result.timestamp.isoformat() if result.timestamp else None
-                    })
+        # Count by status
+        status_counts = {}
+        for status in OptimizationStatus:
+            status_counts[status.value] = sum(1 for opt in all_optimizations if opt.status == status)
         
         return {
             "total_optimizations": len(optimizations),
-            "running": len([opt for opt in optimizations if opt["status"] == "running"]),
-            "completed": len([opt for opt in optimizations if opt["status"] == "completed"]),
-            "failed": len([opt for opt in optimizations if opt["status"] == "failed"]),
+            "running": status_counts.get("running", 0),
+            "completed": status_counts.get("completed", 0),
+            "failed": status_counts.get("failed", 0),
+            "timeout": status_counts.get("timeout", 0),
+            "pending": status_counts.get("pending", 0),
             "optimizations": optimizations
         }
         
