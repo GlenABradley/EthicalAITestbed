@@ -3154,7 +3154,7 @@ def create_integrated_app():
             logger.error(f"❌ Knowledge-enhanced ethics analysis failed: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Enhanced analysis failed: {str(e)}")
     
-    def _synthesize_enhanced_analysis(ethics_analysis: Any, knowledge_insights: List[Dict], philosophical_context: List[Dict]) -> str:
+    def _synthesize_enhanced_analysis(self, ethics_analysis: Any, knowledge_insights: List[Dict], philosophical_context: List[Dict]) -> str:
         """Synthesize enhanced analysis with knowledge integration"""
         synthesis_parts = []
         
