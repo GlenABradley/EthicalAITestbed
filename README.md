@@ -2,6 +2,26 @@
 
 A unified ethical AI evaluation platform combining philosophical frameworks with software engineering practices.
 
+## 📁 Repository Structure
+
+**Quick Navigation:** See [FILELIST.md](./FILELIST.md) for complete file structure and AI agent navigation guide.
+
+### Core Components
+```
+/app/
+├── backend/         # FastAPI Python Backend (Main: server.py, ethical_engine.py)
+├── frontend/        # React Application (Main: src/App.js, components/)
+├── Documentation/   # *.md files (README.md, TESTING_STATUS.md, etc.)
+└── Testing/         # *test*.py files and results
+```
+
+### Essential Files for AI Agents
+- **Backend Entry:** `backend/server.py` - Main FastAPI application
+- **Core Logic:** `backend/ethical_engine.py` - Ethical evaluation engine  
+- **Frontend Entry:** `frontend/src/App.js` - Main React application
+- **Testing Guide:** `test_result.md` - Testing protocols and results
+- **Full File List:** `FILELIST.md` - Complete repository structure
+
 ## Version 1.2 - Unified Architecture
 
 This version implements a refactored architecture with clean separation of concerns and unified component orchestration.
