@@ -1390,3 +1390,366 @@ class PostEvaluationMode(EvaluationModeInterface):
                 "quality_metrics": "Quality assessment weights"
             }
         }
+
+class MultiModalEvaluationOrchestrator:
+    """
+    Orchestrates multi-modal evaluations with intelligent routing and optimization.
+    
+    Inspired by the Command Pattern and Strategy Pattern for flexible evaluation routing.
+    Implements Circuit Breaker and Bulkhead patterns for resilience.
+    
+    Design Philosophy:
+    - Single Responsibility: Each mode handles its specific evaluation context
+    - Open/Closed: Easy to add new evaluation modes without modifying existing code
+    - Dependency Inversion: Depends on abstractions, not concrete implementations
+    """
+    
+    def __init__(self, 
+                 ethical_evaluator=None, 
+                 ml_ethics_engine=None,
+                 max_concurrent_evaluations: int = 10):
+        """Initialize the multi-modal evaluation orchestrator."""
+        self.ethical_evaluator = ethical_evaluator
+        self.ml_ethics_engine = ml_ethics_engine
+        self.max_concurrent_evaluations = max_concurrent_evaluations
+        
+        # Initialize evaluation modes
+        self._initialize_evaluation_modes()
+        
+        # Request tracking and metrics
+        self.active_requests: Dict[str, EvaluationContext] = {}
+        self.request_history: deque = deque(maxlen=1000)
+        self.performance_metrics = defaultdict(list)
+        
+        # Concurrency control
+        self.semaphore = asyncio.Semaphore(max_concurrent_evaluations)
+        self.executor = ThreadPoolExecutor(max_workers=max_concurrent_evaluations)
+        
+        # Circuit breaker state for each mode
+        self.circuit_breakers = {
+            mode: {"failures": 0, "last_failure": 0, "state": "closed"}
+            for mode in EvaluationMode
+        }
+        
+        logger.info(f"Multi-modal evaluation orchestrator initialized with {len(evaluation_mode_registry)} modes")
+    
+    def _initialize_evaluation_modes(self):
+        """Initialize and register all evaluation modes."""
+        # Register pre-evaluation mode
+        pre_mode = PreEvaluationMode(self.ethical_evaluator, self.ml_ethics_engine)
+        register_evaluation_mode(EvaluationMode.PRE_EVALUATION, pre_mode)
+        
+        # Register post-evaluation mode  
+        post_mode = PostEvaluationMode(self.ethical_evaluator, self.ml_ethics_engine)
+        register_evaluation_mode(EvaluationMode.POST_EVALUATION, post_mode)
+        
+        # Stream evaluation mode will use the existing smart buffer system
+        # Batch evaluation mode can be implemented later
+        # Interactive evaluation mode for human-in-the-loop
+        
+        logger.info("Evaluation modes initialized and registered")
+    
+    async def evaluate(self, 
+                      content: Union[str, List[str]], 
+                      mode: EvaluationMode,
+                      priority: EvaluationPriority = EvaluationPriority.MEDIUM,
+                      context_metadata: Optional[Dict[str, Any]] = None,
+                      **kwargs) -> UnifiedEvaluationResult:
+        """
+        Perform evaluation using the specified mode with intelligent orchestration.
+        
+        Args:
+            content: Content to evaluate
+            mode: Evaluation mode to use
+            priority: Priority level for processing
+            context_metadata: Additional context information
+            **kwargs: Mode-specific parameters
+            
+        Returns:
+            UnifiedEvaluationResult with comprehensive analysis
+        """
+        # Create evaluation context
+        context = EvaluationContext(
+            request_id=str(uuid.uuid4()),
+            mode=mode,
+            priority=priority,
+            timestamp=time.time(),
+            source=kwargs.get("source", "api"),
+            user_id=kwargs.get("user_id"),
+            session_id=kwargs.get("session_id"),
+            training_context=kwargs.get("training_context"),
+            metadata=context_metadata or {}
+        )
+        
+        # Check circuit breaker
+        if not self._check_circuit_breaker(mode):
+            return self._create_circuit_breaker_result(context)
+        
+        # Add to active requests
+        self.active_requests[context.request_id] = context
+        
+        try:
+            # Use semaphore for concurrency control
+            async with self.semaphore:
+                result = await self._execute_evaluation(content, context, **kwargs)
+            
+            # Update metrics and circuit breaker
+            self._update_metrics(mode, result)
+            self._update_circuit_breaker(mode, success=True)
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Evaluation failed for mode {mode.value}: {e}")
+            self._update_circuit_breaker(mode, success=False)
+            
+            # Return error result
+            return UnifiedEvaluationResult(
+                request_id=context.request_id,
+                mode=mode,
+                status=EvaluationStatus.FAILED,
+                overall_ethical_score=0.0,
+                decision="HALT",
+                confidence=0.0,
+                error_details=str(e),
+                context=context
+            )
+        finally:
+            # Remove from active requests
+            self.active_requests.pop(context.request_id, None)
+            # Add to history
+            self.request_history.append(context)
+    
+    async def _execute_evaluation(self, 
+                                 content: Union[str, List[str]], 
+                                 context: EvaluationContext,
+                                 **kwargs) -> UnifiedEvaluationResult:
+        """Execute the evaluation using the appropriate mode implementation."""
+        mode_impl = get_evaluation_mode(context.mode)
+        if not mode_impl:
+            raise ValueError(f"No implementation found for mode: {context.mode.value}")
+        
+        # Execute evaluation with timeout
+        try:
+            result = await asyncio.wait_for(
+                mode_impl.evaluate(content, context, **kwargs),
+                timeout=kwargs.get("timeout", 60.0)
+            )
+            return result
+        except asyncio.TimeoutError:
+            raise Exception(f"Evaluation timed out for mode {context.mode.value}")
+    
+    def _check_circuit_breaker(self, mode: EvaluationMode) -> bool:
+        """Check if circuit breaker allows evaluation for this mode."""
+        breaker = self.circuit_breakers[mode]
+        
+        if breaker["state"] == "open":
+            # Check if we should try again (simple timeout-based recovery)
+            if time.time() - breaker["last_failure"] > 60:  # 60 second timeout
+                breaker["state"] = "half-open"
+                return True
+            return False
+        
+        return True
+    
+    def _update_circuit_breaker(self, mode: EvaluationMode, success: bool):
+        """Update circuit breaker state based on evaluation result."""
+        breaker = self.circuit_breakers[mode]
+        
+        if success:
+            if breaker["state"] == "half-open":
+                breaker["state"] = "closed"
+            breaker["failures"] = 0
+        else:
+            breaker["failures"] += 1
+            breaker["last_failure"] = time.time()
+            
+            # Open circuit breaker after 3 consecutive failures
+            if breaker["failures"] >= 3:
+                breaker["state"] = "open"
+                logger.warning(f"Circuit breaker opened for mode {mode.value}")
+    
+    def _create_circuit_breaker_result(self, context: EvaluationContext) -> UnifiedEvaluationResult:
+        """Create result when circuit breaker is open."""
+        return UnifiedEvaluationResult(
+            request_id=context.request_id,
+            mode=context.mode,
+            status=EvaluationStatus.FAILED,
+            overall_ethical_score=0.0,
+            decision="HALT",
+            confidence=0.0,
+            error_details=f"Circuit breaker open for mode {context.mode.value}",
+            warnings=["Service temporarily unavailable due to repeated failures"],
+            context=context
+        )
+    
+    def _update_metrics(self, mode: EvaluationMode, result: UnifiedEvaluationResult):
+        """Update performance metrics for the evaluation mode."""
+        metrics = self.performance_metrics[mode.value]
+        metrics.append({
+            "timestamp": time.time(),
+            "processing_time": result.processing_time,
+            "status": result.status.value,
+            "ethical_score": result.overall_ethical_score,
+            "confidence": result.confidence
+        })
+        
+        # Keep only last 100 metrics per mode
+        if len(metrics) > 100:
+            metrics.pop(0)
+    
+    async def batch_evaluate(self, 
+                           content_items: List[Union[str, List[str]]], 
+                           mode: EvaluationMode,
+                           **kwargs) -> List[UnifiedEvaluationResult]:
+        """
+        Perform batch evaluation of multiple content items.
+        
+        Args:
+            content_items: List of content to evaluate
+            mode: Evaluation mode to use for all items
+            **kwargs: Additional parameters
+            
+        Returns:
+            List of UnifiedEvaluationResult objects
+        """
+        # Create evaluation tasks
+        tasks = []
+        for i, content in enumerate(content_items):
+            task_kwargs = kwargs.copy()
+            task_kwargs["source"] = f"batch_{i}"
+            
+            task = self.evaluate(
+                content, 
+                mode, 
+                priority=EvaluationPriority.BATCH,
+                **task_kwargs
+            )
+            tasks.append(task)
+        
+        # Execute batch with concurrency control
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # Handle exceptions
+        processed_results = []
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                # Create error result
+                processed_results.append(UnifiedEvaluationResult(
+                    request_id=f"batch_error_{i}",
+                    mode=mode,
+                    status=EvaluationStatus.FAILED,
+                    overall_ethical_score=0.0,
+                    decision="HALT",
+                    confidence=0.0,
+                    error_details=str(result)
+                ))
+            else:
+                processed_results.append(result)
+        
+        return processed_results
+    
+    async def configure_mode(self, mode: EvaluationMode, configuration: Dict[str, Any]) -> bool:
+        """Configure a specific evaluation mode."""
+        mode_impl = get_evaluation_mode(mode)
+        if not mode_impl:
+            logger.error(f"No implementation found for mode: {mode.value}")
+            return False
+        
+        try:
+            result = await mode_impl.configure(configuration)
+            if result:
+                logger.info(f"Successfully configured mode: {mode.value}")
+            else:
+                logger.error(f"Failed to configure mode: {mode.value}")
+            return result
+        except Exception as e:
+            logger.error(f"Configuration error for mode {mode.value}: {e}")
+            return False
+    
+    def get_mode_capabilities(self, mode: EvaluationMode) -> Dict[str, Any]:
+        """Get capabilities of a specific evaluation mode."""
+        mode_impl = get_evaluation_mode(mode)
+        if not mode_impl:
+            return {"error": f"No implementation found for mode: {mode.value}"}
+        
+        try:
+            return mode_impl.get_capabilities()
+        except Exception as e:
+            return {"error": f"Failed to get capabilities: {str(e)}"}
+    
+    def get_orchestrator_metrics(self) -> Dict[str, Any]:
+        """Get comprehensive orchestrator metrics."""
+        metrics = {
+            "active_requests": len(self.active_requests),
+            "total_requests_processed": len(self.request_history),
+            "mode_performance": {},
+            "circuit_breaker_status": {},
+            "recent_activity": []
+        }
+        
+        # Mode performance metrics
+        for mode_name, mode_metrics in self.performance_metrics.items():
+            if mode_metrics:
+                recent_metrics = mode_metrics[-10:]  # Last 10 evaluations
+                metrics["mode_performance"][mode_name] = {
+                    "total_evaluations": len(mode_metrics),
+                    "average_processing_time": sum(m["processing_time"] for m in recent_metrics) / len(recent_metrics),
+                    "average_ethical_score": sum(m["ethical_score"] for m in recent_metrics) / len(recent_metrics),
+                    "average_confidence": sum(m["confidence"] for m in recent_metrics) / len(recent_metrics),
+                    "success_rate": len([m for m in recent_metrics if m["status"] == "completed"]) / len(recent_metrics)
+                }
+        
+        # Circuit breaker status
+        for mode, breaker in self.circuit_breakers.items():
+            metrics["circuit_breaker_status"][mode.value] = {
+                "state": breaker["state"],
+                "failure_count": breaker["failures"],
+                "last_failure": breaker["last_failure"]
+            }
+        
+        # Recent activity
+        recent_requests = list(self.request_history)[-20:]  # Last 20 requests
+        for req in recent_requests:
+            metrics["recent_activity"].append({
+                "timestamp": req.timestamp,
+                "mode": req.mode.value,
+                "priority": req.priority.value,
+                "source": req.source
+            })
+        
+        return metrics
+    
+    async def cleanup(self):
+        """Clean up resources."""
+        try:
+            # Wait for active evaluations to complete (with timeout)
+            if self.active_requests:
+                logger.info(f"Waiting for {len(self.active_requests)} active evaluations to complete...")
+                await asyncio.sleep(2)  # Give some time for completion
+            
+            # Shutdown executor
+            self.executor.shutdown(wait=True)
+            
+            logger.info("Multi-modal evaluation orchestrator cleanup completed")
+        except Exception as e:
+            logger.error(f"Error during orchestrator cleanup: {e}")
+
+# Global orchestrator instance
+multi_modal_orchestrator: Optional[MultiModalEvaluationOrchestrator] = None
+
+def get_orchestrator() -> Optional[MultiModalEvaluationOrchestrator]:
+    """Get the global multi-modal evaluation orchestrator."""
+    return multi_modal_orchestrator
+
+def initialize_orchestrator(ethical_evaluator=None, ml_ethics_engine=None) -> MultiModalEvaluationOrchestrator:
+    """Initialize the global multi-modal evaluation orchestrator."""
+    global multi_modal_orchestrator
+    
+    multi_modal_orchestrator = MultiModalEvaluationOrchestrator(
+        ethical_evaluator=ethical_evaluator,
+        ml_ethics_engine=ml_ethics_engine
+    )
+    
+    logger.info("Global multi-modal evaluation orchestrator initialized")
+    return multi_modal_orchestrator
