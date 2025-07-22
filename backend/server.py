@@ -114,13 +114,15 @@ logger = logging.getLogger(__name__)
 _global_ethical_engine = None
 
 def get_cached_ethical_engine():
-    """Get or create a cached instance of the ethical engine."""
+    """Get or create a cached instance of the ethical engine for local hardware."""
     global _global_ethical_engine
     if _global_ethical_engine is None:
         from ethical_engine import EthicalEvaluator
-        logger.info("Initializing global ethical engine instance...")
+        logger.info("🚀 Initializing FULL POWER ethical engine for local hardware...")
+        logger.info("📊 Loading sentence transformers, embeddings, and comprehensive analysis...")
         _global_ethical_engine = EthicalEvaluator()
-        logger.info("✅ Global ethical engine initialized")
+        logger.info("✅ Full ethical engine initialized with complete functionality")
+        logger.info("🎯 Local hardware ready for comprehensive ethical analysis")
     return _global_ethical_engine
 
 # 🔧 Load environment configuration
