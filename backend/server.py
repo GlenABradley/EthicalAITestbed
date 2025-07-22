@@ -1464,15 +1464,14 @@ async def start_cluster_optimization(
         return {
             "status": "started",
             "optimization_id": optimization_id,
-            "message": "7-stage Bayesian cluster optimization started",
+            "message": "Lightweight Bayesian cluster optimization started",
             "configuration": {
-                "initial_samples": optimization_config.n_initial_samples,
-                "optimization_iterations": optimization_config.n_optimization_iterations,
-                "max_time_seconds": optimization_config.max_optimization_time,
-                "parallel_evaluations": optimization_config.parallel_evaluations,
-                "optimization_scales": [scale.value for scale in OptimizationScale]
+                "random_samples": optimization_config.n_random_samples,
+                "optimization_iterations": optimization_config.n_iterations,
+                "max_time_seconds": optimization_config.max_time_seconds,
+                "optimization_mode": "lightweight"
             },
-            "estimated_completion_time": optimization_config.max_optimization_time,
+            "estimated_completion_time": optimization_config.max_time_seconds,
             "progress_endpoint": f"/api/optimization/status/{optimization_id}",
             "results_endpoint": f"/api/optimization/results/{optimization_id}"
         }
