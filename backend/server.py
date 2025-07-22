@@ -721,7 +721,7 @@ def create_integrated_app():
             # Evaluate training data and extract ethical vectors
             for example in request.training_data:
                 if evaluator:
-                    evaluation = evaluator.evaluate(example)
+                    evaluation = evaluator.evaluate_text(example)
                     
                     # Convert autonomy dimensions to vectors (D1-D5)
                     autonomy_dim_values = list(evaluation.autonomy_dimensions.values())
