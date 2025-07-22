@@ -1835,6 +1835,17 @@ def create_integrated_app():
         logger.info("🚀 Starting Ethical AI Developer Testbed - Integrated v1.1.0")
         await init_evaluation_systems()
         logger.info("✅ Integrated evaluation systems ready")
+        
+        # Initialize Multi-Modal Evaluation Orchestrator - Phase 4
+        try:
+            multi_modal_orchestrator = initialize_orchestrator(
+                ethical_evaluator=evaluator,
+                ml_ethics_engine=ml_ethics_engine
+            )
+            logger.info("✅ Multi-modal evaluation orchestrator initialized")
+        except Exception as e:
+            logger.error(f"❌ Failed to initialize multi-modal orchestrator: {e}")
+            multi_modal_orchestrator = None
     
     @app.on_event("shutdown") 
     async def shutdown_event():
