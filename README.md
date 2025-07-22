@@ -154,9 +154,9 @@ sudo supervisorctl restart frontend
 
 #### **⚙️ Parameter Tuning**
 1. Navigate to "Parameter Tuning" tab
-2. Adjust philosophical framework weights
-3. Configure evaluation thresholds and preferences
-4. Enable advanced features (dynamic scaling, learning mode)
+2. Interface for adjusting philosophical framework weights (interactive controls need completion)
+3. Framework for configuring evaluation thresholds and preferences (backend integration ready)
+4. Structure for enabling advanced features (dynamic scaling, learning mode implementation needed)
 
 ## **API Documentation**
 
