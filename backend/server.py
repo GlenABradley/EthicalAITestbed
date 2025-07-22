@@ -1184,6 +1184,9 @@ def create_integrated_app():
     # Global smart buffer instance for training data streams
     training_stream_buffer = None
     
+    # Initialize the global evaluator variable
+    evaluator = None
+    
     class StreamTokenRequest(BaseModel):
         """Request model for streaming tokens."""
         tokens: List[str] = Field(..., description="List of tokens to add to stream")
