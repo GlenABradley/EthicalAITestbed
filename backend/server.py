@@ -1013,14 +1013,13 @@ async def get_heat_map_mock(request: Dict[str, Any]):
         )
     
     try:
-        # Use REAL ethical analysis for heat map data
-        from ethical_engine import EthicalEvaluator
-        ethical_engine = EthicalEvaluator()
+        # Use REAL ethical analysis with cached engine for heat map data
+        cached_engine = get_cached_ethical_engine()
         
-        logger.info(f"Generating REAL heat-map from ethical analysis for {len(text)} characters")
+        logger.info(f"Generating REAL heat-map from cached ethical analysis for {len(text)} characters")
         
-        # Get real evaluation with spans
-        evaluation = ethical_engine.evaluate_text(text)
+        # Get real evaluation with spans using cached engine
+        evaluation = cached_engine.evaluate_text(text)
         real_spans = getattr(evaluation, 'spans', [])
         
         logger.info(f"Got {len(real_spans)} real spans for heat-map")
