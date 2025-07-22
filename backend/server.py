@@ -633,7 +633,7 @@ def create_integrated_app():
             for idx, example in enumerate(request.training_data):
                 if evaluator:
                     # Use existing evaluator for each example
-                    evaluation_result = evaluator.evaluate(example)
+                    evaluation_result = evaluator.evaluate_text(example)
                     
                     evaluations.append({
                         "example_index": idx,
