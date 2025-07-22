@@ -89,6 +89,16 @@ from unified_configuration_manager import (
     UnifiedConfiguration
 )
 
+# 🎯 Import Bayesian cluster optimization system
+from bayesian_cluster_optimizer import (
+    BayesianClusterOptimizer,
+    OptimizationParameters,
+    OptimizationResult,
+    create_bayesian_optimizer,
+    OptimizationScale,
+    AcquisitionFunction
+)
+
 # 🎓 PROFESSOR'S NOTE: Backward Compatibility Imports
 # ══════════════════════════════════════════════════
 # We maintain backward compatibility with existing components while
