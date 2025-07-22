@@ -1107,27 +1107,34 @@ async def comprehensive_ethics_analysis(request: Dict[str, Any]):
         )
     
     try:
-        # Use simplified real analysis for ML ethics (same as main evaluation)
-        logger.info("Running real ML ethics analysis")
+        # Use FULL ethical engine for comprehensive ML analysis
+        logger.info("🚀 Running FULL ML ethics analysis with complete evaluation engine")
         
-        # Simple ethical analysis to get real scores
-        words = text.split()
-        ethical_keywords = {
-            'unethical': ['exploit', 'manipulate', 'deceive', 'fraud', 'discriminate', 'harm', 'unfair', 'unethical', 'corrupt', 'abuse', 
-                         'scraping', 'violation', 'loophole', 'misleading', 'dishonest', 'deceptive', 'unauthorized', 'coerce', 'compel'],
-            'ethical': ['ethical', 'fair', 'honest', 'transparent', 'respectful', 'beneficial', 'good', 'moral', 'right', 'virtuous',
-                       'charitable', 'donate', 'consent', 'open', 'community', 'service']
-        }
+        # Get the full ethical engine
+        ethical_engine = get_cached_ethical_engine()
         
-        # Calculate scores based on content
-        unethical_count = sum(1 for word in words if any(keyword in word.lower() for keyword in ethical_keywords['unethical']))
-        ethical_count = sum(1 for word in words if any(keyword in word.lower() for keyword in ethical_keywords['ethical']))
-        total_words = max(len([w for w in words if len(w) > 2]), 1)  # meaningful words
+        # Run complete ethical evaluation
+        evaluation = ethical_engine.evaluate_text(text)
         
-        # Real scoring based on analysis
-        virtue_score = max(0.1, min(0.9, 0.7 - (unethical_count / total_words) * 0.6 + (ethical_count / total_words) * 0.3))
-        deontological_score = max(0.1, min(0.9, 0.6 - (unethical_count / total_words) * 0.5 + (ethical_count / total_words) * 0.4))  
-        consequentialist_score = max(0.1, min(0.9, 0.8 - (unethical_count / total_words) * 0.7 + (ethical_count / total_words) * 0.2))
+        # Extract comprehensive framework scores from full evaluation
+        virtue_score = getattr(evaluation, 'virtue_ethical_score', 0.5)
+        deontological_score = getattr(evaluation, 'deontological_score', 0.5) 
+        consequentialist_score = getattr(evaluation, 'consequentialist_score', 0.5)
+        
+        # If scores aren't directly available, calculate from spans
+        if hasattr(evaluation, 'spans') and evaluation.spans:
+            virtue_scores = [span.virtue_score for span in evaluation.spans if hasattr(span, 'virtue_score')]
+            deontological_scores = [span.deontological_score for span in evaluation.spans if hasattr(span, 'deontological_score')]
+            consequentialist_scores = [span.consequentialist_score for span in evaluation.spans if hasattr(span, 'consequentialist_score')]
+            
+            if virtue_scores:
+                virtue_score = sum(virtue_scores) / len(virtue_scores)
+            if deontological_scores:
+                deontological_score = sum(deontological_scores) / len(deontological_scores)
+            if consequentialist_scores:
+                consequentialist_score = sum(consequentialist_scores) / len(consequentialist_scores)
+                
+        logger.info(f"🎯 Full ML analysis complete: V={virtue_score:.3f}, D={deontological_score:.3f}, C={consequentialist_score:.3f}")
         
         return {
             "status": "completed",
