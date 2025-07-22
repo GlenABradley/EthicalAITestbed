@@ -252,6 +252,16 @@ function App() {
               📊 Heat-Map
             </button>
             <button
+              onClick={() => setActiveTab('ml-assistant')}
+              className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                activeTab === 'ml-assistant'
+                  ? 'bg-purple-500 text-white'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              🧠 ML Ethics Assistant
+            </button>
+            <button
               onClick={() => setActiveTab('parameters')}
               className={`px-4 py-2 rounded-md font-medium transition-colors ${
                 activeTab === 'parameters'
