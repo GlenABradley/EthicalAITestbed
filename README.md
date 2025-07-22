@@ -134,11 +134,11 @@ sudo supervisorctl restart frontend
 
 #### **📊 Heat-Map Visualization**  
 1. Go to "📊 Heat-Map" tab
-2. Enter text for visual ethical analysis
-3. Explore multi-dimensional visualization with:
-   - Virtue, autonomy, consequentialist perspectives
-   - Color-coded ethical assessment (red violations → blue excellence)
-   - Interactive tooltips with detailed information
+2. Enter text for visual ethical analysis (interface ready, backend API operational)
+3. Framework for multi-dimensional visualization with:
+   - Virtue, autonomy, consequentialist perspectives (mock data currently, full analysis needs implementation)
+   - Color-coded ethical assessment structure (visualization framework ready)
+   - Interactive tooltips framework (implementation needed)
 
 #### **🧠 ML Ethics Assistant**
 1. Access "🧠 ML Ethics Assistant" tab  
