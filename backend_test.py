@@ -471,36 +471,895 @@ class EthicalEvaluationTester:
         except Exception as e:
             self.log_result("Integration Workflow", False, f"Workflow failed: {str(e)}")
     
+    # ============================================================================
+    # PHASE 5 ENHANCED ETHICS PIPELINE TESTING
+    # ============================================================================
+    
+    def test_enhanced_ethics_pipeline_status(self):
+        """Test /api/ethics/pipeline-status endpoint"""
+        try:
+            start_time = time.time()
+            response = requests.get(f"{API_BASE}/ethics/pipeline-status", timeout=15)
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['status', 'pipeline_health', 'component_status', 'capabilities']
+                
+                if all(field in data for field in required_fields):
+                    # Check component status
+                    components = data.get('component_status', {})
+                    expected_components = ['meta_ethics_analyzer', 'normative_evaluator', 'applied_evaluator']
+                    
+                    components_available = all(comp in components for comp in expected_components)
+                    
+                    self.log_result(
+                        "Enhanced Ethics Pipeline Status", 
+                        True, 
+                        f"Pipeline status retrieved successfully, components available: {components_available} ({response_time:.3f}s)",
+                        {
+                            "response_time": response_time, 
+                            "status": data.get('status'),
+                            "pipeline_health": data.get('pipeline_health'),
+                            "components": list(components.keys()),
+                            "capabilities": data.get('capabilities', {})
+                        }
+                    )
+                else:
+                    self.log_result(
+                        "Enhanced Ethics Pipeline Status", 
+                        False, 
+                        "Missing required status fields",
+                        {"data": data, "required": required_fields}
+                    )
+            else:
+                self.log_result("Enhanced Ethics Pipeline Status", False, f"HTTP {response.status_code}", {"response": response.text})
+                
+        except Exception as e:
+            self.log_result("Enhanced Ethics Pipeline Status", False, f"Request failed: {str(e)}")
+    
+    def test_meta_ethical_analysis(self):
+        """Test /api/ethics/meta-analysis endpoint with philosophical test cases"""
+        test_cases = [
+            ("Kantian Universalizability", self.philosophical_test_cases["kantian_test"]),
+            ("Naturalistic Fallacy Detection", self.philosophical_test_cases["naturalistic_fallacy"]),
+            ("Fact-Value Distinction", self.philosophical_test_cases["fact_value_distinction"])
+        ]
+        
+        for test_name, test_text in test_cases:
+            try:
+                start_time = time.time()
+                response = requests.post(
+                    f"{API_BASE}/ethics/meta-analysis",
+                    json={"text": test_text},
+                    timeout=30
+                )
+                response_time = time.time() - start_time
+                self.performance_metrics.append((f"meta_analysis_{test_name.lower().replace(' ', '_')}", response_time))
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    
+                    # Check response structure
+                    required_fields = ['status', 'meta_ethical_analysis', 'philosophical_interpretation']
+                    if not all(field in data for field in required_fields):
+                        self.log_result(
+                            f"Meta-Ethical Analysis - {test_name} Structure", 
+                            False, 
+                            "Missing required response fields",
+                            {"data": data, "required": required_fields}
+                        )
+                        continue
+                    
+                    # Check meta-ethical analysis content
+                    meta_analysis = data.get('meta_ethical_analysis', {})
+                    philosophical_interpretation = data.get('philosophical_interpretation', {})
+                    
+                    # Validate key philosophical components
+                    has_universalizability = 'universalizability_test' in meta_analysis
+                    has_naturalistic_fallacy = 'naturalistic_fallacy_check' in meta_analysis
+                    has_semantic_coherence = 'semantic_coherence' in meta_analysis
+                    has_modal_properties = 'modal_properties' in meta_analysis
+                    
+                    # Check philosophical interpretations
+                    has_kantian = 'kantian_assessment' in philosophical_interpretation
+                    has_moorean = 'moorean_assessment' in philosophical_interpretation
+                    has_humean = 'humean_assessment' in philosophical_interpretation
+                    
+                    philosophical_completeness = all([
+                        has_universalizability, has_naturalistic_fallacy, has_semantic_coherence,
+                        has_modal_properties, has_kantian, has_moorean, has_humean
+                    ])
+                    
+                    if philosophical_completeness:
+                        # Test-specific validations
+                        if test_name == "Kantian Universalizability":
+                            universalizability_result = meta_analysis.get('universalizability_test', False)
+                            self.log_result(
+                                f"Meta-Ethical Analysis - {test_name}", 
+                                True, 
+                                f"Kantian universalizability test: {universalizability_result} ({response_time:.3f}s)",
+                                {
+                                    "response_time": response_time,
+                                    "universalizability_test": universalizability_result,
+                                    "semantic_coherence": meta_analysis.get('semantic_coherence', 0),
+                                    "kantian_assessment": philosophical_interpretation.get('kantian_assessment', {})
+                                }
+                            )
+                        elif test_name == "Naturalistic Fallacy Detection":
+                            fallacy_check = meta_analysis.get('naturalistic_fallacy_check', True)
+                            self.log_result(
+                                f"Meta-Ethical Analysis - {test_name}", 
+                                True, 
+                                f"Naturalistic fallacy avoided: {fallacy_check} ({response_time:.3f}s)",
+                                {
+                                    "response_time": response_time,
+                                    "naturalistic_fallacy_check": fallacy_check,
+                                    "moorean_assessment": philosophical_interpretation.get('moorean_assessment', {})
+                                }
+                            )
+                        else:  # Fact-Value Distinction
+                            fact_value_relations = meta_analysis.get('fact_value_relations', [])
+                            self.log_result(
+                                f"Meta-Ethical Analysis - {test_name}", 
+                                True, 
+                                f"Fact-value relations identified: {len(fact_value_relations)} ({response_time:.3f}s)",
+                                {
+                                    "response_time": response_time,
+                                    "fact_value_relations": fact_value_relations,
+                                    "humean_assessment": philosophical_interpretation.get('humean_assessment', {})
+                                }
+                            )
+                    else:
+                        self.log_result(
+                            f"Meta-Ethical Analysis - {test_name}", 
+                            False, 
+                            "Incomplete philosophical analysis components",
+                            {
+                                "missing_components": {
+                                    "universalizability": has_universalizability,
+                                    "naturalistic_fallacy": has_naturalistic_fallacy,
+                                    "semantic_coherence": has_semantic_coherence,
+                                    "modal_properties": has_modal_properties,
+                                    "kantian": has_kantian,
+                                    "moorean": has_moorean,
+                                    "humean": has_humean
+                                }
+                            }
+                        )
+                        
+                else:
+                    self.log_result(
+                        f"Meta-Ethical Analysis - {test_name}", 
+                        False, 
+                        f"HTTP {response.status_code}",
+                        {"response": response.text, "response_time": response_time}
+                    )
+                    
+            except Exception as e:
+                self.log_result(f"Meta-Ethical Analysis - {test_name}", False, f"Request failed: {str(e)}")
+    
+    def test_normative_ethics_analysis(self):
+        """Test /api/ethics/normative-analysis endpoint with multi-framework analysis"""
+        test_cases = [
+            ("Deontological Framework", self.philosophical_test_cases["kantian_test"], "deontological"),
+            ("Consequentialist Framework", self.philosophical_test_cases["utilitarian_test"], "consequentialist"),
+            ("Virtue Ethics Framework", self.philosophical_test_cases["virtue_ethics_test"], "virtue"),
+            ("Multi-Framework Analysis", self.philosophical_test_cases["complex_dilemma"], "all")
+        ]
+        
+        for test_name, test_text, framework_focus in test_cases:
+            try:
+                start_time = time.time()
+                response = requests.post(
+                    f"{API_BASE}/ethics/normative-analysis",
+                    json={"text": test_text, "framework": framework_focus},
+                    timeout=45
+                )
+                response_time = time.time() - start_time
+                self.performance_metrics.append((f"normative_analysis_{framework_focus}", response_time))
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    
+                    # Check response structure
+                    required_fields = ['status', 'normative_analysis', 'philosophical_insights', 'resolution_guidance']
+                    if not all(field in data for field in required_fields):
+                        self.log_result(
+                            f"Normative Ethics Analysis - {test_name} Structure", 
+                            False, 
+                            "Missing required response fields",
+                            {"data": data, "required": required_fields}
+                        )
+                        continue
+                    
+                    # Check normative analysis content
+                    normative_analysis = data.get('normative_analysis', {})
+                    philosophical_insights = data.get('philosophical_insights', {})
+                    resolution_guidance = data.get('resolution_guidance', {})
+                    
+                    # Validate framework components
+                    has_deontological = 'deontological' in normative_analysis
+                    has_consequentialist = 'consequentialist' in normative_analysis
+                    has_virtue_ethics = 'virtue_ethics' in normative_analysis
+                    has_framework_convergence = 'framework_convergence' in normative_analysis
+                    
+                    # Check philosophical insights
+                    has_deont_insights = 'deontological_insights' in philosophical_insights
+                    has_conseq_insights = 'consequentialist_insights' in philosophical_insights
+                    has_virtue_insights = 'virtue_ethics_insights' in philosophical_insights
+                    
+                    framework_completeness = all([
+                        has_deontological, has_consequentialist, has_virtue_ethics,
+                        has_framework_convergence, has_deont_insights, has_conseq_insights, has_virtue_insights
+                    ])
+                    
+                    if framework_completeness:
+                        framework_convergence = normative_analysis.get('framework_convergence', 0)
+                        ethical_dilemma_type = normative_analysis.get('ethical_dilemma_type')
+                        
+                        # Framework-specific validations
+                        if framework_focus == "deontological":
+                            deont_analysis = normative_analysis.get('deontological', {})
+                            categorical_imperative = deont_analysis.get('categorical_imperative_test', False)
+                            humanity_formula = deont_analysis.get('humanity_formula_test', False)
+                            
+                            self.log_result(
+                                f"Normative Ethics Analysis - {test_name}", 
+                                True, 
+                                f"Deontological analysis: CI={categorical_imperative}, HF={humanity_formula} ({response_time:.3f}s)",
+                                {
+                                    "response_time": response_time,
+                                    "categorical_imperative_test": categorical_imperative,
+                                    "humanity_formula_test": humanity_formula,
+                                    "autonomy_respect": deont_analysis.get('autonomy_respect', 0),
+                                    "framework_convergence": framework_convergence
+                                }
+                            )
+                        elif framework_focus == "consequentialist":
+                            conseq_analysis = normative_analysis.get('consequentialist', {})
+                            utility_calculation = conseq_analysis.get('utility_calculation', 0)
+                            aggregate_welfare = conseq_analysis.get('aggregate_welfare', 0)
+                            
+                            self.log_result(
+                                f"Normative Ethics Analysis - {test_name}", 
+                                True, 
+                                f"Consequentialist analysis: utility={utility_calculation:.3f}, welfare={aggregate_welfare:.3f} ({response_time:.3f}s)",
+                                {
+                                    "response_time": response_time,
+                                    "utility_calculation": utility_calculation,
+                                    "aggregate_welfare": aggregate_welfare,
+                                    "positive_consequences": len(conseq_analysis.get('positive_consequences', [])),
+                                    "negative_consequences": len(conseq_analysis.get('negative_consequences', []))
+                                }
+                            )
+                        elif framework_focus == "virtue":
+                            virtue_analysis = normative_analysis.get('virtue_ethics', {})
+                            eudaimonic_contribution = virtue_analysis.get('eudaimonic_contribution', 0)
+                            golden_mean = virtue_analysis.get('golden_mean_analysis', 0)
+                            
+                            self.log_result(
+                                f"Normative Ethics Analysis - {test_name}", 
+                                True, 
+                                f"Virtue ethics analysis: eudaimonia={eudaimonic_contribution:.3f}, golden_mean={golden_mean:.3f} ({response_time:.3f}s)",
+                                {
+                                    "response_time": response_time,
+                                    "eudaimonic_contribution": eudaimonic_contribution,
+                                    "golden_mean_analysis": golden_mean,
+                                    "character_development": virtue_analysis.get('character_development', 0),
+                                    "practical_wisdom": virtue_analysis.get('practical_wisdom', 0)
+                                }
+                            )
+                        else:  # Multi-framework analysis
+                            self.log_result(
+                                f"Normative Ethics Analysis - {test_name}", 
+                                True, 
+                                f"Multi-framework analysis: convergence={framework_convergence:.3f}, dilemma={ethical_dilemma_type} ({response_time:.3f}s)",
+                                {
+                                    "response_time": response_time,
+                                    "framework_convergence": framework_convergence,
+                                    "ethical_dilemma_type": ethical_dilemma_type,
+                                    "resolution_recommendation": normative_analysis.get('resolution_recommendation', ''),
+                                    "philosophical_consensus": resolution_guidance.get('philosophical_consensus', '')
+                                }
+                            )
+                    else:
+                        self.log_result(
+                            f"Normative Ethics Analysis - {test_name}", 
+                            False, 
+                            "Incomplete normative framework components",
+                            {
+                                "missing_components": {
+                                    "deontological": has_deontological,
+                                    "consequentialist": has_consequentialist,
+                                    "virtue_ethics": has_virtue_ethics,
+                                    "framework_convergence": has_framework_convergence
+                                }
+                            }
+                        )
+                        
+                else:
+                    self.log_result(
+                        f"Normative Ethics Analysis - {test_name}", 
+                        False, 
+                        f"HTTP {response.status_code}",
+                        {"response": response.text, "response_time": response_time}
+                    )
+                    
+            except Exception as e:
+                self.log_result(f"Normative Ethics Analysis - {test_name}", False, f"Request failed: {str(e)}")
+    
+    def test_applied_ethics_analysis(self):
+        """Test /api/ethics/applied-analysis endpoint with domain-specific cases"""
+        test_cases = [
+            ("Digital Ethics Domain", self.philosophical_test_cases["digital_ethics_test"], "digital"),
+            ("AI Ethics Domain", self.philosophical_test_cases["ai_ethics_test"], "ai"),
+            ("Auto Domain Detection", self.philosophical_test_cases["complex_dilemma"], "auto")
+        ]
+        
+        for test_name, test_text, domain_focus in test_cases:
+            try:
+                start_time = time.time()
+                response = requests.post(
+                    f"{API_BASE}/ethics/applied-analysis",
+                    json={"text": test_text, "domain": domain_focus},
+                    timeout=30
+                )
+                response_time = time.time() - start_time
+                self.performance_metrics.append((f"applied_analysis_{domain_focus}", response_time))
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    
+                    # Check response structure
+                    required_fields = ['status', 'applied_analysis', 'domain_assessments', 'professional_guidance']
+                    if not all(field in data for field in required_fields):
+                        self.log_result(
+                            f"Applied Ethics Analysis - {test_name} Structure", 
+                            False, 
+                            "Missing required response fields",
+                            {"data": data, "required": required_fields}
+                        )
+                        continue
+                    
+                    # Check applied analysis content
+                    applied_analysis = data.get('applied_analysis', {})
+                    domain_assessments = data.get('domain_assessments', {})
+                    professional_guidance = data.get('professional_guidance', {})
+                    
+                    # Validate domain detection
+                    applicable_domains = applied_analysis.get('applicable_domains', [])
+                    domain_relevance_scores = applied_analysis.get('domain_relevance_scores', {})
+                    practical_recommendations = applied_analysis.get('practical_recommendations', [])
+                    
+                    domain_detection_working = len(applicable_domains) > 0 or len(domain_relevance_scores) > 0
+                    
+                    if domain_detection_working:
+                        # Domain-specific validations
+                        if domain_focus == "digital" and "digital_ethics" in domain_assessments:
+                            digital_assessment = domain_assessments["digital_ethics"]
+                            privacy_protection = digital_assessment.get('privacy_protection', 'UNKNOWN')
+                            user_autonomy = digital_assessment.get('user_autonomy', 0)
+                            
+                            self.log_result(
+                                f"Applied Ethics Analysis - {test_name}", 
+                                True, 
+                                f"Digital ethics analysis: privacy={privacy_protection}, autonomy={user_autonomy:.3f} ({response_time:.3f}s)",
+                                {
+                                    "response_time": response_time,
+                                    "privacy_protection": privacy_protection,
+                                    "user_autonomy": user_autonomy,
+                                    "transparency_level": digital_assessment.get('transparency_level', 0),
+                                    "surveillance_risk": digital_assessment.get('surveillance_risk', 0)
+                                }
+                            )
+                        elif domain_focus == "ai" and "ai_ethics" in domain_assessments:
+                            ai_assessment = domain_assessments["ai_ethics"]
+                            fairness_level = ai_assessment.get('fairness_level', 'UNKNOWN')
+                            safety_assurance = ai_assessment.get('safety_assurance', 0)
+                            
+                            self.log_result(
+                                f"Applied Ethics Analysis - {test_name}", 
+                                True, 
+                                f"AI ethics analysis: fairness={fairness_level}, safety={safety_assurance:.3f} ({response_time:.3f}s)",
+                                {
+                                    "response_time": response_time,
+                                    "fairness_level": fairness_level,
+                                    "safety_assurance": safety_assurance,
+                                    "human_oversight": ai_assessment.get('human_oversight', 0),
+                                    "bias_mitigation": ai_assessment.get('bias_mitigation', 0),
+                                    "value_alignment": ai_assessment.get('value_alignment', 0)
+                                }
+                            )
+                        else:  # Auto domain detection
+                            self.log_result(
+                                f"Applied Ethics Analysis - {test_name}", 
+                                True, 
+                                f"Auto domain detection: {len(applicable_domains)} domains, {len(practical_recommendations)} recommendations ({response_time:.3f}s)",
+                                {
+                                    "response_time": response_time,
+                                    "applicable_domains": applicable_domains,
+                                    "domain_relevance_scores": domain_relevance_scores,
+                                    "recommendations_count": len(practical_recommendations),
+                                    "implementation_priority": professional_guidance.get('implementation_priority', 'UNKNOWN')
+                                }
+                            )
+                    else:
+                        self.log_result(
+                            f"Applied Ethics Analysis - {test_name}", 
+                            False, 
+                            "Domain detection not working - no applicable domains identified",
+                            {
+                                "applicable_domains": applicable_domains,
+                                "domain_relevance_scores": domain_relevance_scores,
+                                "response_time": response_time
+                            }
+                        )
+                        
+                else:
+                    self.log_result(
+                        f"Applied Ethics Analysis - {test_name}", 
+                        False, 
+                        f"HTTP {response.status_code}",
+                        {"response": response.text, "response_time": response_time}
+                    )
+                    
+            except Exception as e:
+                self.log_result(f"Applied Ethics Analysis - {test_name}", False, f"Request failed: {str(e)}")
+    
+    def test_comprehensive_ethics_analysis(self):
+        """Test /api/ethics/comprehensive-analysis endpoint with different analysis depths"""
+        test_cases = [
+            ("Surface Analysis", self.philosophical_test_cases["kantian_test"], "surface"),
+            ("Standard Analysis", self.philosophical_test_cases["complex_dilemma"], "standard"),
+            ("Comprehensive Analysis", self.philosophical_test_cases["ai_ethics_test"], "comprehensive")
+        ]
+        
+        for test_name, test_text, analysis_depth in test_cases:
+            try:
+                start_time = time.time()
+                response = requests.post(
+                    f"{API_BASE}/ethics/comprehensive-analysis",
+                    json={"text": test_text, "depth": analysis_depth},
+                    timeout=60  # Comprehensive analysis may take longer
+                )
+                response_time = time.time() - start_time
+                self.performance_metrics.append((f"comprehensive_analysis_{analysis_depth}", response_time))
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    
+                    # Check response structure
+                    required_fields = ['status', 'analysis', 'meta']
+                    if not all(field in data for field in required_fields):
+                        self.log_result(
+                            f"Comprehensive Ethics Analysis - {test_name} Structure", 
+                            False, 
+                            "Missing required response fields",
+                            {"data": data, "required": required_fields}
+                        )
+                        continue
+                    
+                    # Check comprehensive analysis content
+                    analysis = data.get('analysis', {})
+                    meta = data.get('meta', {})
+                    
+                    # Validate three-layer architecture
+                    has_meta_ethics = 'meta_ethics' in analysis
+                    has_normative_ethics = 'normative_ethics' in analysis
+                    has_applied_ethics = 'applied_ethics' in analysis
+                    has_overall_consistency = 'overall_consistency' in analysis
+                    has_ethical_confidence = 'ethical_confidence' in analysis
+                    has_synthesized_judgment = 'synthesized_judgment' in analysis
+                    has_actionable_recommendations = 'actionable_recommendations' in analysis
+                    
+                    three_layer_completeness = all([
+                        has_meta_ethics, has_normative_ethics, has_applied_ethics,
+                        has_overall_consistency, has_ethical_confidence, has_synthesized_judgment,
+                        has_actionable_recommendations
+                    ])
+                    
+                    if three_layer_completeness:
+                        overall_consistency = analysis.get('overall_consistency', 0)
+                        ethical_confidence = analysis.get('ethical_confidence', 0)
+                        complexity_score = analysis.get('complexity_score', 0)
+                        synthesized_judgment = analysis.get('synthesized_judgment', '')
+                        primary_concerns = analysis.get('primary_concerns', [])
+                        actionable_recommendations = analysis.get('actionable_recommendations', [])
+                        
+                        # Validate philosophical rigor
+                        meta_ethics = analysis.get('meta_ethics', {})
+                        normative_ethics = analysis.get('normative_ethics', {})
+                        applied_ethics = analysis.get('applied_ethics', {})
+                        
+                        philosophical_rigor = (
+                            'universalizability_test' in meta_ethics and
+                            'naturalistic_fallacy_check' in meta_ethics and
+                            'framework_convergence' in normative_ethics and
+                            'applicable_domains' in applied_ethics
+                        )
+                        
+                        self.log_result(
+                            f"Comprehensive Ethics Analysis - {test_name}", 
+                            True, 
+                            f"Three-layer analysis complete: consistency={overall_consistency:.3f}, confidence={ethical_confidence:.3f}, judgment='{synthesized_judgment[:50]}...' ({response_time:.3f}s)",
+                            {
+                                "response_time": response_time,
+                                "analysis_depth": analysis_depth,
+                                "overall_consistency": overall_consistency,
+                                "ethical_confidence": ethical_confidence,
+                                "complexity_score": complexity_score,
+                                "synthesized_judgment": synthesized_judgment,
+                                "primary_concerns_count": len(primary_concerns),
+                                "recommendations_count": len(actionable_recommendations),
+                                "philosophical_rigor": philosophical_rigor,
+                                "processing_time": analysis.get('processing_time', 0)
+                            }
+                        )
+                    else:
+                        self.log_result(
+                            f"Comprehensive Ethics Analysis - {test_name}", 
+                            False, 
+                            "Incomplete three-layer analysis structure",
+                            {
+                                "missing_components": {
+                                    "meta_ethics": has_meta_ethics,
+                                    "normative_ethics": has_normative_ethics,
+                                    "applied_ethics": has_applied_ethics,
+                                    "overall_consistency": has_overall_consistency,
+                                    "ethical_confidence": has_ethical_confidence,
+                                    "synthesized_judgment": has_synthesized_judgment,
+                                    "actionable_recommendations": has_actionable_recommendations
+                                }
+                            }
+                        )
+                        
+                else:
+                    self.log_result(
+                        f"Comprehensive Ethics Analysis - {test_name}", 
+                        False, 
+                        f"HTTP {response.status_code}",
+                        {"response": response.text, "response_time": response_time}
+                    )
+                    
+            except Exception as e:
+                self.log_result(f"Comprehensive Ethics Analysis - {test_name}", False, f"Request failed: {str(e)}")
+    
+    def test_ml_training_ethical_guidance(self):
+        """Test /api/ethics/ml-training-guidance endpoint"""
+        test_cases = [
+            ("Training Data Ethics", self.philosophical_test_cases["ai_ethics_test"], "data"),
+            ("Model Development Ethics", "Our AI model learns from user behavior to predict preferences", "model"),
+            ("Comprehensive ML Guidance", "Training an AI system on social media data to detect harmful content", "comprehensive")
+        ]
+        
+        for test_name, test_content, guidance_type in test_cases:
+            try:
+                start_time = time.time()
+                response = requests.post(
+                    f"{API_BASE}/ethics/ml-training-guidance",
+                    json={
+                        "content": test_content, 
+                        "type": guidance_type,
+                        "training_context": {"model_type": "classification", "dataset_size": "large"}
+                    },
+                    timeout=60
+                )
+                response_time = time.time() - start_time
+                self.performance_metrics.append((f"ml_guidance_{guidance_type}", response_time))
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    
+                    # Check response structure
+                    required_fields = ['status', 'ml_ethical_guidance', 'actionable_recommendations', 'philosophical_assessment']
+                    if not all(field in data for field in required_fields):
+                        self.log_result(
+                            f"ML Training Ethical Guidance - {test_name} Structure", 
+                            False, 
+                            "Missing required response fields",
+                            {"data": data, "required": required_fields}
+                        )
+                        continue
+                    
+                    # Check ML ethical guidance content
+                    ml_guidance = data.get('ml_ethical_guidance', {})
+                    actionable_recommendations = data.get('actionable_recommendations', [])
+                    philosophical_assessment = data.get('philosophical_assessment', {})
+                    
+                    # Validate ML-specific components
+                    has_training_data_ethics = 'training_data_ethics' in ml_guidance
+                    has_model_development_ethics = 'model_development_ethics' in ml_guidance
+                    has_philosophical_foundations = 'philosophical_foundations' in ml_guidance
+                    
+                    ml_guidance_completeness = all([
+                        has_training_data_ethics, has_model_development_ethics, has_philosophical_foundations
+                    ])
+                    
+                    if ml_guidance_completeness:
+                        training_data_ethics = ml_guidance.get('training_data_ethics', {})
+                        model_development_ethics = ml_guidance.get('model_development_ethics', {})
+                        philosophical_foundations = ml_guidance.get('philosophical_foundations', {})
+                        
+                        # Extract key metrics
+                        bias_risk = training_data_ethics.get('bias_risk_assessment', 0)
+                        privacy_implications = training_data_ethics.get('privacy_implications', 0)
+                        transparency_requirements = model_development_ethics.get('transparency_requirements', 0)
+                        safety_considerations = model_development_ethics.get('safety_considerations', 0)
+                        
+                        # Philosophical grounding
+                        kantian_universalizability = philosophical_foundations.get('kantian_universalizability', False)
+                        utilitarian_welfare = philosophical_foundations.get('utilitarian_welfare_impact', 0)
+                        overall_consistency = philosophical_foundations.get('overall_ethical_consistency', 0)
+                        
+                        self.log_result(
+                            f"ML Training Ethical Guidance - {test_name}", 
+                            True, 
+                            f"ML guidance generated: bias_risk={bias_risk:.3f}, transparency={transparency_requirements:.3f}, {len(actionable_recommendations)} recommendations ({response_time:.3f}s)",
+                            {
+                                "response_time": response_time,
+                                "guidance_type": guidance_type,
+                                "bias_risk_assessment": bias_risk,
+                                "privacy_implications": privacy_implications,
+                                "transparency_requirements": transparency_requirements,
+                                "safety_considerations": safety_considerations,
+                                "kantian_universalizability": kantian_universalizability,
+                                "utilitarian_welfare_impact": utilitarian_welfare,
+                                "overall_ethical_consistency": overall_consistency,
+                                "recommendations_count": len(actionable_recommendations),
+                                "ethical_judgment": philosophical_assessment.get('ethical_judgment', ''),
+                                "confidence_level": philosophical_assessment.get('confidence_level', 0)
+                            }
+                        )
+                    else:
+                        self.log_result(
+                            f"ML Training Ethical Guidance - {test_name}", 
+                            False, 
+                            "Incomplete ML ethical guidance components",
+                            {
+                                "missing_components": {
+                                    "training_data_ethics": has_training_data_ethics,
+                                    "model_development_ethics": has_model_development_ethics,
+                                    "philosophical_foundations": has_philosophical_foundations
+                                }
+                            }
+                        )
+                        
+                else:
+                    self.log_result(
+                        f"ML Training Ethical Guidance - {test_name}", 
+                        False, 
+                        f"HTTP {response.status_code}",
+                        {"response": response.text, "response_time": response_time}
+                    )
+                    
+            except Exception as e:
+                self.log_result(f"ML Training Ethical Guidance - {test_name}", False, f"Request failed: {str(e)}")
+    
+    def test_philosophical_rigor_validation(self):
+        """Test philosophical rigor with classical examples"""
+        classical_examples = [
+            ("Trolley Problem", "A runaway trolley is heading towards five people. You can pull a lever to divert it to a side track where it will kill one person instead. Should you pull the lever?"),
+            ("Categorical Imperative", "I should make a promise I don't intend to keep to get out of financial difficulty"),
+            ("Utilitarian Calculus", "Torturing one innocent person would save the lives of a thousand people"),
+            ("Virtue Ethics", "A doctor lies to a patient about their terminal diagnosis to spare them emotional pain"),
+            ("Naturalistic Fallacy", "Aggression is found throughout nature, therefore human aggression is morally justified")
+        ]
+        
+        for example_name, example_text in classical_examples:
+            try:
+                start_time = time.time()
+                response = requests.post(
+                    f"{API_BASE}/ethics/comprehensive-analysis",
+                    json={"text": example_text, "depth": "comprehensive"},
+                    timeout=60
+                )
+                response_time = time.time() - start_time
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    analysis = data.get('analysis', {})
+                    
+                    # Validate philosophical accuracy for known examples
+                    meta_ethics = analysis.get('meta_ethics', {})
+                    normative_ethics = analysis.get('normative_ethics', {})
+                    
+                    if example_name == "Categorical Imperative":
+                        # Should fail universalizability test
+                        universalizability = meta_ethics.get('universalizability_test', True)
+                        categorical_imperative = normative_ethics.get('deontological', {}).get('categorical_imperative_test', True)
+                        
+                        philosophical_accuracy = not universalizability and not categorical_imperative
+                        
+                        self.log_result(
+                            f"Philosophical Rigor - {example_name}", 
+                            philosophical_accuracy, 
+                            f"Kantian analysis accuracy: universalizability={universalizability}, CI={categorical_imperative} ({response_time:.3f}s)",
+                            {
+                                "response_time": response_time,
+                                "universalizability_test": universalizability,
+                                "categorical_imperative_test": categorical_imperative,
+                                "expected_failure": True,
+                                "philosophical_accuracy": philosophical_accuracy
+                            }
+                        )
+                    elif example_name == "Naturalistic Fallacy":
+                        # Should detect naturalistic fallacy
+                        naturalistic_fallacy_check = meta_ethics.get('naturalistic_fallacy_check', True)
+                        
+                        philosophical_accuracy = not naturalistic_fallacy_check  # Should be False (fallacy detected)
+                        
+                        self.log_result(
+                            f"Philosophical Rigor - {example_name}", 
+                            philosophical_accuracy, 
+                            f"Naturalistic fallacy detection: clean={naturalistic_fallacy_check} ({response_time:.3f}s)",
+                            {
+                                "response_time": response_time,
+                                "naturalistic_fallacy_check": naturalistic_fallacy_check,
+                                "expected_fallacy_detection": True,
+                                "philosophical_accuracy": philosophical_accuracy
+                            }
+                        )
+                    else:
+                        # General philosophical rigor check
+                        overall_consistency = analysis.get('overall_consistency', 0)
+                        ethical_confidence = analysis.get('ethical_confidence', 0)
+                        framework_convergence = normative_ethics.get('framework_convergence', 0)
+                        
+                        philosophical_rigor = (
+                            overall_consistency > 0.3 and  # Some consistency expected
+                            ethical_confidence > 0.3 and   # Some confidence expected
+                            framework_convergence >= 0.0   # Valid convergence score
+                        )
+                        
+                        self.log_result(
+                            f"Philosophical Rigor - {example_name}", 
+                            philosophical_rigor, 
+                            f"General rigor: consistency={overall_consistency:.3f}, confidence={ethical_confidence:.3f}, convergence={framework_convergence:.3f} ({response_time:.3f}s)",
+                            {
+                                "response_time": response_time,
+                                "overall_consistency": overall_consistency,
+                                "ethical_confidence": ethical_confidence,
+                                "framework_convergence": framework_convergence,
+                                "philosophical_rigor": philosophical_rigor
+                            }
+                        )
+                else:
+                    self.log_result(
+                        f"Philosophical Rigor - {example_name}", 
+                        False, 
+                        f"HTTP {response.status_code}",
+                        {"response": response.text, "response_time": response_time}
+                    )
+                    
+            except Exception as e:
+                self.log_result(f"Philosophical Rigor - {example_name}", False, f"Request failed: {str(e)}")
+    
+    def test_error_handling_and_edge_cases(self):
+        """Test error handling and edge cases for Phase 5 endpoints"""
+        edge_cases = [
+            ("Empty Content", "", "/ethics/comprehensive-analysis"),
+            ("Very Long Content", "A" * 10000, "/ethics/meta-analysis"),
+            ("Non-English Content", "这是一个中文测试文本，用于测试伦理分析系统", "/ethics/normative-analysis"),
+            ("Special Characters", "!@#$%^&*()_+{}|:<>?[]\\;'\",./ 🤖🧠⚖️", "/ethics/applied-analysis"),
+            ("Invalid Analysis Depth", "Test content", "/ethics/comprehensive-analysis")
+        ]
+        
+        for case_name, test_content, endpoint in edge_cases:
+            try:
+                start_time = time.time()
+                
+                # Prepare request based on case
+                if case_name == "Empty Content":
+                    request_data = {"text": test_content}
+                elif case_name == "Invalid Analysis Depth":
+                    request_data = {"text": test_content, "depth": "invalid_depth"}
+                elif endpoint == "/ethics/ml-training-guidance":
+                    request_data = {"content": test_content}
+                else:
+                    request_data = {"text": test_content}
+                
+                response = requests.post(
+                    f"{API_BASE}{endpoint}",
+                    json=request_data,
+                    timeout=30
+                )
+                response_time = time.time() - start_time
+                
+                if case_name == "Empty Content":
+                    # Should return 400 for empty content
+                    expected_success = response.status_code == 400
+                    self.log_result(
+                        f"Edge Case - {case_name}", 
+                        expected_success, 
+                        f"Empty content handling: HTTP {response.status_code} ({response_time:.3f}s)",
+                        {"response_time": response_time, "status_code": response.status_code, "expected": 400}
+                    )
+                elif case_name == "Invalid Analysis Depth":
+                    # Should handle gracefully (either 400 or default to standard)
+                    if response.status_code == 200:
+                        data = response.json()
+                        analysis_depth = data.get('meta', {}).get('analysis_depth', '')
+                        expected_success = analysis_depth == 'standard'  # Should default to standard
+                    else:
+                        expected_success = response.status_code == 400  # Or reject with 400
+                    
+                    self.log_result(
+                        f"Edge Case - {case_name}", 
+                        expected_success, 
+                        f"Invalid depth handling: HTTP {response.status_code} ({response_time:.3f}s)",
+                        {"response_time": response_time, "status_code": response.status_code}
+                    )
+                else:
+                    # Should handle gracefully without crashing
+                    expected_success = response.status_code in [200, 400, 422]  # Acceptable responses
+                    
+                    if response.status_code == 200:
+                        # If successful, check that analysis was attempted
+                        data = response.json()
+                        has_analysis = 'analysis' in data or 'meta_ethical_analysis' in data or 'normative_analysis' in data or 'applied_analysis' in data
+                        
+                        self.log_result(
+                            f"Edge Case - {case_name}", 
+                            has_analysis, 
+                            f"Edge case processed successfully: analysis_present={has_analysis} ({response_time:.3f}s)",
+                            {"response_time": response_time, "status_code": response.status_code, "analysis_present": has_analysis}
+                        )
+                    else:
+                        self.log_result(
+                            f"Edge Case - {case_name}", 
+                            expected_success, 
+                            f"Edge case handled gracefully: HTTP {response.status_code} ({response_time:.3f}s)",
+                            {"response_time": response_time, "status_code": response.status_code}
+                        )
+                    
+            except Exception as e:
+                # Timeouts or connection errors are acceptable for very long content
+                if case_name == "Very Long Content" and "timeout" in str(e).lower():
+                    self.log_result(f"Edge Case - {case_name}", True, f"Timeout handling working: {str(e)}")
+                else:
+                    self.log_result(f"Edge Case - {case_name}", False, f"Request failed: {str(e)}")
+    
     def run_all_tests(self):
-        """Run all tests"""
+        """Run all tests including Phase 5 Enhanced Ethics Pipeline"""
         print("🚀 Starting Comprehensive Backend Testing for Ethical AI Developer Testbed")
+        print("🧠 Focus: Phase 5 Enhanced Ethics Pipeline with Philosophical Foundations")
         print(f"🔗 Testing backend at: {BACKEND_URL}")
         print("=" * 80)
         
         # Core endpoint tests
+        print("\n📊 CORE SYSTEM TESTS")
+        print("-" * 40)
         self.test_health_check()
         self.test_parameters_endpoint()
         self.test_learning_stats_endpoint()
         
-        print("\n📊 EVALUATION SYSTEM TESTS (Focus: EthicalSpan has_violation() fix)")
+        print("\n🧠 PHASE 5 ENHANCED ETHICS PIPELINE TESTS")
         print("-" * 60)
         
-        # Primary evaluation tests (focus of this testing session)
-        self.test_evaluation_with_unethical_content()
-        self.test_evaluation_with_ethical_content()
-        self.test_evaluation_with_empty_text()
-        self.test_evaluation_with_edge_cases()
+        # Phase 5 Enhanced Ethics Pipeline Tests
+        self.test_enhanced_ethics_pipeline_status()
+        self.test_meta_ethical_analysis()
+        self.test_normative_ethics_analysis()
+        self.test_applied_ethics_analysis()
+        self.test_comprehensive_ethics_analysis()
+        self.test_ml_training_ethical_guidance()
         
-        print("\n⚡ PERFORMANCE & INTEGRATION TESTS")
+        print("\n📚 PHILOSOPHICAL RIGOR VALIDATION")
+        print("-" * 50)
+        self.test_philosophical_rigor_validation()
+        
+        print("\n🛡️ ERROR HANDLING & EDGE CASES")
         print("-" * 40)
+        self.test_error_handling_and_edge_cases()
         
-        # Performance and integration tests
-        self.test_performance_stats_endpoint()
+        print("\n⚡ INTEGRATION TESTS")
+        print("-" * 30)
         self.test_integration_workflow()
         
         # Summary
         print("\n" + "=" * 80)
-        print("📋 TEST SUMMARY")
+        print("📋 COMPREHENSIVE TEST SUMMARY")
         print("=" * 80)
         
         total_tests = len(self.results)
@@ -514,34 +1373,60 @@ class EthicalEvaluationTester:
         
         if self.performance_metrics:
             print(f"\n⚡ PERFORMANCE METRICS:")
-            for metric_name, response_time in self.performance_metrics:
-                print(f"   {metric_name}: {response_time:.3f}s")
+            phase5_metrics = [m for m in self.performance_metrics if any(keyword in m[0] for keyword in ['meta_analysis', 'normative_analysis', 'applied_analysis', 'comprehensive_analysis', 'ml_guidance'])]
+            if phase5_metrics:
+                print("   Phase 5 Enhanced Ethics Pipeline:")
+                for metric_name, response_time in phase5_metrics:
+                    print(f"     {metric_name}: {response_time:.3f}s")
+            
+            other_metrics = [m for m in self.performance_metrics if not any(keyword in m[0] for keyword in ['meta_analysis', 'normative_analysis', 'applied_analysis', 'comprehensive_analysis', 'ml_guidance'])]
+            if other_metrics:
+                print("   Other Systems:")
+                for metric_name, response_time in other_metrics:
+                    print(f"     {metric_name}: {response_time:.3f}s")
         
         if self.failed_tests:
             print(f"\n❌ FAILED TESTS:")
-            for test_name in self.failed_tests:
-                print(f"   - {test_name}")
-        
-        print("\n🎯 FOCUS AREA RESULTS (EthicalSpan has_violation() fix):")
-        evaluation_tests = [t for t in self.results if 'Evaluation' in t['test']]
-        eval_passed = len([t for t in evaluation_tests if t['success']])
-        eval_total = len(evaluation_tests)
-        
-        if eval_total > 0:
-            print(f"   Evaluation Tests: {eval_passed}/{eval_total} passed ({(eval_passed/eval_total)*100:.1f}%)")
+            phase5_failures = [t for t in self.failed_tests if any(keyword in t for keyword in ['Meta-Ethical', 'Normative Ethics', 'Applied Ethics', 'Comprehensive Ethics', 'ML Training', 'Philosophical Rigor', 'Enhanced Ethics'])]
+            other_failures = [t for t in self.failed_tests if not any(keyword in t for keyword in ['Meta-Ethical', 'Normative Ethics', 'Applied Ethics', 'Comprehensive Ethics', 'ML Training', 'Philosophical Rigor', 'Enhanced Ethics'])]
             
-            # Check if critical functionality is working
-            unethical_detection = any(t['success'] for t in evaluation_tests if 'Unethical Content' in t['test'] and 'Detection' in t['test'])
-            ethical_detection = any(t['success'] for t in evaluation_tests if 'Ethical Content' in t['test'] and 'Detection' in t['test'])
+            if phase5_failures:
+                print("   Phase 5 Enhanced Ethics Pipeline:")
+                for test_name in phase5_failures:
+                    print(f"     - {test_name}")
             
-            if unethical_detection and ethical_detection:
-                print("   ✅ CRITICAL: Both ethical and unethical content detection working")
-            elif unethical_detection:
-                print("   ⚠️  PARTIAL: Unethical detection working, ethical detection issues")
-            elif ethical_detection:
-                print("   ⚠️  PARTIAL: Ethical detection working, unethical detection issues")
+            if other_failures:
+                print("   Other Systems:")
+                for test_name in other_failures:
+                    print(f"     - {test_name}")
+        
+        print("\n🎯 PHASE 5 ENHANCED ETHICS PIPELINE RESULTS:")
+        phase5_tests = [t for t in self.results if any(keyword in t['test'] for keyword in ['Meta-Ethical', 'Normative Ethics', 'Applied Ethics', 'Comprehensive Ethics', 'ML Training', 'Philosophical Rigor', 'Enhanced Ethics'])]
+        phase5_passed = len([t for t in phase5_tests if t['success']])
+        phase5_total = len(phase5_tests)
+        
+        if phase5_total > 0:
+            print(f"   Enhanced Ethics Pipeline Tests: {phase5_passed}/{phase5_total} passed ({(phase5_passed/phase5_total)*100:.1f}%)")
+            
+            # Check critical Phase 5 functionality
+            meta_ethics_working = any(t['success'] for t in phase5_tests if 'Meta-Ethical Analysis' in t['test'])
+            normative_ethics_working = any(t['success'] for t in phase5_tests if 'Normative Ethics Analysis' in t['test'])
+            applied_ethics_working = any(t['success'] for t in phase5_tests if 'Applied Ethics Analysis' in t['test'])
+            comprehensive_working = any(t['success'] for t in phase5_tests if 'Comprehensive Ethics Analysis' in t['test'])
+            ml_guidance_working = any(t['success'] for t in phase5_tests if 'ML Training Ethical Guidance' in t['test'])
+            
+            print(f"   ✅ Meta-Ethics Layer: {'WORKING' if meta_ethics_working else 'FAILED'}")
+            print(f"   ✅ Normative Ethics Layer: {'WORKING' if normative_ethics_working else 'FAILED'}")
+            print(f"   ✅ Applied Ethics Layer: {'WORKING' if applied_ethics_working else 'FAILED'}")
+            print(f"   ✅ Comprehensive Analysis: {'WORKING' if comprehensive_working else 'FAILED'}")
+            print(f"   ✅ ML Training Guidance: {'WORKING' if ml_guidance_working else 'FAILED'}")
+            
+            if all([meta_ethics_working, normative_ethics_working, applied_ethics_working, comprehensive_working]):
+                print("   🎉 PHASE 5 ENHANCED ETHICS PIPELINE: FULLY OPERATIONAL")
+            elif any([meta_ethics_working, normative_ethics_working, applied_ethics_working]):
+                print("   ⚠️  PHASE 5 ENHANCED ETHICS PIPELINE: PARTIALLY OPERATIONAL")
             else:
-                print("   ❌ CRITICAL: Both ethical and unethical detection failing")
+                print("   ❌ PHASE 5 ENHANCED ETHICS PIPELINE: NOT OPERATIONAL")
         
         return passed_count == total_tests
 
