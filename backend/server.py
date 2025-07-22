@@ -2919,17 +2919,17 @@ def create_integrated_app():
                     "fragment_id": fragment.fragment_id,
                     "title": fragment.title,
                     "content": fragment.content,
-                    "relevance_score": fragment.relevance_score,
+                    "relevance_score": float(fragment.relevance_score) if hasattr(fragment.relevance_score, 'item') else fragment.relevance_score,
                     "source": {
                         "name": fragment.source.name,
                         "type": fragment.source.source_type.value,
                         "trustworthiness": fragment.source.trustworthiness.value,
                         "url": fragment.source.url,
-                        "credibility_score": fragment.source.credibility_score
+                        "credibility_score": float(fragment.source.credibility_score) if hasattr(fragment.source.credibility_score, 'item') else fragment.source.credibility_score
                     },
                     "concepts": fragment.concepts,
                     "semantic_tags": fragment.semantic_tags,
-                    "extraction_confidence": fragment.extraction_confidence
+                    "extraction_confidence": float(fragment.extraction_confidence) if hasattr(fragment.extraction_confidence, 'item') else fragment.extraction_confidence
                 }
                 response_data["knowledge_fragments"].append(fragment_data)
             
