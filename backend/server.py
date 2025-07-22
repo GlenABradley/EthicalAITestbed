@@ -673,53 +673,65 @@ async def evaluate_text(
         clean_text = request.text
         delta_summary = {}
         
-        # Check if we have core evaluation results with detailed analysis
-        if hasattr(result, 'context') and result.context:
-            analysis_results = getattr(result.context, 'analysis_results', {})
-            core_eval = analysis_results.get('core_evaluation')
+        # Try to get core evaluation results with detailed span analysis
+        core_eval = None
+        
+        # First check if we can access core evaluation from orchestrator
+        if hasattr(orchestrator, '_components') and 'core_engine' in orchestrator._components:
+            try:
+                # Get detailed evaluation directly from core engine
+                core_engine = orchestrator._components['core_engine']
+                core_eval = core_engine.evaluate_text(request.text)
+                logger.info(f"Core evaluation obtained with {len(getattr(core_eval, 'spans', []))} spans")
+            except Exception as e:
+                logger.warning(f"Failed to get core evaluation: {e}")
+        
+        # If we have detailed core evaluation with spans
+        if core_eval and hasattr(core_eval, 'spans') and core_eval.spans:
+            # Convert spans to frontend-compatible format
+            spans = []
+            minimal_spans = []
             
-            if core_eval and hasattr(core_eval, 'spans'):
-                # Convert spans to frontend-compatible format
-                spans = []
-                minimal_spans = []
-                
-                for span in core_eval.spans:
-                    span_data = {
-                        "text": span.text,
-                        "start": span.start,
-                        "end": span.end,
-                        "virtue_score": span.virtue_score,
-                        "deontological_score": span.deontological_score,
-                        "consequentialist_score": span.consequentialist_score,
-                        "virtue_violation": span.virtue_violation,
-                        "deontological_violation": span.deontological_violation,
-                        "consequentialist_violation": span.consequentialist_violation,
-                        "any_violation": span.any_violation
-                    }
-                    spans.append(span_data)
-                    
-                    # Add to minimal spans if it has violations
-                    if span.any_violation:
-                        minimal_spans.append(span_data)
-                
-                evaluation_details = {
-                    "overall_ethical": result.overall_ethical,
-                    "processing_time": result.processing_time,
-                    "minimal_violation_count": len(minimal_spans),
-                    "spans": spans,
-                    "minimal_spans": minimal_spans,
-                    "evaluation_id": result.request_id
+            for span in core_eval.spans:
+                span_data = {
+                    "text": span.text,
+                    "start": span.start,
+                    "end": span.end,
+                    "virtue_score": span.virtue_score,
+                    "deontological_score": span.deontological_score,
+                    "consequentialist_score": span.consequentialist_score,
+                    "virtue_violation": span.virtue_violation,
+                    "deontological_violation": span.deontological_violation,
+                    "consequentialist_violation": span.consequentialist_violation,
+                    "any_violation": span.any_violation
                 }
+                spans.append(span_data)
                 
-                clean_text = getattr(core_eval, 'clean_text', request.text)
-                delta_summary = {
-                    "original_length": len(request.text),
-                    "clean_length": len(clean_text),
-                    "changes_made": len(minimal_spans) > 0
-                }
+                # Add to minimal spans if it has violations
+                if span.any_violation:
+                    minimal_spans.append(span_data)
+            
+            evaluation_details = {
+                "overall_ethical": core_eval.overall_ethical,
+                "processing_time": result.processing_time,
+                "minimal_violation_count": len(minimal_spans),
+                "spans": spans,
+                "minimal_spans": minimal_spans,
+                "evaluation_id": result.request_id
+            }
+            
+            clean_text = getattr(core_eval, 'clean_text', request.text)
+            delta_summary = {
+                "original_length": len(request.text),
+                "clean_length": len(clean_text),
+                "changes_made": len(minimal_spans) > 0
+            }
+            
+            logger.info(f"Created detailed evaluation with {len(spans)} spans, {len(minimal_spans)} violations")
         
         # Fallback: if no detailed analysis, create basic structure
-        if not evaluation_details:
+        else:
+            logger.info("No detailed spans available, using basic evaluation structure")
             evaluation_details = {
                 "overall_ethical": result.overall_ethical,
                 "processing_time": result.processing_time,
