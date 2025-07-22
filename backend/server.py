@@ -677,20 +677,33 @@ async def evaluate_text(
         # Try to get core evaluation results with detailed span analysis
         core_eval = None
         
-        # First check if we can access core evaluation from orchestrator
-        if hasattr(orchestrator, '_components') and 'core_engine' in orchestrator._components:
-            try:
-                # Get detailed evaluation directly from core engine
-                core_engine = orchestrator._components['core_engine']
-                logger.info(f"Core engine available, calling evaluate_text with {len(request.text)} characters")
-                core_eval = core_engine.evaluate_text(request.text)
-                logger.info(f"Core evaluation obtained with {len(getattr(core_eval, 'spans', []))} spans")
-            except Exception as e:
-                logger.warning(f"Failed to get core evaluation: {e}")
-        elif hasattr(orchestrator, '_components'):
-            logger.warning(f"Core engine not in components. Available: {list(orchestrator._components.keys())}")
-        else:
-            logger.warning("Orchestrator has no _components attribute")
+        # Direct core engine initialization as fallback
+        try:
+            from ethical_engine import EthicalEvaluator
+            logger.info("Initializing direct core engine for detailed analysis")
+            direct_core_engine = EthicalEvaluator()
+            logger.info(f"Direct core engine initialized, calling evaluate_text with {len(request.text)} characters")
+            core_eval = direct_core_engine.evaluate_text(request.text)
+            logger.info(f"Direct core evaluation obtained with {len(getattr(core_eval, 'spans', []))} spans")
+        except Exception as e:
+            logger.warning(f"Direct core engine failed: {e}")
+            
+            # First check if we can access core evaluation from orchestrator  
+            if hasattr(orchestrator, '_components') and 'core_engine' in orchestrator._components:
+                try:
+                    # Get detailed evaluation directly from core engine
+                    core_engine = orchestrator._components['core_engine']
+                    logger.info(f"Orchestrator core engine available, calling evaluate_text with {len(request.text)} characters")
+                    core_eval = core_engine.evaluate_text(request.text)
+                    logger.info(f"Orchestrator core evaluation obtained with {len(getattr(core_eval, 'spans', []))} spans")
+                except Exception as e2:
+                    logger.warning(f"Failed to get orchestrator core evaluation: {e2}")
+            elif hasattr(orchestrator, '_components'):
+                logger.warning(f"Core engine not in components. Available: {list(orchestrator._components.keys())}")
+            else:
+                logger.warning("Orchestrator has no _components attribute")
+        
+        # If we have detailed core evaluation with spans
         if core_eval and hasattr(core_eval, 'spans') and core_eval.spans:
             # Convert spans to frontend-compatible format
             spans = []
