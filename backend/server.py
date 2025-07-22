@@ -686,58 +686,50 @@ async def evaluate_text(
         clean_text = request.text
         delta_summary = {}
         
-        # Get REAL but FAST core evaluation results 
+        # Get REAL but FAST core evaluation results using cached engine
         core_eval = None
         
-        # Use a lighter-weight real analysis approach
+        # Use cached ethical engine for faster processing
         try:
-            logger.info("Attempting lightweight real ethical analysis")
+            logger.info("Using cached ethical engine for real analysis")
             
-            # Import the core ethical engine
-            from ethical_engine import EthicalEvaluator
-            
-            # Create evaluation but with simplified processing
-            async def run_fast_real_analysis():
+            # Create evaluation function using cached engine
+            async def run_cached_real_analysis():
                 try:
-                    # Initialize engine but skip heavy processing steps for speed
-                    direct_core_engine = EthicalEvaluator()
+                    # Get the cached engine instance (fast - no reinitialization)
+                    cached_engine = get_cached_ethical_engine()
                     
-                    # For faster processing, analyze smaller chunks
+                    # For faster processing, analyze smaller chunks if needed
                     text_to_analyze = request.text
-                    if len(text_to_analyze) > 200:  # Truncate very long text for speed
-                        text_to_analyze = text_to_analyze[:200] + "..."
-                        logger.info(f"Truncating text to 200 chars for faster analysis")
+                    if len(text_to_analyze) > 300:  # Reasonable limit for speed
+                        text_to_analyze = text_to_analyze[:300] + "..."
+                        logger.info(f"Truncating text to 300 chars for faster analysis")
                     
-                    logger.info(f"Running lightweight real analysis on {len(text_to_analyze)} characters")
+                    logger.info(f"Running cached real analysis on {len(text_to_analyze)} characters")
                     
-                    # Call the evaluation with the text
-                    result = direct_core_engine.evaluate_text(text_to_analyze)
+                    # Call the evaluation with cached engine (should be much faster)
+                    result = cached_engine.evaluate_text(text_to_analyze)
                     
-                    # Expand spans back to original text if we truncated
-                    if hasattr(result, 'spans') and len(request.text) > 200:
-                        # Add a note about truncation
-                        logger.info(f"Analysis used first 200 characters of {len(request.text)} character text")
-                    
-                    logger.info(f"Lightweight real analysis complete with {len(getattr(result, 'spans', []))} spans")
+                    logger.info(f"Cached real analysis complete with {len(getattr(result, 'spans', []))} spans")
                     return result
                     
                 except Exception as e:
-                    logger.error(f"Lightweight real analysis failed: {e}")
+                    logger.error(f"Cached real analysis failed: {e}")
                     return None
             
-            # Run with a reasonable timeout
+            # Run with a reasonable timeout (should be faster now)
             try:
-                core_eval = await asyncio.wait_for(run_fast_real_analysis(), timeout=5.0)  # 5 second timeout
+                core_eval = await asyncio.wait_for(run_cached_real_analysis(), timeout=6.0)
                 if core_eval:
-                    logger.info("✅ Real analysis completed within timeout")
+                    logger.info("✅ Cached real analysis completed within timeout")
                 else:
-                    logger.warning("Real analysis returned None")
+                    logger.warning("Cached real analysis returned None")
             except asyncio.TimeoutError:
-                logger.warning("Real analysis timed out after 5 seconds, using fallback")
+                logger.warning("Cached real analysis timed out after 6 seconds, using fallback")
                 core_eval = None
                 
         except Exception as e:
-            logger.error(f"Failed to initialize real analysis: {e}")
+            logger.error(f"Failed to use cached real analysis: {e}")
             core_eval = None
         
         # If we have detailed core evaluation with spans
