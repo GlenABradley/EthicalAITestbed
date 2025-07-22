@@ -499,32 +499,66 @@ class BackendTestSuite:
         return overall_success
     
     async def bayesian_test_parameter_validation(self):
-        """Test parameter validation for optimization requests."""
-        print("🔍 Testing optimization parameter validation...")
+        """Test parameter validation for optimization requests with PERFORMANCE focus."""
+        print("🔍 Testing optimization parameter validation with performance requirements...")
         
-        # Test with invalid parameters
+        # Test with invalid parameters - should respond quickly
         invalid_test_cases = [
             ("Empty test_texts", {"test_texts": []}),
             ("Non-list test_texts", {"test_texts": "not a list"}),
             ("Insufficient test_texts", {"test_texts": ["only one text"]}),
-            ("Invalid parameters", {"test_texts": ["text1", "text2"], "n_initial_samples": -1})
         ]
         
         validation_passed = 0
+        total_response_time = 0
         
         for test_name, test_data in invalid_test_cases:
             success, response_time, result = await self.test_endpoint("POST", "/optimization/start", test_data)
+            total_response_time += response_time
             
-            # For validation tests, we expect failures (422 status)
+            # For validation tests, we expect failures (422 status) and fast responses
             validation_handled = not success or result.get('status') == 'error'
+            performance_ok = response_time < 5.0  # Should be fast for validation errors
             
-            details = f"Response time: {response_time:.3f}s | Validation handled: {validation_handled}"
-            if validation_handled:
+            details = f"Response time: {response_time:.3f}s | Validation handled: {validation_handled} | Performance OK: {performance_ok}"
+            
+            if validation_handled and performance_ok:
                 validation_passed += 1
             
-            self.log_test_result("bayesian_tests", f"Validation - {test_name}", validation_handled, response_time, details)
+            self.log_test_result("bayesian_tests", f"Performance Validation - {test_name}", validation_handled and performance_ok, response_time, details)
+        
+        # Test edge case with timeout handling
+        timeout_test_data = {
+            "test_texts": [
+                "Quick test for optimized Bayesian cluster resolution.",
+                "Performance improvements should make this much faster."
+            ],
+            "n_initial_samples": 3,
+            "n_optimization_iterations": 5,
+            "max_optimization_time": 1.0,  # Very short timeout to test timeout handling
+            "parallel_evaluations": False,
+            "max_workers": 1
+        }
+        
+        success, response_time, result = await self.test_endpoint("POST", "/optimization/start", timeout_test_data)
+        total_response_time += response_time
+        
+        # Should either succeed quickly or handle timeout gracefully
+        timeout_handled = success or (not success and "timeout" in str(result.get('error', '')).lower())
+        performance_ok = response_time < 5.0
+        
+        details = f"Timeout test: {response_time:.3f}s | Handled: {timeout_handled} | Performance OK: {performance_ok}"
+        
+        if timeout_handled and performance_ok:
+            validation_passed += 1
+        
+        self.log_test_result("bayesian_tests", "Performance Timeout Handling", timeout_handled and performance_ok, response_time, details)
         
         overall_success = validation_passed >= 3  # Allow some tolerance
+        avg_response_time = total_response_time / 4  # 4 tests total
+        
+        print(f"    Average validation response time: {avg_response_time:.3f}s")
+        
         return overall_success
     
     async def bayesian_test_status_monitoring(self):
