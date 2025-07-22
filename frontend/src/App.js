@@ -156,6 +156,84 @@ function App() {
     .catch(error => console.error('Parameter update error:', error));
   }, [parameters]);
 
+  // Memoized tab handlers
+  const handleTabSwitch = useCallback((tabName) => {
+    console.log(`🔥 TAB SWITCH CLICKED - switching to: ${tabName}`);
+    setActiveTab(tabName);
+  }, []);
+
+  // Alternative tab handlers using native events
+  const handleTabSwitchNative = useCallback((event, tabName) => {
+    event.preventDefault();
+    event.stopPropagation();
+    console.log(`🎯 NATIVE TAB HANDLER - switching to: ${tabName}`);
+    setActiveTab(tabName);
+  }, []);
+
+  // Add native DOM event listeners as fallback after component mounts
+  useEffect(() => {
+    console.log('🔧 Setting up fallback event listeners');
+    
+    // Function to add native click listeners to buttons
+    const addNativeListeners = () => {
+      // Tab buttons
+      const tabButtons = document.querySelectorAll('nav button');
+      tabButtons.forEach((button, index) => {
+        const tabNames = ['evaluate', 'heatmap', 'ml-assistant', 'parameters'];
+        const tabName = tabNames[index];
+        
+        if (tabName) {
+          // Remove existing listeners
+          button.removeEventListener('click', button._nativeClickHandler);
+          
+          // Add new listener
+          const clickHandler = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log(`🎯 NATIVE LISTENER - Tab clicked: ${tabName}`);
+            setActiveTab(tabName);
+          };
+          
+          button._nativeClickHandler = clickHandler;
+          button.addEventListener('click', clickHandler, { passive: false });
+        }
+      });
+      
+      // Evaluate button
+      const evaluateButton = document.querySelector('button:has-text("Evaluate"), button[data-action="evaluate"]');
+      if (evaluateButton) {
+        evaluateButton.removeEventListener('click', evaluateButton._nativeClickHandler);
+        
+        const evaluateClickHandler = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('🎯 NATIVE LISTENER - Evaluate button clicked');
+          handleEvaluate();
+        };
+        
+        evaluateButton._nativeClickHandler = evaluateClickHandler;
+        evaluateButton.addEventListener('click', evaluateClickHandler, { passive: false });
+      }
+    };
+
+    // Add listeners after a short delay to ensure DOM is ready
+    const timer = setTimeout(addNativeListeners, 100);
+    
+    // Also add listeners when the active tab changes
+    addNativeListeners();
+    
+    return () => {
+      clearTimeout(timer);
+      // Cleanup listeners
+      const allButtons = document.querySelectorAll('button');
+      allButtons.forEach(button => {
+        if (button._nativeClickHandler) {
+          button.removeEventListener('click', button._nativeClickHandler);
+        }
+      });
+    };
+  }, [activeTab, handleEvaluate]);
+
   // New functions for learning system
   const submitFeedback = (evaluationId, feedbackScore, userComment = '') => {
     fetch(`${API}/feedback`, {
