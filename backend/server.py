@@ -1417,13 +1417,13 @@ async def start_cluster_optimization(
                 detail="At least 2 test texts required for optimization"
             )
         
-        # Configure optimization parameters
+        # Configure optimization parameters - PERFORMANCE OPTIMIZED
         optimization_config = OptimizationParameters(
-            n_initial_samples=request.get("n_initial_samples", 10),  # Reduced for demo
-            n_optimization_iterations=request.get("n_optimization_iterations", 20),  # Reduced for demo
-            max_optimization_time=request.get("max_optimization_time", 180.0),  # 3 minutes max
-            parallel_evaluations=request.get("parallel_evaluations", True),
-            max_workers=request.get("max_workers", 2)  # Reduced for demo
+            n_initial_samples=min(request.get("n_initial_samples", 3), 5),  # Max 5 for performance  
+            n_optimization_iterations=min(request.get("n_optimization_iterations", 5), 10),  # Max 10 for performance
+            max_optimization_time=min(request.get("max_optimization_time", 30.0), 60.0),  # Max 60s
+            parallel_evaluations=False,  # Disabled for stability
+            max_workers=1  # Single worker for stability
         )
         
         # Create optimization ID
