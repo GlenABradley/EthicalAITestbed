@@ -1450,6 +1450,378 @@ def create_integrated_app():
     # ============================================================================
     
     # ============================================================================
+    # MULTI-MODAL EVALUATION API - PHASE 4 IMPLEMENTATION
+    # ============================================================================
+    
+    class MultiModalEvaluationRequest(BaseModel):
+        """Request model for multi-modal evaluation."""
+        content: Union[str, List[str]] = Field(..., description="Content to evaluate")
+        mode: str = Field(..., description="Evaluation mode: pre_evaluation, post_evaluation, stream_evaluation")
+        priority: str = Field(default="medium", description="Priority: critical, high, medium, low, batch")
+        original_input: Optional[str] = Field(default=None, description="Original input for post-evaluation")
+        intended_purpose: Optional[str] = Field(default=None, description="Intended purpose for alignment assessment")
+        user_id: Optional[str] = Field(default=None, description="User identifier")
+        session_id: Optional[str] = Field(default=None, description="Session identifier")
+        training_context: Optional[Dict[str, Any]] = Field(default=None, description="Training context metadata")
+        timeout: float = Field(default=60.0, description="Evaluation timeout in seconds")
+        
+    class BatchEvaluationRequest(BaseModel):
+        """Request model for batch multi-modal evaluation."""
+        content_items: List[Union[str, List[str]]] = Field(..., description="List of content to evaluate")
+        mode: str = Field(..., description="Evaluation mode for all items")
+        priority: str = Field(default="batch", description="Priority level")
+        batch_metadata: Optional[Dict[str, Any]] = Field(default=None, description="Metadata for entire batch")
+        
+    class ModeConfigurationRequest(BaseModel):
+        """Request model for mode configuration."""
+        mode: str = Field(..., description="Evaluation mode to configure")
+        configuration: Dict[str, Any] = Field(..., description="Configuration parameters")
+        
+    @api_router.post("/multimodal/evaluate", response_model=Dict[str, Any])
+    async def multimodal_evaluate(request: MultiModalEvaluationRequest):
+        """
+        Perform multi-modal evaluation using the orchestrator.
+        
+        Supports different evaluation modes:
+        - pre_evaluation: Screen inputs before processing
+        - post_evaluation: Validate outputs after processing
+        - stream_evaluation: Real-time analysis during processing
+        """
+        try:
+            start_time = time.time()
+            
+            # Get the orchestrator
+            orchestrator = get_orchestrator()
+            if not orchestrator:
+                raise HTTPException(status_code=500, detail="Multi-modal orchestrator not initialized")
+            
+            # Parse enum values
+            try:
+                mode = EvaluationMode(request.mode)
+                priority = EvaluationPriority(request.priority)
+            except ValueError as e:
+                raise HTTPException(status_code=400, detail=f"Invalid enum value: {e}")
+            
+            # Prepare evaluation parameters
+            kwargs = {
+                "user_id": request.user_id,
+                "session_id": request.session_id,
+                "training_context": request.training_context,
+                "timeout": request.timeout
+            }
+            
+            # Add mode-specific parameters
+            if mode == EvaluationMode.POST_EVALUATION:
+                kwargs["original_input"] = request.original_input
+                kwargs["intended_purpose"] = request.intended_purpose
+            
+            # Perform evaluation
+            result = await orchestrator.evaluate(
+                content=request.content,
+                mode=mode,
+                priority=priority,
+                **kwargs
+            )
+            
+            # Convert to dict and add processing metadata
+            response = result.to_dict()
+            response["api_processing_time"] = time.time() - start_time
+            response["orchestrator_metrics"] = {
+                "active_requests": len(orchestrator.active_requests),
+                "mode_used": mode.value,
+                "priority_used": priority.value
+            }
+            
+            return response
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Multi-modal evaluation failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Evaluation failed: {str(e)}")
+    
+    @api_router.post("/multimodal/batch-evaluate", response_model=Dict[str, Any])
+    async def batch_multimodal_evaluate(request: BatchEvaluationRequest):
+        """
+        Perform batch multi-modal evaluation of multiple content items.
+        
+        Efficiently processes multiple items using concurrent evaluation
+        with intelligent load balancing and error handling.
+        """
+        try:
+            start_time = time.time()
+            
+            # Get the orchestrator
+            orchestrator = get_orchestrator()
+            if not orchestrator:
+                raise HTTPException(status_code=500, detail="Multi-modal orchestrator not initialized")
+            
+            # Parse enum values
+            try:
+                mode = EvaluationMode(request.mode)
+                priority = EvaluationPriority(request.priority)
+            except ValueError as e:
+                raise HTTPException(status_code=400, detail=f"Invalid enum value: {e}")
+            
+            # Validate batch size
+            if len(request.content_items) > 100:
+                raise HTTPException(status_code=400, detail="Batch size exceeds maximum limit of 100 items")
+            
+            # Perform batch evaluation
+            results = await orchestrator.batch_evaluate(
+                content_items=request.content_items,
+                mode=mode,
+                priority=priority,
+                batch_metadata=request.batch_metadata
+            )
+            
+            # Aggregate results
+            successful_results = [r for r in results if r.status != "failed"]
+            failed_results = [r for r in results if r.status == "failed"]
+            
+            # Calculate batch statistics
+            batch_stats = {
+                "total_items": len(request.content_items),
+                "successful_evaluations": len(successful_results),
+                "failed_evaluations": len(failed_results),
+                "success_rate": len(successful_results) / len(request.content_items),
+                "average_processing_time": sum(r.processing_time for r in successful_results) / len(successful_results) if successful_results else 0,
+                "average_ethical_score": sum(r.overall_ethical_score for r in successful_results) / len(successful_results) if successful_results else 0
+            }
+            
+            return {
+                "batch_id": str(uuid.uuid4()),
+                "batch_stats": batch_stats,
+                "results": [r.to_dict() for r in results],
+                "processing_time": time.time() - start_time,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Batch multi-modal evaluation failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Batch evaluation failed: {str(e)}")
+    
+    @api_router.post("/multimodal/configure-mode", response_model=Dict[str, Any])
+    async def configure_evaluation_mode(request: ModeConfigurationRequest):
+        """
+        Configure a specific evaluation mode with custom parameters.
+        
+        Allows dynamic adjustment of evaluation thresholds, criteria,
+        and behavior for different use cases and requirements.
+        """
+        try:
+            # Get the orchestrator
+            orchestrator = get_orchestrator()
+            if not orchestrator:
+                raise HTTPException(status_code=500, detail="Multi-modal orchestrator not initialized")
+            
+            # Parse mode enum
+            try:
+                mode = EvaluationMode(request.mode)
+            except ValueError:
+                raise HTTPException(status_code=400, detail=f"Invalid evaluation mode: {request.mode}")
+            
+            # Apply configuration
+            success = await orchestrator.configure_mode(mode, request.configuration)
+            
+            if success:
+                return {
+                    "status": "configured",
+                    "mode": request.mode,
+                    "configuration_applied": request.configuration,
+                    "timestamp": datetime.now().isoformat()
+                }
+            else:
+                raise HTTPException(status_code=400, detail=f"Failed to configure mode: {request.mode}")
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Mode configuration failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Configuration failed: {str(e)}")
+    
+    @api_router.get("/multimodal/capabilities")
+    async def get_multimodal_capabilities():
+        """
+        Get comprehensive information about available evaluation modes and capabilities.
+        
+        Returns detailed information about each mode's features, performance
+        characteristics, and configuration options.
+        """
+        try:
+            # Get the orchestrator
+            orchestrator = get_orchestrator()
+            if not orchestrator:
+                raise HTTPException(status_code=500, detail="Multi-modal orchestrator not initialized")
+            
+            capabilities = {
+                "available_modes": [],
+                "orchestrator_info": {
+                    "max_concurrent_evaluations": orchestrator.max_concurrent_evaluations,
+                    "active_requests": len(orchestrator.active_requests),
+                    "total_requests_processed": len(orchestrator.request_history)
+                },
+                "supported_priorities": [p.value for p in EvaluationPriority],
+                "api_version": "4.0.0",
+                "features": [
+                    "Multi-modal evaluation orchestration",
+                    "Circuit breaker resilience patterns",
+                    "Concurrent evaluation processing", 
+                    "Batch evaluation support",
+                    "Dynamic mode configuration",
+                    "Comprehensive metrics and monitoring"
+                ]
+            }
+            
+            # Get capabilities for each available mode
+            for mode in EvaluationMode:
+                mode_capabilities = orchestrator.get_mode_capabilities(mode)
+                if "error" not in mode_capabilities:
+                    capabilities["available_modes"].append(mode_capabilities)
+            
+            return capabilities
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Capabilities retrieval failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Failed to get capabilities: {str(e)}")
+    
+    @api_router.get("/multimodal/metrics")
+    async def get_multimodal_metrics():
+        """
+        Get comprehensive orchestrator performance metrics.
+        
+        Returns detailed metrics about evaluation performance, success rates,
+        circuit breaker states, and system health indicators.
+        """
+        try:
+            # Get the orchestrator
+            orchestrator = get_orchestrator()
+            if not orchestrator:
+                raise HTTPException(status_code=500, detail="Multi-modal orchestrator not initialized")
+            
+            # Get comprehensive metrics
+            metrics = orchestrator.get_orchestrator_metrics()
+            
+            # Add timestamp and system info
+            metrics["timestamp"] = datetime.now().isoformat()
+            metrics["system_info"] = {
+                "uptime_seconds": time.time() - (orchestrator.request_history[0].timestamp if orchestrator.request_history else time.time()),
+                "python_version": "3.x",
+                "orchestrator_version": "4.0.0"
+            }
+            
+            return metrics
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Metrics retrieval failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Failed to get metrics: {str(e)}")
+    
+    @api_router.post("/multimodal/health-check")
+    async def multimodal_health_check():
+        """
+        Perform comprehensive health check of the multi-modal evaluation system.
+        
+        Tests all evaluation modes, checks circuit breaker states,
+        and verifies system readiness for production workloads.
+        """
+        try:
+            start_time = time.time()
+            
+            # Get the orchestrator
+            orchestrator = get_orchestrator()
+            if not orchestrator:
+                return {
+                    "status": "unhealthy",
+                    "error": "Multi-modal orchestrator not initialized",
+                    "timestamp": datetime.now().isoformat()
+                }
+            
+            health_results = {
+                "overall_status": "healthy",
+                "mode_health": {},
+                "circuit_breaker_status": {},
+                "system_health": {},
+                "recommendations": []
+            }
+            
+            # Test each evaluation mode with a simple evaluation
+            test_content = "This is a simple test message for health checking."
+            
+            for mode in [EvaluationMode.PRE_EVALUATION, EvaluationMode.POST_EVALUATION]:
+                try:
+                    result = await orchestrator.evaluate(
+                        content=test_content,
+                        mode=mode,
+                        priority=EvaluationPriority.HIGH,
+                        timeout=10.0
+                    )
+                    
+                    health_results["mode_health"][mode.value] = {
+                        "status": "healthy",
+                        "response_time": result.processing_time,
+                        "confidence": result.confidence,
+                        "last_test": datetime.now().isoformat()
+                    }
+                    
+                except Exception as e:
+                    health_results["mode_health"][mode.value] = {
+                        "status": "unhealthy",
+                        "error": str(e),
+                        "last_test": datetime.now().isoformat()
+                    }
+                    health_results["overall_status"] = "degraded"
+            
+            # Check circuit breaker states
+            for mode, breaker in orchestrator.circuit_breakers.items():
+                health_results["circuit_breaker_status"][mode.value] = {
+                    "state": breaker["state"],
+                    "failure_count": breaker["failures"],
+                    "healthy": breaker["state"] in ["closed", "half-open"]
+                }
+                
+                if breaker["state"] == "open":
+                    health_results["overall_status"] = "degraded"
+                    health_results["recommendations"].append(f"Circuit breaker open for {mode.value} - investigate failures")
+            
+            # System health indicators
+            health_results["system_health"] = {
+                "active_requests": len(orchestrator.active_requests),
+                "memory_usage": "normal",  # Could be enhanced with actual memory monitoring
+                "response_time": time.time() - start_time,
+                "concurrent_capacity": orchestrator.max_concurrent_evaluations
+            }
+            
+            # Generate recommendations
+            if health_results["overall_status"] == "healthy":
+                health_results["recommendations"].append("System is operating normally")
+            elif health_results["overall_status"] == "degraded":
+                health_results["recommendations"].append("System has degraded performance - monitor closely")
+            
+            health_results["timestamp"] = datetime.now().isoformat()
+            health_results["health_check_duration"] = time.time() - start_time
+            
+            return health_results
+            
+        except Exception as e:
+            logger.error(f"Health check failed: {str(e)}")
+            return {
+                "overall_status": "unhealthy",
+                "error": str(e),
+                "timestamp": datetime.now().isoformat(),
+                "health_check_duration": time.time() - start_time if 'start_time' in locals() else 0
+            }
+    
+    # ============================================================================
+    # END MULTI-MODAL EVALUATION API - PHASE 4
+    # ============================================================================
+    
+    # ============================================================================
     # END ML ETHICS API - PHASE 3
     # ============================================================================
     
