@@ -2796,6 +2796,21 @@ def create_integrated_app():
         except Exception as e:
             logger.error(f"❌ Failed to initialize streaming server: {e}")
             streaming_server = None
+            
+        # Initialize Knowledge Integration Layer - Phase 8
+        try:
+            knowledge_integrator = await initialize_knowledge_integrator()
+            logger.info("✅ Knowledge Integration Layer initialized with world-class knowledge architecture")
+            logger.info("   - Knowledge Representation: Doug Lenat's Cyc project principles")
+            logger.info("   - Semantic Web Integration: Tim Berners-Lee's linked data standards")
+            logger.info("   - Knowledge Graph: Google Knowledge Graph methodologies")
+            logger.info("   - Vector Search: Modern RAG (Retrieval-Augmented Generation) patterns")
+            logger.info("   - Multi-Source Integration: Wikipedia, Philosophy, Academic databases")
+            logger.info("   - Credibility Assessment: Wikimedia Foundation quality standards")
+            logger.info("   - Citation Tracking: Academic research provenance methods")
+        except Exception as e:
+            logger.error(f"❌ Failed to initialize knowledge integrator: {e}")
+            knowledge_integrator = None
     
     @app.on_event("shutdown") 
     async def shutdown_event():
