@@ -779,6 +779,20 @@ async def evaluate_text(
             processing_time=processing_time,
             timestamp=datetime.utcnow(),
             version="10.0.0",
+            evaluation={
+                "overall_ethical": False,
+                "processing_time": processing_time,
+                "minimal_violation_count": 0,
+                "spans": [],
+                "minimal_spans": [],
+                "evaluation_id": request_id
+            },
+            clean_text=request.text if hasattr(request, 'text') else "",
+            delta_summary={
+                "original_length": len(request.text) if hasattr(request, 'text') else 0,
+                "clean_length": len(request.text) if hasattr(request, 'text') else 0,
+                "changes_made": False
+            },
             explanation=f"Evaluation failed due to system error: {str(e)}",
             warnings=[f"System error occurred: {str(e)}"],
             cache_hit=False,
