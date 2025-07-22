@@ -1015,7 +1015,7 @@ async def get_heat_map_mock(request: Dict[str, Any]):
         evaluation = ethical_engine.evaluate_text(text)
         real_spans = getattr(evaluation, 'spans', [])
         
-        logger.info(f"Got {len(real_spans)} real spans for heat-map")
+        logger.info(f"🎯 Generated heat-map with {len(real_spans)} comprehensive spans from full analysis")
         
         # Convert real spans to heat-map format
         spans = []
