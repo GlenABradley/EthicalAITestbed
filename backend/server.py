@@ -668,6 +668,73 @@ async def evaluate_text(
         # Perform unified evaluation
         result = await orchestrator.evaluate_content(request.text, context)
         
+        # Extract detailed evaluation data for frontend compatibility
+        evaluation_details = {}
+        clean_text = request.text
+        delta_summary = {}
+        
+        # Check if we have core evaluation results with detailed analysis
+        if hasattr(result, 'context') and result.context:
+            analysis_results = getattr(result.context, 'analysis_results', {})
+            core_eval = analysis_results.get('core_evaluation')
+            
+            if core_eval and hasattr(core_eval, 'spans'):
+                # Convert spans to frontend-compatible format
+                spans = []
+                minimal_spans = []
+                
+                for span in core_eval.spans:
+                    span_data = {
+                        "text": span.text,
+                        "start": span.start,
+                        "end": span.end,
+                        "virtue_score": span.virtue_score,
+                        "deontological_score": span.deontological_score,
+                        "consequentialist_score": span.consequentialist_score,
+                        "virtue_violation": span.virtue_violation,
+                        "deontological_violation": span.deontological_violation,
+                        "consequentialist_violation": span.consequentialist_violation,
+                        "any_violation": span.any_violation
+                    }
+                    spans.append(span_data)
+                    
+                    # Add to minimal spans if it has violations
+                    if span.any_violation:
+                        minimal_spans.append(span_data)
+                
+                evaluation_details = {
+                    "overall_ethical": result.overall_ethical,
+                    "processing_time": result.processing_time,
+                    "minimal_violation_count": len(minimal_spans),
+                    "spans": spans,
+                    "minimal_spans": minimal_spans,
+                    "evaluation_id": result.request_id
+                }
+                
+                clean_text = getattr(core_eval, 'clean_text', request.text)
+                delta_summary = {
+                    "original_length": len(request.text),
+                    "clean_length": len(clean_text),
+                    "changes_made": len(minimal_spans) > 0
+                }
+        
+        # Fallback: if no detailed analysis, create basic structure
+        if not evaluation_details:
+            evaluation_details = {
+                "overall_ethical": result.overall_ethical,
+                "processing_time": result.processing_time,
+                "minimal_violation_count": len(result.ethical_violations),
+                "spans": [],
+                "minimal_spans": [],
+                "evaluation_id": result.request_id
+            }
+            
+            delta_summary = {
+                "original_length": len(request.text),
+                "clean_length": len(request.text),
+                "changes_made": False
+            }
+        
         # Create response
         response = EvaluationResponse(
             request_id=result.request_id,
@@ -676,6 +743,9 @@ async def evaluate_text(
             processing_time=result.processing_time,
             timestamp=result.timestamp,
             version=result.version,
+            evaluation=evaluation_details,
+            clean_text=clean_text,
+            delta_summary=delta_summary,
             analysis_results={
                 "meta_ethical": result.meta_ethical_analysis,
                 "normative": result.normative_analysis,
