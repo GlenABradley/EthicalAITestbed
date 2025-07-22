@@ -900,3 +900,451 @@ class NormativeEthicsEvaluator:
         
         net_score = max(0.0, min(1.0, 0.5 + autonomy_score - coercion_score))
         return net_score
+    
+    async def _identify_duties(self, content: str) -> List[str]:
+        """Identify moral duties present in content."""
+        identified_duties = []
+        
+        for duty_type, duties in self.kantian_duties.items():
+            for duty_name, duty_info in duties.items():
+                indicators = duty_info["indicators"]
+                violations = duty_info["violations"]
+                
+                has_indicator = any(ind in content for ind in indicators)
+                has_violation = any(viol in content for viol in violations)
+                
+                if has_indicator:
+                    identified_duties.append(f"{duty_name} (affirmed)")
+                elif has_violation:
+                    identified_duties.append(f"{duty_name} (violated)")
+        
+        return identified_duties
+    
+    async def _assess_universalizability(self, content: str) -> float:
+        """Assess how universalizable the maxim is."""
+        # Simplified universalizability assessment
+        universal_indicators = ["everyone", "all", "universal", "always", "never"]
+        particular_indicators = ["someone", "sometimes", "specific", "particular"]
+        
+        universal_count = sum(1 for ind in universal_indicators if ind in content)
+        particular_count = sum(1 for ind in particular_indicators if ind in content)
+        
+        if universal_count > particular_count:
+            return 0.8
+        elif universal_count == particular_count:
+            return 0.5
+        else:
+            return 0.3
+    
+    async def _evaluate_rational_consistency(self, content: str) -> float:
+        """Evaluate logical consistency of ethical reasoning."""
+        contradiction_indicators = ["but", "however", "although", "despite", "contradiction"]
+        consistency_indicators = ["therefore", "thus", "consequently", "follows", "logical"]
+        
+        contradiction_count = sum(1 for ind in contradiction_indicators if ind in content)
+        consistency_count = sum(1 for ind in consistency_indicators if ind in content)
+        
+        if consistency_count > contradiction_count:
+            return 0.8
+        else:
+            return max(0.2, 0.8 - (contradiction_count * 0.2))
+    
+    async def _calculate_utility(self, content: str) -> float:
+        """Calculate net utility based on utilitarian principles."""
+        positive_utils = 0.0
+        negative_utils = 0.0
+        
+        # Hedonistic calculation
+        pleasure_words = self.utility_factors["hedonistic"]["pleasure_indicators"]
+        pain_words = self.utility_factors["hedonistic"]["pain_indicators"]
+        
+        positive_utils += sum(0.2 for word in pleasure_words if word in content)
+        negative_utils += sum(0.2 for word in pain_words if word in content)
+        
+        # Preference satisfaction
+        pref_sat = self.utility_factors["preference"]["preference_satisfaction"]
+        pref_frust = self.utility_factors["preference"]["preference_frustration"]
+        
+        positive_utils += sum(0.15 for word in pref_sat if word in content)
+        negative_utils += sum(0.15 for word in pref_frust if word in content)
+        
+        # Objective goods
+        obj_goods = self.utility_factors["objective_list"]["objective_goods"]
+        obj_bads = self.utility_factors["objective_list"]["objective_bads"]
+        
+        positive_utils += sum(0.1 for word in obj_goods if word in content)
+        negative_utils += sum(0.1 for word in obj_bads if word in content)
+        
+        # Normalize to [-1, 1] range
+        net_utility = positive_utils - negative_utils
+        return max(-1.0, min(1.0, net_utility))
+    
+    async def _identify_consequences(self, content: str) -> Tuple[List[str], List[str]]:
+        """Identify positive and negative consequences mentioned in content."""
+        import re
+        
+        positive_consequences = []
+        negative_consequences = []
+        
+        # Pattern-based consequence identification
+        consequence_patterns = [
+            r"result(?:s)? in (\w+(?:\s+\w+)*)",
+            r"lead(?:s)? to (\w+(?:\s+\w+)*)",
+            r"cause(?:s)? (\w+(?:\s+\w+)*)",
+            r"bring(?:s)? about (\w+(?:\s+\w+)*)"
+        ]
+        
+        positive_indicators = ["benefit", "help", "improve", "good", "positive", "advantage"]
+        negative_indicators = ["harm", "hurt", "damage", "bad", "negative", "disadvantage"]
+        
+        for pattern in consequence_patterns:
+            matches = re.findall(pattern, content, re.IGNORECASE)
+            for match in matches:
+                match_lower = match.lower()
+                if any(pos in match_lower for pos in positive_indicators):
+                    positive_consequences.append(match)
+                elif any(neg in match_lower for neg in negative_indicators):
+                    negative_consequences.append(match)
+        
+        return positive_consequences, negative_consequences
+    
+    async def _identify_affected_parties(self, content: str) -> List[str]:
+        """Identify stakeholders affected by the action."""
+        stakeholder_patterns = ["people", "individuals", "society", "community", "users", "customers", 
+                               "employees", "children", "adults", "elderly", "students", "patients"]
+        
+        affected = []
+        content_lower = content.lower()
+        
+        for stakeholder in stakeholder_patterns:
+            if stakeholder in content_lower:
+                affected.append(stakeholder)
+        
+        return affected
+    
+    async def _assess_aggregate_welfare(self, content: str, pos_consequences: List[str], neg_consequences: List[str]) -> float:
+        """Assess overall welfare impact."""
+        positive_weight = len(pos_consequences) * 0.3
+        negative_weight = len(neg_consequences) * 0.3
+        
+        welfare_keywords = ["welfare", "wellbeing", "flourish", "thrive", "prosper"]
+        harm_keywords = ["suffer", "distress", "misery", "pain", "hardship"]
+        
+        welfare_score = sum(0.2 for word in welfare_keywords if word in content.lower())
+        harm_score = sum(0.2 for word in harm_keywords if word in content.lower())
+        
+        net_welfare = positive_weight + welfare_score - negative_weight - harm_score
+        return max(0.0, min(1.0, 0.5 + net_welfare))
+    
+    async def _evaluate_distribution_fairness(self, content: str) -> float:
+        """Evaluate fairness of utility distribution."""
+        fairness_indicators = ["fair", "equal", "equitable", "just", "balanced"]
+        unfairness_indicators = ["unfair", "unequal", "biased", "discriminatory", "unbalanced"]
+        
+        fairness_score = sum(0.2 for ind in fairness_indicators if ind in content.lower())
+        unfairness_score = sum(0.2 for ind in unfairness_indicators if ind in content.lower())
+        
+        return max(0.0, min(1.0, 0.5 + fairness_score - unfairness_score))
+    
+    async def _assess_long_term_effects(self, content: str) -> float:
+        """Assess long-term consequence considerations."""
+        long_term_indicators = ["long term", "future", "permanent", "lasting", "enduring"]
+        short_term_indicators = ["immediate", "instant", "quick", "temporary", "brief"]
+        
+        long_term_score = sum(0.3 for ind in long_term_indicators if ind in content.lower())
+        short_term_score = sum(0.1 for ind in short_term_indicators if ind in content.lower())
+        
+        return max(0.0, min(1.0, long_term_score - (short_term_score * 0.5)))
+    
+    async def _assess_virtues(self, content: str) -> Dict[str, float]:
+        """Assess presence and strength of virtues in content."""
+        virtue_scores = {}
+        content_lower = content.lower()
+        
+        for virtue_name, virtue_info in self.cardinal_virtues.items():
+            indicators = virtue_info["indicators"]
+            score = sum(0.2 for ind in indicators if ind in content_lower)
+            virtue_scores[virtue_name] = min(1.0, score)
+        
+        return virtue_scores
+    
+    async def _assess_vices(self, content: str) -> Dict[str, float]:
+        """Assess presence and strength of vices in content."""
+        vice_scores = {}
+        content_lower = content.lower()
+        
+        # Use virtue oppositions to identify vices
+        for virtue, vice in self.virtue_oppositions.items():
+            if virtue in self.cardinal_virtues:
+                virtue_info = self.cardinal_virtues[virtue]
+                # Look for excess or deficiency
+                excess_indicators = [virtue_info.get("excess", "")]
+                deficiency_indicators = [virtue_info.get("deficiency", "")]
+                
+                excess_score = sum(0.3 for ind in excess_indicators if ind and ind in content_lower)
+                deficiency_score = sum(0.3 for ind in deficiency_indicators if ind and ind in content_lower)
+                
+                vice_scores[f"{virtue}_excess"] = min(1.0, excess_score)
+                vice_scores[f"{virtue}_deficiency"] = min(1.0, deficiency_score)
+        
+        return vice_scores
+    
+    async def _analyze_golden_mean(self, content: str, virtue_assessment: Dict[str, float]) -> float:
+        """Analyze adherence to Aristotelian golden mean principle."""
+        # Calculate balance across virtue dimensions
+        if not virtue_assessment:
+            return 0.5
+        
+        virtue_values = list(virtue_assessment.values())
+        mean_virtue = np.mean(virtue_values)
+        virtue_variance = np.var(virtue_values)
+        
+        # Lower variance indicates better balance (golden mean)
+        balance_score = 1.0 - min(1.0, virtue_variance * 2)
+        
+        # Combine with mean virtue level
+        golden_mean_score = (mean_virtue + balance_score) / 2
+        return golden_mean_score
+    
+    async def _assess_eudaimonic_contribution(self, content: str) -> float:
+        """Assess contribution to human flourishing (eudaimonia)."""
+        eudaimonic_indicators = ["flourish", "thrive", "fulfillment", "meaning", "purpose", 
+                               "excellence", "actualization", "growth", "development"]
+        
+        anti_eudaimonic_indicators = ["stagnation", "meaningless", "empty", "unfulfilled", 
+                                    "degradation", "decline", "deterioration"]
+        
+        content_lower = content.lower()
+        positive_score = sum(0.15 for ind in eudaimonic_indicators if ind in content_lower)
+        negative_score = sum(0.15 for ind in anti_eudaimonic_indicators if ind in content_lower)
+        
+        return max(0.0, min(1.0, 0.5 + positive_score - negative_score))
+    
+    async def _evaluate_character_development(self, content: str) -> float:
+        """Evaluate impact on character formation and moral development."""
+        character_positive = ["learn", "grow", "improve", "develop", "cultivate", "strengthen"]
+        character_negative = ["corrupt", "degrade", "weaken", "diminish", "erode"]
+        
+        content_lower = content.lower()
+        positive_impact = sum(0.2 for word in character_positive if word in content_lower)
+        negative_impact = sum(0.2 for word in character_negative if word in content_lower)
+        
+        return max(0.0, min(1.0, 0.5 + positive_impact - negative_impact))
+    
+    async def _assess_practical_wisdom(self, content: str) -> float:
+        """Assess demonstration of practical wisdom (phronesis)."""
+        wisdom_indicators = ["wise", "prudent", "thoughtful", "careful", "considered", 
+                           "deliberate", "judicious", "discerning", "insightful"]
+        
+        folly_indicators = ["foolish", "rash", "impulsive", "careless", "thoughtless", 
+                          "reckless", "hasty", "unwise"]
+        
+        content_lower = content.lower()
+        wisdom_score = sum(0.15 for ind in wisdom_indicators if ind in content_lower)
+        folly_score = sum(0.15 for ind in folly_indicators if ind in content_lower)
+        
+        return max(0.0, min(1.0, 0.5 + wisdom_score - folly_score))
+    
+    async def _assess_framework_convergence(self, 
+                                          deontological: DeontologicalAnalysis,
+                                          consequentialist: ConsequentialistAnalysis,
+                                          virtue_ethics: VirtueEthicsAnalysis) -> float:
+        """Assess degree of agreement between ethical frameworks."""
+        
+        # Extract key scores from each framework
+        deont_score = (deontological.autonomy_respect + deontological.rational_consistency) / 2
+        conseq_score = (consequentialist.aggregate_welfare + consequentialist.utility_calculation + 1) / 2
+        virtue_score = virtue_ethics.eudaimonic_contribution
+        
+        # Calculate pairwise differences
+        deont_conseq_diff = abs(deont_score - conseq_score)
+        deont_virtue_diff = abs(deont_score - virtue_score)
+        conseq_virtue_diff = abs(conseq_score - virtue_score)
+        
+        # Average difference (lower is better convergence)
+        avg_difference = (deont_conseq_diff + deont_virtue_diff + conseq_virtue_diff) / 3
+        
+        # Convert to convergence score (higher is better)
+        convergence = 1.0 - avg_difference
+        return max(0.0, min(1.0, convergence))
+    
+    async def _identify_ethical_dilemma(self,
+                                      deontological: DeontologicalAnalysis,
+                                      consequentialist: ConsequentialistAnalysis,
+                                      virtue_ethics: VirtueEthicsAnalysis) -> Optional[str]:
+        """Identify type of ethical dilemma if frameworks conflict."""
+        
+        deont_positive = deontological.categorical_imperative_test and deontological.humanity_formula_test
+        conseq_positive = consequentialist.utility_calculation > 0.1
+        virtue_positive = virtue_ethics.eudaimonic_contribution > 0.6
+        
+        agreements = sum([deont_positive, conseq_positive, virtue_positive])
+        
+        if agreements == 3:
+            return None  # No dilemma - all agree
+        elif agreements == 0:
+            return "universal_conflict"  # All frameworks oppose
+        elif agreements == 1:
+            if deont_positive:
+                return "duty_vs_consequences_and_character"
+            elif conseq_positive:
+                return "outcomes_vs_duty_and_character"
+            else:
+                return "virtue_vs_duty_and_consequences"
+        else:  # agreements == 2
+            if not deont_positive:
+                return "duty_conflict"
+            elif not conseq_positive:
+                return "consequentialist_conflict"
+            else:
+                return "virtue_conflict"
+    
+    async def _generate_resolution_recommendation(self,
+                                                deontological: DeontologicalAnalysis,
+                                                consequentialist: ConsequentialistAnalysis,
+                                                virtue_ethics: VirtueEthicsAnalysis,
+                                                convergence: float) -> str:
+        """Generate recommendation for resolving ethical conflicts."""
+        
+        if convergence > 0.8:
+            return "Framework convergence high - proceed with confidence in ethical alignment"
+        
+        elif convergence > 0.6:
+            return "Moderate framework agreement - consider additional stakeholder input"
+        
+        elif convergence > 0.4:
+            return "Framework conflict detected - apply principle of ethical conservatism (choose most restrictive)"
+        
+        else:
+            return "Severe framework conflict - require human ethical review and deliberation"
+    
+    def _create_minimal_analysis(self, error_msg: str) -> NormativeEthicsAnalysis:
+        """Create minimal analysis structure for error cases."""
+        return NormativeEthicsAnalysis(
+            deontological=DeontologicalAnalysis(
+                categorical_imperative_test=False,
+                humanity_formula_test=False,
+                autonomy_respect=0.0,
+                duty_identification=[],
+                maxim_universalizability=0.0,
+                rational_consistency=0.0
+            ),
+            consequentialist=ConsequentialistAnalysis(
+                utility_calculation=0.0,
+                positive_consequences=[],
+                negative_consequences=[],
+                affected_parties=[],
+                aggregate_welfare=0.0,
+                distribution_fairness=0.0,
+                long_term_effects=0.0
+            ),
+            virtue_ethics=VirtueEthicsAnalysis(
+                virtue_assessment={},
+                vice_assessment={},
+                golden_mean_analysis=0.0,
+                eudaimonic_contribution=0.0,
+                character_development=0.0,
+                practical_wisdom=0.0
+            ),
+            framework_convergence=0.0,
+            ethical_dilemma_type="analysis_error",
+            resolution_recommendation=f"Analysis failed: {error_msg}"
+        )
+
+# ============================================================================
+# APPLIED ETHICS FRAMEWORK LAYER
+# ============================================================================
+
+class AppliedEthicsDomain(Enum):
+    """
+    Applied ethics domains with established research foundations.
+    
+    Categories based on contemporary applied ethics literature.
+    """
+    DIGITAL_ETHICS = "digital_ethics"         # Privacy, data rights, digital autonomy
+    AI_ETHICS = "ai_ethics"                   # AI safety, fairness, transparency
+    BIOETHICS = "bioethics"                   # Medical ethics, research ethics
+    ENVIRONMENTAL_ETHICS = "environmental_ethics"  # Ecological responsibility
+    BUSINESS_ETHICS = "business_ethics"       # Corporate responsibility
+    RESEARCH_ETHICS = "research_ethics"       # Scientific integrity
+
+@dataclass
+class DigitalEthicsAnalysis:
+    """
+    Analysis of digital ethics considerations.
+    
+    Based on established frameworks in digital ethics research.
+    """
+    privacy_assessment: float                 # Privacy protection level [0,1]
+    data_sovereignty: float                   # Data control and ownership [0,1] 
+    digital_autonomy: float                   # User agency in digital spaces [0,1]
+    algorithmic_transparency: float           # Algorithm explainability [0,1]
+    digital_divide_impact: float             # Equity of access considerations [0,1]
+    surveillance_concerns: float             # Privacy invasion risk [0,1]
+    platform_power_analysis: float          # Power concentration assessment [0,1]
+    
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "privacy_assessment": self.privacy_assessment,
+            "data_sovereignty": self.data_sovereignty,
+            "digital_autonomy": self.digital_autonomy,
+            "algorithmic_transparency": self.algorithmic_transparency,
+            "digital_divide_impact": self.digital_divide_impact,
+            "surveillance_concerns": self.surveillance_concerns,
+            "platform_power_analysis": self.platform_power_analysis
+        }
+
+@dataclass
+class AIEthicsAnalysis:
+    """
+    Analysis of AI-specific ethical considerations.
+    
+    Grounded in contemporary AI ethics research and frameworks.
+    """
+    fairness_assessment: float               # Algorithmic fairness [0,1]
+    accountability_measures: float           # Responsibility assignment [0,1]
+    transparency_level: float                # Explainability and interpretability [0,1]
+    safety_assurance: float                  # AI safety measures [0,1]
+    human_oversight: float                   # Human-in-the-loop consideration [0,1]
+    bias_mitigation: float                   # Bias detection and correction [0,1]
+    value_alignment: float                   # Alignment with human values [0,1]
+    robustness_assessment: float             # System reliability [0,1]
+    
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "fairness_assessment": self.fairness_assessment,
+            "accountability_measures": self.accountability_measures,
+            "transparency_level": self.transparency_level,
+            "safety_assurance": self.safety_assurance,
+            "human_oversight": self.human_oversight,
+            "bias_mitigation": self.bias_mitigation,
+            "value_alignment": self.value_alignment,
+            "robustness_assessment": self.robustness_assessment
+        }
+
+@dataclass
+class AppliedEthicsAnalysis:
+    """
+    Comprehensive applied ethics analysis across relevant domains.
+    """
+    digital_ethics: Optional[DigitalEthicsAnalysis] = None
+    ai_ethics: Optional[AIEthicsAnalysis] = None
+    applicable_domains: List[AppliedEthicsDomain] = field(default_factory=list)
+    domain_relevance_scores: Dict[str, float] = field(default_factory=dict)
+    contextual_factors: Dict[str, Any] = field(default_factory=dict)
+    practical_recommendations: List[str] = field(default_factory=list)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        result = {
+            "applicable_domains": [domain.value for domain in self.applicable_domains],
+            "domain_relevance_scores": self.domain_relevance_scores,
+            "contextual_factors": self.contextual_factors,
+            "practical_recommendations": self.practical_recommendations
+        }
+        
+        if self.digital_ethics:
+            result["digital_ethics"] = self.digital_ethics.to_dict()
+        if self.ai_ethics:
+            result["ai_ethics"] = self.ai_ethics.to_dict()
+            
+        return result
