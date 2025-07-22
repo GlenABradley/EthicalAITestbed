@@ -501,3 +501,14 @@ class MLEthicsVectorEngine:
 
 # Global instance
 ml_ethics_engine = MLEthicsVectorEngine()
+
+# Global access functions for integration with other modules
+def get_ml_ethics_engine():
+    """Get the global ML ethics engine instance."""
+    return ml_ethics_engine
+
+def get_training_stream_buffer():
+    """Get training stream buffer (placeholder for Phase 3 integration)."""
+    # This is referenced in server.py but not yet implemented
+    # Returning None for now to prevent import errors
+    return None
