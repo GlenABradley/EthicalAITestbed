@@ -528,32 +528,37 @@ class BackendTestSuite:
         return overall_success
     
     async def bayesian_test_status_monitoring(self):
-        """Test optimization status monitoring."""
-        print("📊 Testing optimization status monitoring...")
+        """Test optimization status monitoring with PERFORMANCE requirements."""
+        print("📊 Testing optimization status monitoring with performance requirements...")
         
-        # Test with non-existent optimization ID
+        # Test with non-existent optimization ID - should be fast (< 2 seconds)
         fake_id = "opt_fake_12345"
         success1, response_time1, result1 = await self.test_endpoint("GET", f"/optimization/status/{fake_id}")
+        
+        # Check performance requirement for status endpoint (< 2 seconds)
+        status_performance_met = response_time1 < 2.0
         
         # Should return 404 for non-existent ID
         not_found_handled = not success1
         
-        details = f"Non-existent ID test: {response_time1:.3f}s | 404 handled: {not_found_handled}"
+        details = f"Non-existent ID test: {response_time1:.3f}s | 404 handled: {not_found_handled} | Performance (< 2s): {status_performance_met}"
         
         # Test with real optimization ID if available
         if hasattr(self, 'optimization_ids') and self.optimization_ids:
             real_id = self.optimization_ids[0]
             success2, response_time2, result2 = await self.test_endpoint("GET", f"/optimization/status/{real_id}")
             
-            details += f" | Real ID test: {response_time2:.3f}s"
+            status_performance_met2 = response_time2 < 2.0
+            details += f" | Real ID test: {response_time2:.3f}s | Performance (< 2s): {status_performance_met2}"
             if success2:
                 details += f" | Status: {result2.get('status', 'unknown')}"
             
-            overall_success = not_found_handled and (success2 or not success2)  # Either works or fails gracefully
+            # Overall success requires proper error handling AND performance
+            overall_success = not_found_handled and status_performance_met and status_performance_met2
         else:
-            overall_success = not_found_handled
+            overall_success = not_found_handled and status_performance_met
         
-        self.log_test_result("bayesian_tests", "Status Monitoring", overall_success, response_time1, details)
+        self.log_test_result("bayesian_tests", "Performance Status Monitoring", overall_success, response_time1, details)
         return overall_success
     
     async def bayesian_test_results_retrieval(self):
