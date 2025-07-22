@@ -448,15 +448,6 @@ function App() {
                   </div>
                   <div className="flex space-x-4">
                     <button
-                      onClick={() => {
-                        console.log('🔥 TEST BUTTON CLICKED - Direct arrow function works!');
-                        alert('Test button clicked! React events are working.');
-                      }}
-                      className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
-                    >
-                      Test Click
-                    </button>
-                    <button
                       onClick={handleEvaluate}
                       onMouseDown={handleEvaluateNative}
                       data-action="evaluate"
