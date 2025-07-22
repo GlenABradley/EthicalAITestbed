@@ -98,6 +98,15 @@ from realtime_streaming_engine import (
     RealTimeEthicsStreamer
 )
 
+# Import Phase 8: Knowledge Integration Layer
+from knowledge_integration_layer import (
+    get_knowledge_integrator,
+    initialize_knowledge_integrator,
+    KnowledgeQuery,
+    KnowledgeSourceType,
+    TrustworthinessLevel
+)
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
