@@ -211,6 +211,19 @@ class EvaluationResponse(BaseModel):
         description="Detailed analysis from multiple ethical frameworks"
     )
     
+    # Evaluation details for frontend compatibility
+    evaluation: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Detailed evaluation results including spans and violations"
+    )
+    
+    # Clean text and delta information
+    clean_text: str = Field(default="", description="Text after ethical processing")
+    delta_summary: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Summary of changes made to the text"
+    )
+    
     # Findings and recommendations
     violations: List[Dict[str, Any]] = Field(
         default_factory=list,
