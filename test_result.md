@@ -299,11 +299,15 @@ metadata:
 
 test_plan:
   current_focus:
-    - "User Issue Verification Complete"
-    - "All Backend APIs Functional"
-  stuck_tasks: []
+    - "Bayesian Optimization Performance Issues"
+    - "Bayesian Optimization System Optimization"
+  stuck_tasks:
+    - "Bayesian Optimization Start Endpoint"
+    - "Bayesian Optimization Status Monitoring"
+    - "Bayesian Optimization Results Retrieval"
+    - "Bayesian Optimization Parameter Validation"
   test_all: false
-  test_priority: "verification_complete"
+  test_priority: "bayesian_optimization_focus"
 
 agent_communication:
   - agent: "testing"
