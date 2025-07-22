@@ -91,6 +91,13 @@ from enhanced_ethics_pipeline import (
     initialize_enhanced_ethics_pipeline, get_enhanced_ethics_pipeline
 )
 
+# Import Phase 7: Real-Time Streaming Engine
+from realtime_streaming_engine import (
+    get_streaming_server, 
+    initialize_streaming_server,
+    RealTimeEthicsStreamer
+)
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
