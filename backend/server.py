@@ -1042,36 +1042,64 @@ async def comprehensive_ethics_analysis(request: Dict[str, Any]):
             detail="Text is required for analysis"
         )
     
-    # Mock comprehensive analysis response
-    return {
-        "status": "completed",
-        "analysis_type": "comprehensive",
-        "text": text,
-        "frameworks": {
-            "virtue_ethics": {
-                "score": random.uniform(0.3, 0.9),
-                "assessment": "Text demonstrates good character-based reasoning.",
-                "recommendations": ["Consider virtue-based language", "Emphasize character development"]
+    try:
+        # Use the real ethical engine for comprehensive analysis
+        from ethical_engine import EthicalEvaluator
+        ethical_engine = EthicalEvaluator()
+        
+        # Run real ethical evaluation
+        evaluation = ethical_engine.evaluate_text(text)
+        
+        # Extract real framework scores from the evaluation
+        virtue_score = getattr(evaluation, 'virtue_ethical_score', 0.5)
+        deontological_score = getattr(evaluation, 'deontological_score', 0.5) 
+        consequentialist_score = getattr(evaluation, 'consequentialist_score', 0.5)
+        
+        return {
+            "status": "completed",
+            "analysis_type": "comprehensive",
+            "text": text,
+            "frameworks": {
+                "virtue_ethics": {
+                    "score": virtue_score,
+                    "assessment": f"Virtue-based analysis shows {virtue_score:.1%} ethical alignment with character-based reasoning.",
+                    "recommendations": ["Consider virtue-based language", "Emphasize character development"] if virtue_score < 0.7 else ["Maintain strong character alignment", "Continue virtue-focused approach"]
+                },
+                "deontological": {
+                    "score": deontological_score,  
+                    "assessment": f"Duty-based evaluation shows {deontological_score:.1%} compliance with moral obligations.",
+                    "recommendations": ["Clarify moral obligations", "Ensure universal applicability"] if deontological_score < 0.7 else ["Strong duty-based compliance", "Maintain universal principles"]
+                },
+                "consequentialist": {
+                    "score": consequentialist_score,
+                    "assessment": f"Outcome-focused analysis indicates {consequentialist_score:.1%} positive utility.",
+                    "recommendations": ["Consider broader consequences", "Maximize overall well-being"] if consequentialist_score < 0.7 else ["Positive utility outcomes", "Continue consequentialist alignment"]
+                }
             },
-            "deontological": {
-                "score": random.uniform(0.3, 0.9),  
-                "assessment": "Duty-based evaluation shows moderate compliance.",
-                "recommendations": ["Clarify moral obligations", "Ensure universal applicability"]
+            "overall_assessment": f"Multi-framework analysis shows {(virtue_score + deontological_score + consequentialist_score) / 3:.1%} ethical compliance.",
+            "ml_guidance": {
+                "bias_detection": "Real analysis based on ethical framework evaluation",
+                "transparency": "Framework alignment supports transparent ML practices",
+                "fairness": f"Overall fairness score: {(virtue_score + deontological_score + consequentialist_score) / 3:.1%}"
             },
-            "consequentialist": {
-                "score": random.uniform(0.3, 0.9),
-                "assessment": "Outcome-focused analysis indicates positive utility.",
-                "recommendations": ["Consider broader consequences", "Maximize overall well-being"]
-            }
-        },
-        "overall_assessment": "Multi-framework analysis completed with moderate to high ethical compliance.",
-        "ml_guidance": {
-            "bias_detection": "No significant bias patterns detected",
-            "transparency": "Content supports transparent ML practices",
-            "fairness": "Approach aligns with fairness principles"
-        },
-        "processing_time": random.uniform(0.05, 0.15)
-    }
+            "processing_time": evaluation.processing_time if hasattr(evaluation, 'processing_time') else 0.1
+        }
+        
+    except Exception as e:
+        logger.error(f"Real comprehensive analysis failed: {e}")
+        # Fallback to basic analysis if real engine fails
+        return {
+            "status": "completed_with_fallback",
+            "analysis_type": "comprehensive",
+            "text": text,
+            "error": "Real analysis unavailable, using fallback assessment",
+            "frameworks": {
+                "virtue_ethics": {"score": 0.5, "assessment": "Analysis engine unavailable", "recommendations": ["Real analysis needed"]},
+                "deontological": {"score": 0.5, "assessment": "Analysis engine unavailable", "recommendations": ["Real analysis needed"]},
+                "consequentialist": {"score": 0.5, "assessment": "Analysis engine unavailable", "recommendations": ["Real analysis needed"]}
+            },
+            "processing_time": 0.001
+        }
 
 @app.post("/api/ethics/meta-analysis", tags=["ML Ethics Assistant"])
 async def meta_ethics_analysis(request: Dict[str, Any]):
