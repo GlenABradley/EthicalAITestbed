@@ -695,10 +695,12 @@ async def evaluate_text(
             text = request.text
             words = text.split()
             
-            # Real ethical keyword analysis
+            # Real ethical keyword analysis with comprehensive terms
             ethical_keywords = {
-                'unethical': ['exploit', 'manipulate', 'deceive', 'fraud', 'discriminate', 'harm', 'unfair', 'unethical', 'corrupt', 'abuse'],
-                'ethical': ['ethical', 'fair', 'honest', 'transparent', 'respectful', 'beneficial', 'good', 'moral', 'right', 'virtuous']
+                'unethical': ['exploit', 'manipulate', 'deceive', 'fraud', 'discriminate', 'harm', 'unfair', 'unethical', 'corrupt', 'abuse', 
+                             'scraping', 'violation', 'loophole', 'misleading', 'dishonest', 'deceptive', 'unauthorized', 'coerce', 'compel'],
+                'ethical': ['ethical', 'fair', 'honest', 'transparent', 'respectful', 'beneficial', 'good', 'moral', 'right', 'virtuous',
+                           'charitable', 'donate', 'consent', 'open', 'community', 'service']
             }
             
             # Analyze words for ethical content
