@@ -1829,6 +1829,465 @@ def create_integrated_app():
     # ============================================================================
     
     # ============================================================================
+    # ENHANCED ETHICS PIPELINE API - PHASE 5
+    # Implementing multi-layered philosophical ethics analysis with expert-level rigor
+    # Based on 2400+ years of ethical philosophy and contemporary AI ethics research
+    # ============================================================================
+    
+    @api_router.post("/ethics/comprehensive-analysis")
+    async def comprehensive_ethics_analysis(request: Dict[str, Any]):
+        """
+        Perform comprehensive three-layer ethical analysis with philosophical rigor.
+        
+        Implements:
+        - Meta-Ethics: Kant's universalizability, Moore's naturalistic fallacy, fact-value analysis
+        - Normative Ethics: Deontological (Kantian), Consequentialist (Utilitarian), Virtue (Aristotelian)
+        - Applied Ethics: Domain-specific analysis (AI, Digital, etc.)
+        
+        Based on contemporary philosophical literature and AI ethics research.
+        """
+        try:
+            text = request.get("text", "")
+            context = request.get("context", {})
+            analysis_depth = request.get("depth", "standard")  # surface, standard, comprehensive
+            
+            if not text.strip():
+                raise HTTPException(status_code=400, detail="Text content is required for ethical analysis")
+                
+            # Validate analysis depth
+            if analysis_depth not in ["surface", "standard", "comprehensive"]:
+                analysis_depth = "standard"
+            
+            pipeline = get_enhanced_ethics_pipeline()
+            if not pipeline:
+                raise HTTPException(status_code=503, detail="Enhanced ethics pipeline not available")
+            
+            logger.info(f"🧠 Initiating {analysis_depth} philosophical ethics analysis")
+            logger.info(f"   Content length: {len(text)} characters")
+            
+            # Perform comprehensive analysis
+            start_time = time.time()
+            analysis = await pipeline.analyze_comprehensive_ethics(
+                content=text,
+                context=context,
+                analysis_depth=analysis_depth
+            )
+            
+            # Log philosophical insights
+            logger.info(f"📚 Meta-ethical analysis: {analysis.meta_ethics.semantic_coherence:.3f} coherence")
+            logger.info(f"⚖️  Framework convergence: {analysis.normative_ethics.framework_convergence:.3f}")
+            logger.info(f"🎯 Applied domains: {len(analysis.applied_ethics.applicable_domains)}")
+            logger.info(f"🔄 Overall consistency: {analysis.overall_consistency:.3f}")
+            
+            return {
+                "status": "success",
+                "analysis": analysis.to_dict(),
+                "meta": {
+                    "analysis_id": str(uuid.uuid4()),
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "analysis_depth": analysis_depth,
+                    "processing_time": time.time() - start_time,
+                    "content_length": len(text),
+                    "philosophical_framework": "three_layer_ethics_architecture"
+                }
+            }
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"❌ Comprehensive ethics analysis failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Ethics analysis failed: {str(e)}")
+    
+    @api_router.post("/ethics/meta-analysis")
+    async def meta_ethical_analysis(request: Dict[str, Any]):
+        """
+        Perform meta-ethical analysis focusing on logical structure and semantic properties.
+        
+        Implements computational versions of:
+        - Kant's categorical imperative universalizability tests
+        - Moore's naturalistic fallacy detection (Principia Ethica, 1903)
+        - Hume's fact-value distinction analysis
+        - Semantic coherence and modal properties assessment
+        """
+        try:
+            text = request.get("text", "")
+            context = request.get("context", {})
+            
+            if not text.strip():
+                raise HTTPException(status_code=400, detail="Text content is required")
+            
+            pipeline = get_enhanced_ethics_pipeline()
+            if not pipeline:
+                raise HTTPException(status_code=503, detail="Enhanced ethics pipeline not available")
+            
+            logger.info("🔍 Performing meta-ethical structural analysis")
+            
+            # Meta-ethical analysis only
+            meta_analysis = await pipeline.meta_ethics_analyzer.analyze_meta_ethical_structure(text, context)
+            
+            # Philosophical interpretation
+            interpretation = {
+                "kantian_assessment": {
+                    "universalizability_passed": meta_analysis.universalizability_test,
+                    "action_guidance_strength": meta_analysis.action_guidance_strength,
+                    "modal_necessity": meta_analysis.modal_properties.get("necessity", False)
+                },
+                "moorean_assessment": {
+                    "naturalistic_fallacy_avoided": meta_analysis.naturalistic_fallacy_check,
+                    "ethical_properties_identified": len(meta_analysis.property_attributions)
+                },
+                "humean_assessment": {
+                    "fact_value_relations": [rel.value for rel in meta_analysis.fact_value_relations],
+                    "is_ought_gap_present": len(meta_analysis.fact_value_relations) > 0
+                }
+            }
+            
+            return {
+                "status": "success",
+                "meta_ethical_analysis": meta_analysis.to_dict(),
+                "philosophical_interpretation": interpretation,
+                "meta": {
+                    "analysis_id": str(uuid.uuid4()),
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "philosophical_basis": "kantian_moorean_humean_foundations"
+                }
+            }
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"❌ Meta-ethical analysis failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Meta-ethical analysis failed: {str(e)}")
+    
+    @api_router.post("/ethics/normative-analysis")
+    async def normative_ethical_analysis(request: Dict[str, Any]):
+        """
+        Perform normative ethical analysis across major philosophical frameworks.
+        
+        Implements:
+        - Deontological Analysis: Kantian categorical imperative, duty-based evaluation
+        - Consequentialist Analysis: Utilitarian calculus, welfare maximization
+        - Virtue Ethics Analysis: Aristotelian eudaimonia, golden mean, character assessment
+        """
+        try:
+            text = request.get("text", "")
+            context = request.get("context", {})
+            framework_focus = request.get("framework", "all")  # all, deontological, consequentialist, virtue
+            
+            if not text.strip():
+                raise HTTPException(status_code=400, detail="Text content is required")
+            
+            pipeline = get_enhanced_ethics_pipeline()
+            if not pipeline:
+                raise HTTPException(status_code=503, detail="Enhanced ethics pipeline not available")
+            
+            logger.info(f"⚖️  Performing normative ethical analysis (focus: {framework_focus})")
+            
+            # Full normative analysis
+            normative_analysis = await pipeline.normative_evaluator.evaluate_normative_ethics(text, context)
+            
+            # Framework-specific insights
+            insights = {
+                "deontological_insights": {
+                    "kantian_verdict": "PASS" if normative_analysis.deontological.categorical_imperative_test else "FAIL",
+                    "humanity_formula": "RESPECTED" if normative_analysis.deontological.humanity_formula_test else "VIOLATED",
+                    "autonomy_respect_level": normative_analysis.deontological.autonomy_respect,
+                    "identified_duties": normative_analysis.deontological.duty_identification
+                },
+                "consequentialist_insights": {
+                    "utility_verdict": "POSITIVE" if normative_analysis.consequentialist.utility_calculation > 0 else "NEGATIVE",
+                    "net_utility": normative_analysis.consequentialist.utility_calculation,
+                    "welfare_impact": normative_analysis.consequentialist.aggregate_welfare,
+                    "stakeholder_consideration": len(normative_analysis.consequentialist.affected_parties)
+                },
+                "virtue_ethics_insights": {
+                    "eudaimonic_contribution": normative_analysis.virtue_ethics.eudaimonic_contribution,
+                    "golden_mean_adherence": normative_analysis.virtue_ethics.golden_mean_analysis,
+                    "character_development_impact": normative_analysis.virtue_ethics.character_development,
+                    "practical_wisdom_demonstrated": normative_analysis.virtue_ethics.practical_wisdom
+                }
+            }
+            
+            # Ethical dilemma resolution
+            resolution_guidance = {
+                "framework_convergence": normative_analysis.framework_convergence,
+                "ethical_dilemma_type": normative_analysis.ethical_dilemma_type,
+                "resolution_strategy": normative_analysis.resolution_recommendation,
+                "philosophical_consensus": "HIGH" if normative_analysis.framework_convergence > 0.8 else 
+                                         "MODERATE" if normative_analysis.framework_convergence > 0.6 else "LOW"
+            }
+            
+            return {
+                "status": "success",
+                "normative_analysis": normative_analysis.to_dict(),
+                "philosophical_insights": insights,
+                "resolution_guidance": resolution_guidance,
+                "meta": {
+                    "analysis_id": str(uuid.uuid4()),
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "framework_focus": framework_focus,
+                    "philosophical_traditions": ["kantian", "utilitarian", "aristotelian"]
+                }
+            }
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"❌ Normative ethical analysis failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Normative ethical analysis failed: {str(e)}")
+    
+    @api_router.post("/ethics/applied-analysis")
+    async def applied_ethics_analysis(request: Dict[str, Any]):
+        """
+        Perform applied ethics analysis for domain-specific ethical considerations.
+        
+        Domains supported:
+        - Digital Ethics: Privacy, algorithmic transparency, digital autonomy
+        - AI Ethics: Fairness, accountability, safety, human oversight
+        - Research Ethics: Scientific integrity, methodology
+        - Environmental Ethics: Sustainability, ecological responsibility
+        """
+        try:
+            text = request.get("text", "")
+            context = request.get("context", {})
+            domain_focus = request.get("domain", "auto")  # auto, digital, ai, research, environmental
+            
+            if not text.strip():
+                raise HTTPException(status_code=400, detail="Text content is required")
+            
+            pipeline = get_enhanced_ethics_pipeline()
+            if not pipeline:
+                raise HTTPException(status_code=503, detail="Enhanced ethics pipeline not available")
+            
+            logger.info(f"🎯 Performing applied ethics analysis (domain focus: {domain_focus})")
+            
+            # Applied ethics analysis
+            applied_analysis = await pipeline.applied_evaluator.evaluate_applied_ethics(text, context)
+            
+            # Domain-specific assessments
+            domain_assessments = {}
+            
+            if applied_analysis.digital_ethics:
+                domain_assessments["digital_ethics"] = {
+                    "privacy_protection": "STRONG" if applied_analysis.digital_ethics.privacy_assessment > 0.7 else
+                                        "MODERATE" if applied_analysis.digital_ethics.privacy_assessment > 0.5 else "WEAK",
+                    "user_autonomy": applied_analysis.digital_ethics.digital_autonomy,
+                    "transparency_level": applied_analysis.digital_ethics.algorithmic_transparency,
+                    "power_distribution": applied_analysis.digital_ethics.platform_power_analysis,
+                    "surveillance_risk": 1.0 - applied_analysis.digital_ethics.surveillance_concerns
+                }
+            
+            if applied_analysis.ai_ethics:
+                domain_assessments["ai_ethics"] = {
+                    "fairness_level": "HIGH" if applied_analysis.ai_ethics.fairness_assessment > 0.7 else
+                                    "MODERATE" if applied_analysis.ai_ethics.fairness_assessment > 0.5 else "LOW",
+                    "safety_assurance": applied_analysis.ai_ethics.safety_assurance,
+                    "human_oversight": applied_analysis.ai_ethics.human_oversight,
+                    "accountability": applied_analysis.ai_ethics.accountability_measures,
+                    "bias_mitigation": applied_analysis.ai_ethics.bias_mitigation,
+                    "value_alignment": applied_analysis.ai_ethics.value_alignment
+                }
+            
+            # Professional recommendations
+            professional_guidance = {
+                "applicable_domains": [domain.value for domain in applied_analysis.applicable_domains],
+                "domain_relevance_scores": applied_analysis.domain_relevance_scores,
+                "practical_recommendations": applied_analysis.practical_recommendations,
+                "implementation_priority": "HIGH" if len(applied_analysis.practical_recommendations) > 3 else
+                                         "MODERATE" if len(applied_analysis.practical_recommendations) > 1 else "LOW"
+            }
+            
+            return {
+                "status": "success",
+                "applied_analysis": applied_analysis.to_dict(),
+                "domain_assessments": domain_assessments,
+                "professional_guidance": professional_guidance,
+                "meta": {
+                    "analysis_id": str(uuid.uuid4()),
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "domain_focus": domain_focus,
+                    "domains_detected": len(applied_analysis.applicable_domains)
+                }
+            }
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"❌ Applied ethics analysis failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Applied ethics analysis failed: {str(e)}")
+    
+    @api_router.post("/ethics/ml-training-guidance")
+    async def ml_training_ethical_guidance(request: Dict[str, Any]):
+        """
+        Provide ethical guidance for ML training data and model development.
+        
+        Integrates enhanced ethics pipeline with ML ethics engine for training-specific
+        ethical considerations based on philosophical foundations.
+        """
+        try:
+            content = request.get("content", "")
+            training_context = request.get("training_context", {})
+            guidance_type = request.get("type", "comprehensive")  # data, model, comprehensive
+            
+            if not content.strip():
+                raise HTTPException(status_code=400, detail="Training content is required")
+            
+            pipeline = get_enhanced_ethics_pipeline()
+            if not pipeline:
+                raise HTTPException(status_code=503, detail="Enhanced ethics pipeline not available")
+            
+            logger.info(f"🤖 Generating ML training ethical guidance (type: {guidance_type})")
+            
+            # Comprehensive ethical analysis for ML context
+            ethics_analysis = await pipeline.analyze_comprehensive_ethics(
+                content=content,
+                context={**training_context, "domain": "ml_training"},
+                analysis_depth="comprehensive"
+            )
+            
+            # ML-specific ethical considerations
+            ml_ethical_guidance = {
+                "training_data_ethics": {
+                    "bias_risk_assessment": 1.0 - ethics_analysis.applied_ethics.ai_ethics.fairness_assessment if ethics_analysis.applied_ethics.ai_ethics else 0.5,
+                    "representation_fairness": ethics_analysis.applied_ethics.ai_ethics.fairness_assessment if ethics_analysis.applied_ethics.ai_ethics else 0.5,
+                    "consent_considerations": ethics_analysis.normative_ethics.deontological.autonomy_respect,
+                    "privacy_implications": ethics_analysis.applied_ethics.digital_ethics.privacy_assessment if ethics_analysis.applied_ethics.digital_ethics else 0.5
+                },
+                "model_development_ethics": {
+                    "transparency_requirements": ethics_analysis.applied_ethics.ai_ethics.transparency_level if ethics_analysis.applied_ethics.ai_ethics else 0.5,
+                    "accountability_measures": ethics_analysis.applied_ethics.ai_ethics.accountability_measures if ethics_analysis.applied_ethics.ai_ethics else 0.5,
+                    "safety_considerations": ethics_analysis.applied_ethics.ai_ethics.safety_assurance if ethics_analysis.applied_ethics.ai_ethics else 0.5,
+                    "value_alignment": ethics_analysis.applied_ethics.ai_ethics.value_alignment if ethics_analysis.applied_ethics.ai_ethics else 0.5
+                },
+                "philosophical_foundations": {
+                    "kantian_universalizability": ethics_analysis.meta_ethics.universalizability_test,
+                    "utilitarian_welfare_impact": ethics_analysis.normative_ethics.consequentialist.aggregate_welfare,
+                    "virtue_ethics_character_impact": ethics_analysis.normative_ethics.virtue_ethics.character_development,
+                    "overall_ethical_consistency": ethics_analysis.overall_consistency
+                }
+            }
+            
+            # Actionable recommendations for ML practitioners
+            ml_recommendations = []
+            
+            # Data recommendations
+            if ml_ethical_guidance["training_data_ethics"]["bias_risk_assessment"] > 0.6:
+                ml_recommendations.append("Implement comprehensive bias testing and mitigation strategies")
+            
+            if ml_ethical_guidance["training_data_ethics"]["consent_considerations"] < 0.6:
+                ml_recommendations.append("Review data collection consent and usage rights")
+            
+            # Model recommendations
+            if ml_ethical_guidance["model_development_ethics"]["transparency_requirements"] < 0.6:
+                ml_recommendations.append("Enhance model interpretability and explainability features")
+            
+            if ml_ethical_guidance["model_development_ethics"]["accountability_measures"] < 0.6:
+                ml_recommendations.append("Establish clear accountability frameworks and audit trails")
+            
+            # Add philosophical recommendations
+            ml_recommendations.extend(ethics_analysis.actionable_recommendations)
+            
+            return {
+                "status": "success",
+                "ml_ethical_guidance": ml_ethical_guidance,
+                "actionable_recommendations": ml_recommendations[:10],  # Top 10
+                "philosophical_assessment": {
+                    "ethical_judgment": ethics_analysis.synthesized_judgment,
+                    "confidence_level": ethics_analysis.ethical_confidence,
+                    "complexity_score": ethics_analysis.complexity_score,
+                    "primary_concerns": ethics_analysis.primary_concerns[:5]  # Top 5
+                },
+                "meta": {
+                    "analysis_id": str(uuid.uuid4()),
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "guidance_type": guidance_type,
+                    "processing_time": ethics_analysis.processing_time,
+                    "philosophical_framework": "integrated_ml_ethics_pipeline"
+                }
+            }
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"❌ ML training ethical guidance failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"ML ethical guidance failed: {str(e)}")
+    
+    @api_router.get("/ethics/pipeline-status")
+    async def enhanced_ethics_pipeline_status():
+        """
+        Get status and performance metrics of the enhanced ethics pipeline.
+        
+        Provides insights into the philosophical analysis system's health and performance.
+        """
+        try:
+            pipeline = get_enhanced_ethics_pipeline()
+            if not pipeline:
+                return {
+                    "status": "unavailable",
+                    "message": "Enhanced ethics pipeline not initialized"
+                }
+            
+            # Get performance metrics
+            performance_metrics = pipeline.get_performance_metrics()
+            
+            # Component status
+            component_status = {
+                "meta_ethics_analyzer": {
+                    "status": "available",
+                    "capabilities": ["kantian_universalizability", "moorean_naturalistic_fallacy", "humean_fact_value"]
+                },
+                "normative_evaluator": {
+                    "status": "available", 
+                    "frameworks": ["deontological_kantian", "consequentialist_utilitarian", "virtue_ethics_aristotelian"]
+                },
+                "applied_evaluator": {
+                    "status": "available",
+                    "domains": ["digital_ethics", "ai_ethics", "research_ethics", "environmental_ethics"]
+                }
+            }
+            
+            # Philosophical foundation summary
+            foundation_summary = {
+                "meta_ethical_basis": "2400+ years of philosophical tradition",
+                "normative_frameworks": "Classical and contemporary ethical theories",
+                "applied_domains": "Contemporary professional and technological ethics",
+                "computational_implementation": "Empirically grounded philosophical frameworks",
+                "theoretical_rigor": "Peer-reviewed philosophical literature"
+            }
+            
+            return {
+                "status": "available",
+                "pipeline_health": "operational",
+                "performance_metrics": performance_metrics,
+                "component_status": component_status,
+                "philosophical_foundations": foundation_summary,
+                "capabilities": {
+                    "comprehensive_analysis": True,
+                    "meta_ethical_analysis": True,
+                    "normative_analysis": True,
+                    "applied_ethics_analysis": True,
+                    "ml_training_guidance": True
+                },
+                "meta": {
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "version": "5.0.0",
+                    "architecture": "three_layer_ethics_pipeline"
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ Pipeline status check failed: {str(e)}")
+            return {
+                "status": "error",
+                "error": str(e),
+                "timestamp": datetime.utcnow().isoformat()
+            }
+    
+    # ============================================================================
+    # END ENHANCED ETHICS PIPELINE API - PHASE 5
+    # ============================================================================
+    
+    # ============================================================================
     # END ML ETHICS API - PHASE 3
     # ============================================================================
     
