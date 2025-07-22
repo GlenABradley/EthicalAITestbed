@@ -43,6 +43,7 @@ class BackendTestSuite:
             "content_tests": [],
             "integration_tests": [],
             "reliability_tests": [],
+            "bayesian_tests": [],
             "summary": {
                 "total_tests": 0,
                 "passed_tests": 0,
