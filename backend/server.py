@@ -679,7 +679,6 @@ async def evaluate_text(
         
         # Use a simpler timeout approach - if evaluation takes too long, skip detailed analysis
         try:
-            import time
             start_time = time.time()
             
             # For now, skip intensive detailed analysis to prevent timeouts
