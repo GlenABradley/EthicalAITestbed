@@ -142,9 +142,9 @@ sudo supervisorctl restart frontend
 
 #### **🧠 ML Ethics Assistant**
 1. Access "🧠 ML Ethics Assistant" tab  
-2. Choose analysis mode (Comprehensive, Meta-Ethics, Normative, Applied, ML Guidance)
-3. Get philosophical analysis with actionable recommendations
-4. Review bias assessments and transparency requirements
+2. Interface for analysis mode selection (Comprehensive, Meta-Ethics, Normative, Applied, ML Guidance)
+3. Framework for philosophical analysis with actionable recommendations (backend integration required)
+4. Structure for bias assessments and transparency requirements (implementation needed)
 
 #### **🚀 Real-Time Streaming**
 1. Open "🚀 Real-Time Streaming" tab
