@@ -261,13 +261,16 @@ backend:
     implemented: true
     working: false
     file: "backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "medium"
     needs_retesting: false
     status_history:
       - working: false
         agent: "testing"
         comment: "❌ TIMEOUT ISSUE: GET /api/optimization/list endpoint implemented but times out (10.5s). Should be quick to list optimizations but affected by system-wide performance issues in Bayesian optimization module."
+      - working: false
+        agent: "testing"
+        comment: "❌ LIST ENDPOINT STILL TIMING OUT: Performance optimizations have not resolved the timeout issue. List endpoint times out at 10.9s. This simple endpoint should return quickly but is affected by the same system-level performance bottleneck affecting all Bayesian optimization endpoints. The issue appears to be in the module initialization or import process rather than the actual optimization logic."
 
   - task: "Bayesian Optimization Parameter Validation"
     implemented: true
