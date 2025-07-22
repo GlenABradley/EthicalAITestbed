@@ -1163,7 +1163,7 @@ async def comprehensive_ethics_analysis(request: Dict[str, Any]):
                 "transparency": "Framework alignment supports transparent ML practices",
                 "fairness": f"Overall fairness score: {(virtue_score + deontological_score + consequentialist_score) / 3:.1%}"
             },
-            "processing_time": 0.1
+            "processing_time": getattr(evaluation, 'processing_time', 0.1)
         }
         
     except Exception as e:
