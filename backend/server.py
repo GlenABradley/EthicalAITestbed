@@ -2941,7 +2941,7 @@ def create_integrated_app():
                     "type": entity.type,
                     "description": entity.description,
                     "aliases": entity.aliases,
-                    "confidence": entity.confidence,
+                    "confidence": float(entity.confidence) if hasattr(entity.confidence, 'item') else entity.confidence,
                     "relationship_count": sum(len(rels) for rels in entity.relationships.values())
                 }
                 response_data["related_entities"].append(entity_data)
