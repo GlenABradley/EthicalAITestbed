@@ -745,7 +745,7 @@ async def evaluate_text(
                             deontological_score = 0.45 + (len(word_lower) % 8) * 0.05
                             consequentialist_score = 0.5 + (len(word_lower) % 6) * 0.08
                         
-                        spans.append({
+                        spans.append(type('EthicalSpan', (), {
                             'text': word,
                             'start': start_pos,
                             'end': end_pos,
@@ -756,7 +756,7 @@ async def evaluate_text(
                             'deontological_violation': deontological_score < 0.4,
                             'consequentialist_violation': consequentialist_score < 0.4,
                             'any_violation': violations
-                        })
+                        })())
                     
                     # Create a mock evaluation object with real analysis
                     class QuickEthicalEvaluation:
