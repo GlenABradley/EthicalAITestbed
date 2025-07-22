@@ -674,36 +674,38 @@ async def evaluate_text(
         clean_text = request.text
         delta_summary = {}
         
-        # Try to get core evaluation results with detailed span analysis (with timeout protection)
+        # Get REAL core evaluation results with detailed span analysis
         core_eval = None
         
-        # Use a simpler timeout approach - if evaluation takes too long, skip detailed analysis
+        # Re-enable actual ethical analysis with timeout protection
         try:
-            start_time = time.time()
+            logger.info("Attempting real ethical analysis with timeout protection")
             
-            # For now, skip intensive detailed analysis to prevent timeouts
-            # This ensures the API responds quickly while we work on optimization
-            logger.info("Skipping intensive core engine analysis to prevent API timeouts")
+            # Import and initialize the actual ethical engine
+            from ethical_engine import EthicalEvaluator
             
-            # If user specifically needs detailed analysis, they can use a different endpoint
-            # The main evaluation should be fast and responsive
+            # Create a background task with timeout to prevent hanging
+            async def run_real_analysis():
+                try:
+                    direct_core_engine = EthicalEvaluator()
+                    logger.info(f"Running REAL ethical analysis on {len(request.text)} characters")
+                    result = direct_core_engine.evaluate_text(request.text)
+                    logger.info(f"REAL analysis complete with {len(getattr(result, 'spans', []))} spans")
+                    return result
+                except Exception as e:
+                    logger.error(f"Real analysis failed: {e}")
+                    return None
             
-        except Exception as e:
-            logger.warning(f"Evaluation setup failed: {e}")
-            
-        # Check orchestrator components as fallback (should be fast)
-        if core_eval is None and hasattr(orchestrator, '_components') and 'core_engine' in orchestrator._components:
+            # Run with timeout protection
             try:
-                # Only try orchestrator if it's available and should be fast
-                core_engine = orchestrator._components['core_engine'] 
-                # Skip this too if it might be slow
-                logger.info("Orchestrator core engine available but skipping to prevent timeouts")
-            except Exception as e:
-                logger.warning(f"Failed to access orchestrator core evaluation: {e}")
-        elif hasattr(orchestrator, '_components'):
-            logger.info(f"Core engine not in orchestrator components. Available: {list(orchestrator._components.keys())}")
-        else:
-            logger.info("Orchestrator has no _components attribute")
+                core_eval = await asyncio.wait_for(run_real_analysis(), timeout=8.0)  # 8 second timeout
+            except asyncio.TimeoutError:
+                logger.warning("Real analysis timed out after 8 seconds, using fallback")
+                core_eval = None
+                
+        except Exception as e:
+            logger.error(f"Failed to initialize real analysis: {e}")
+            core_eval = None
         
         # If we have detailed core evaluation with spans
         if core_eval and hasattr(core_eval, 'spans') and core_eval.spans:
