@@ -1853,6 +1853,20 @@ def create_integrated_app():
         except Exception as e:
             logger.error(f"❌ Failed to initialize multi-modal orchestrator: {e}")
             multi_modal_orchestrator = None
+            
+        # Initialize Enhanced Ethics Pipeline - Phase 5
+        try:
+            enhanced_ethics_orchestrator = initialize_enhanced_ethics_pipeline(
+                ethical_evaluator=evaluator,
+                ml_ethics_engine=ml_ethics_engine
+            )
+            logger.info("✅ Enhanced ethics pipeline orchestrator initialized with philosophical foundations")
+            logger.info("   - Meta-Ethics Layer: Kantian universalizability, Moore's naturalistic fallacy detection")
+            logger.info("   - Normative Ethics Layer: Deontological, consequentialist, and virtue ethics frameworks") 
+            logger.info("   - Applied Ethics Layer: Digital ethics and AI ethics domains")
+        except Exception as e:
+            logger.error(f"❌ Failed to initialize enhanced ethics pipeline: {e}")
+            enhanced_ethics_orchestrator = None
     
     @app.on_event("shutdown") 
     async def shutdown_event():
