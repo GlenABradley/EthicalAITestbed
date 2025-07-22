@@ -98,7 +98,7 @@ from bayesian_cluster_optimizer import (
     OptimizationScale,
     AcquisitionFunction
 )
-from lightweight_bayesian_optimizer import LightweightOptimizationConfig, start_lightweight_optimization
+from lightweight_bayesian_optimizer import LightweightOptimizationConfig, start_lightweight_optimization, get_optimization_status as get_lightweight_optimization_status, OptimizationStatus
 
 # 🎓 PROFESSOR'S NOTE: Backward Compatibility Imports
 # ══════════════════════════════════════════════════
