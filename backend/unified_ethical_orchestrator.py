@@ -680,11 +680,15 @@ class UnifiedEthicalOrchestrator:
         # Core engine analysis (fallback)
         if 'core_engine' in self._components:
             try:
+                logger.info(f"Calling core engine for detailed analysis of {len(content)} characters")
                 core_result = self._components['core_engine'].evaluate_text(content)
                 analysis_results['core_evaluation'] = core_result
+                logger.info(f"Core engine returned result with {len(getattr(core_result, 'spans', []))} spans")
                 
             except Exception as e:
                 logger.error(f"Core engine analysis failed: {e}")
+        else:
+            logger.warning("Core engine not available in components")
         
         return analysis_results
     
