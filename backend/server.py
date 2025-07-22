@@ -1184,9 +1184,6 @@ def create_integrated_app():
     # SMART BUFFER STREAMING API - PHASE 3 IMPLEMENTATION
     # ============================================================================
     
-    # Global smart buffer instance for training data streams
-    training_stream_buffer = None
-    
     class StreamTokenRequest(BaseModel):
         """Request model for streaming tokens."""
         tokens: List[str] = Field(..., description="List of tokens to add to stream")
