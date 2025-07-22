@@ -25,29 +25,71 @@ This version implements Clean Architecture principles with a centralized orchest
 - **Error Handling**: HTTP status codes with graceful failure handling
 - **Health Monitoring**: System status reporting via `/api/health`
 
-## System Architecture
+## Complete Repository Structure
+
+**For AI Analysis Tools**: See `FILE_MANIFEST.md` for complete file listing with descriptions.
 
 ### Backend Components
 ```
 /backend/
+├── server.py                            # FastAPI main application server
 ├── unified_ethical_orchestrator.py      # Central analysis coordination
 ├── unified_configuration_manager.py     # Configuration management  
-├── server.py                            # FastAPI application
-├── enhanced_ethics_pipeline.py          # Philosophical analysis
-├── knowledge_integration_layer.py       # External knowledge framework
-├── realtime_streaming_engine.py         # WebSocket streaming
-└── production_features.py               # Authentication and security
+├── enhanced_ethics_pipeline.py          # Multi-layer philosophical analysis
+├── knowledge_integration_layer.py       # External knowledge integration
+├── realtime_streaming_engine.py         # WebSocket streaming capabilities
+├── production_features.py               # Authentication and security features
+├── core/                                # Core processing components
+│   ├── __init__.py                      # Module initialization
+│   ├── embedding_service.py             # Text-to-vector embedding service
+│   └── evaluation_engine.py             # Async ethical evaluation engine
+├── utils/                               # Utility components
+│   └── caching_manager.py               # Multi-level caching system
+├── ethical_engine.py                    # Original ethical evaluation engine
+├── ml_ethics_engine.py                  # ML ethics specialized engine
+├── multi_modal_evaluation.py            # Multi-modal evaluation capabilities
+├── smart_buffer.py                      # Intelligent buffering system
+├── server_legacy_backup.py              # Legacy server implementation
+├── .env                                 # Environment variables
+└── requirements.txt                     # Python dependencies
 ```
 
 ### Frontend Components
 ```
-/frontend/src/
-├── App.js                              # Main React application
-├── components/
-│   ├── MLTrainingAssistant.jsx         # ML ethics interface
-│   ├── RealTimeStreamingInterface.jsx  # Streaming evaluation UI
-│   └── EthicalChart.jsx                # Visualization components
-└── [supporting components]
+/frontend/
+├── src/
+│   ├── App.js                           # Main React application
+│   ├── index.js                         # React application entry point
+│   └── components/                      # React components
+│       ├── EthicalChart.jsx             # Heat-map visualization component
+│       ├── MLTrainingAssistant.jsx      # ML ethics interface component
+│       └── RealTimeStreamingInterface.jsx # Real-time streaming UI
+├── package.json                         # Node.js dependencies and scripts
+├── .env                                 # Frontend environment variables
+├── tailwind.config.js                   # Tailwind CSS configuration
+├── postcss.config.js                    # PostCSS configuration
+└── craco.config.js                      # Create React App configuration
+```
+
+### Documentation and Testing
+```
+/app/
+├── README.md                            # Main project documentation (this file)
+├── FILE_MANIFEST.md                     # Complete repository file listing
+├── COMPREHENSIVE_IMPLEMENTATION_STATUS.md # Implementation status analysis
+├── VERSION_1.2_CERTIFICATION.md         # Production certification report
+├── COMPREHENSIVE_ASSESSMENT_V1.2.md     # Performance assessment
+├── VERSION_EVOLUTION_HISTORY.md         # Development history
+├── README_ACCURACY_VALIDATION.md        # Documentation validation
+├── PRODUCTION_DEPLOYMENT_GUIDE.md       # Production deployment guide
+├── TESTING_STATUS.md                    # Testing status and results
+├── test_result.md                       # Testing results and logs
+├── backend_test.py                      # Backend testing script
+├── user_issue_verification_test.py      # User issue verification script
+├── [JSON result files]                  # Testing results in JSON format
+└── .emergent/                           # Platform configuration
+    ├── emergent.yml                     # Emergent platform config
+    └── summary.txt                      # Platform summary
 ```
 
 ## Features
