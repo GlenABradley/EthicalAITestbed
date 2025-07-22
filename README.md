@@ -128,9 +128,9 @@ sudo supervisorctl restart frontend
 
 #### **📝 Text Evaluation**
 1. Navigate to "Evaluate Text" tab
-2. Enter text for comprehensive ethical analysis
-3. Review results across multiple philosophical frameworks
-4. Examine detailed explanations and citations
+2. Enter text for comprehensive ethical analysis (interface ready, interactive functionality needs completion)
+3. Backend integration for results across multiple philosophical frameworks (API operational)
+4. Framework for detailed explanations and citations (implementation needed for citations)
 
 #### **📊 Heat-Map Visualization**  
 1. Go to "📊 Heat-Map" tab
