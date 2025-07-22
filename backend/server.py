@@ -1011,8 +1011,168 @@ def create_integrated_app():
             logger.error(f"Model behavior evaluation failed: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Model behavior evaluation failed: {str(e)}")
     
+    @api_router.post("/ml/advanced-analysis")
+    async def advanced_ml_ethical_analysis(request: Dict[str, Any]):
+        """
+        Perform advanced ML ethical analysis with comprehensive vector breakdowns.
+        
+        Provides detailed analysis including bias detection, safety assessment,
+        and training-phase-specific recommendations for ML systems.
+        """
+        try:
+            start_time = time.time()
+            
+            training_data = request.get("training_data", [])
+            dataset_type = request.get("dataset_type", "uncurated")
+            training_phase = request.get("training_phase", "initial")
+            model_type = request.get("model_type", "general")
+            analysis_depth = request.get("analysis_depth", "standard")  # standard, deep, comprehensive
+            
+            if not training_data:
+                raise HTTPException(status_code=400, detail="training_data required")
+            
+            # Parse enums
+            dataset_type_enum = DatasetType(dataset_type)
+            training_phase_enum = TrainingPhase(training_phase.replace('-', '_'))
+            
+            # Perform comprehensive ethical analysis
+            detailed_analysis = {
+                "dataset_overview": {
+                    "total_examples": len(training_data),
+                    "dataset_type": dataset_type,
+                    "training_phase": training_phase,
+                    "model_type": model_type,
+                    "analysis_depth": analysis_depth
+                },
+                "ethical_evaluations": [],
+                "vector_analysis": {},
+                "risk_assessment": {},
+                "intervention_recommendations": [],
+                "training_adjustments": {},
+                "bias_analysis": {
+                    "gender_bias": [],
+                    "racial_bias": [],
+                    "age_bias": [],
+                    "cultural_bias": [],
+                    "socioeconomic_bias": []
+                },
+                "safety_analysis": {
+                    "misuse_potential": [],
+                    "deception_risk": [],
+                    "manipulation_risk": [],
+                    "harm_potential": []
+                }
+            }
+            
+            all_evaluations = []
+            all_ml_vectors = []
+            ethical_scores = []
+            
+            # Deep analysis of each example
+            for idx, example in enumerate(training_data):
+                if evaluator:
+                    evaluation = evaluator.evaluate_text(example)
+                    all_evaluations.append(evaluation)
+                    
+                    # Generate ML vectors
+                    ml_vectors = ml_ethics_engine.convert_evaluation_to_ml_vectors(
+                        evaluation,
+                        dataset_type=dataset_type_enum,
+                        training_phase=training_phase_enum,
+                        model_type=model_type
+                    )
+                    all_ml_vectors.append(ml_vectors)
+                    
+                    # Calculate ethical score
+                    autonomy_score = sum(evaluation.autonomy_dimensions.values()) / len(evaluation.autonomy_dimensions)
+                    ethical_scores.append(autonomy_score)
+                    
+                    # Detailed evaluation info
+                    detailed_analysis["ethical_evaluations"].append({
+                        "index": idx,
+                        "text_sample": example[:100] + "..." if len(example) > 100 else example,
+                        "overall_ethical": evaluation.overall_ethical,
+                        "violation_count": evaluation.minimal_violation_count,
+                        "autonomy_score": autonomy_score,
+                        "autonomy_dimensions": evaluation.autonomy_dimensions,
+                        "ethical_principles": evaluation.ethical_principles,
+                        "ml_vectors": ml_vectors.to_dict() if analysis_depth == "comprehensive" else None
+                    })
+                    
+                    # Bias analysis (if deep or comprehensive analysis)
+                    if analysis_depth in ["deep", "comprehensive"]:
+                        detailed_analysis["bias_analysis"]["gender_bias"].append(
+                            ml_ethics_engine._detect_gender_bias(evaluation)
+                        )
+                        detailed_analysis["safety_analysis"]["misuse_potential"].append(
+                            ml_ethics_engine._detect_misuse_potential(evaluation)
+                        )
+            
+            # Aggregate vector analysis
+            if all_ml_vectors:
+                def aggregate_vectors(field_name):
+                    field_vectors = [getattr(v, field_name) for v in all_ml_vectors]
+                    return {
+                        "mean": [sum(vals) / len(vals) for vals in zip(*field_vectors)],
+                        "std": [np.std([vals[i] for vals in field_vectors]) for i in range(len(field_vectors[0]))],
+                        "min": [min(vals) for vals in zip(*field_vectors)],
+                        "max": [max(vals) for vals in zip(*field_vectors)]
+                    }
+                
+                detailed_analysis["vector_analysis"] = {
+                    "autonomy_vectors": aggregate_vectors("autonomy_vectors"),
+                    "harm_prevention_vectors": aggregate_vectors("harm_prevention_vectors"),
+                    "fairness_vectors": aggregate_vectors("fairness_vectors"),
+                    "transparency_vectors": aggregate_vectors("transparency_vectors"),
+                    "bias_mitigation_vectors": aggregate_vectors("bias_mitigation_vectors"),
+                    "safety_vectors": aggregate_vectors("safety_vectors")
+                }
+            
+            # Overall risk assessment
+            avg_ethical_score = sum(ethical_scores) / len(ethical_scores) if ethical_scores else 0.0
+            detailed_analysis["risk_assessment"] = {
+                "overall_ethical_score": avg_ethical_score,
+                "high_risk_examples": len([s for s in ethical_scores if s < 0.3]),
+                "medium_risk_examples": len([s for s in ethical_scores if 0.3 <= s < 0.6]),
+                "low_risk_examples": len([s for s in ethical_scores if s >= 0.6]),
+                "dataset_safety_rating": "HIGH" if avg_ethical_score > 0.8 else "MEDIUM" if avg_ethical_score > 0.5 else "LOW"
+            }
+            
+            # Training intervention analysis
+            intervention_analysis = ml_ethics_engine.evaluate_training_intervention(
+                all_evaluations,
+                ethical_scores,
+                training_phase_enum
+            )
+            detailed_analysis["intervention_recommendations"] = intervention_analysis
+            
+            # Advanced training adjustments
+            if all_ml_vectors and ethical_scores:
+                sample_vectors = all_ml_vectors[0]  # Use first example as representative
+                training_adjustments = ml_ethics_engine.generate_training_adjustments(
+                    sample_vectors,
+                    avg_ethical_score,
+                    training_phase_enum
+                )
+                detailed_analysis["training_adjustments"] = training_adjustments.to_dict()
+            
+            # Processing metadata
+            detailed_analysis["processing_metadata"] = {
+                "processing_time": time.time() - start_time,
+                "analysis_timestamp": datetime.now().isoformat(),
+                "engine_version": "2.0.0",
+                "examples_processed": len(training_data),
+                "total_evaluations": len(all_evaluations)
+            }
+            
+            return detailed_analysis
+            
+        except Exception as e:
+            logger.error(f"Advanced ML ethical analysis failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Advanced analysis failed: {str(e)}")
+    
     # ============================================================================
-    # END ML ETHICS API - PHASE 1
+    # END ML ETHICS API - PHASE 2
     # ============================================================================
     
     # Include API router
