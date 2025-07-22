@@ -329,14 +329,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Bayesian Optimization Performance Issues"
-    - "Bayesian Optimization System Optimization"
-  stuck_tasks:
-    - "Bayesian Optimization Start Endpoint"
-    - "Bayesian Optimization Status Monitoring"
-    - "Bayesian Optimization Results Retrieval"
-    - "Bayesian Optimization Parameter Validation"
-    - "Bayesian Optimization List Endpoint"
+    - "Bayesian Optimization System Refinement"
+    - "Optimization Completion Logic"
+  stuck_tasks: []
   test_all: false
   test_priority: "bayesian_optimization_critical"
 
