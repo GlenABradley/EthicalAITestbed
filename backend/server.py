@@ -1437,10 +1437,10 @@ async def start_cluster_optimization(
             try:
                 logger.info(f"🚀 Starting optimization {optimization_id}")
                 
-                # Create optimizer
-                optimizer = await create_bayesian_optimizer(
-                    ethical_engine, 
-                    optimization_config
+                # Create optimizer with timeout protection
+                optimizer = await asyncio.wait_for(
+                    create_bayesian_optimizer(ethical_engine, optimization_config),
+                    timeout=5.0  # 5 second timeout for optimizer creation
                 )
                 
                 # Store optimizer for progress tracking
@@ -1448,10 +1448,13 @@ async def start_cluster_optimization(
                     app.state.optimizers = {}
                 app.state.optimizers[optimization_id] = optimizer
                 
-                # Run optimization
-                result = await optimizer.optimize_cluster_resolution(
-                    test_texts=test_texts,
-                    validation_texts=request.get("validation_texts")
+                # Run optimization with overall timeout
+                result = await asyncio.wait_for(
+                    optimizer.optimize_cluster_resolution(
+                        test_texts=test_texts,
+                        validation_texts=request.get("validation_texts")
+                    ),
+                    timeout=optimization_config.max_optimization_time + 10.0  # Extra 10s buffer
                 )
                 
                 # Store result
@@ -1462,9 +1465,19 @@ async def start_cluster_optimization(
                 logger.info(f"✅ Optimization {optimization_id} completed")
                 logger.info(f"   🎯 Best score: {result.best_resolution_score:.4f}")
                 
+            except asyncio.TimeoutError:
+                logger.error(f"❌ Optimization {optimization_id} timed out")
+                # Store timeout error
+                if not hasattr(app.state, 'optimization_results'):
+                    app.state.optimization_results = {}
+                app.state.optimization_results[optimization_id] = {
+                    "error": "Optimization timed out",
+                    "status": "timeout",
+                    "optimization_id": optimization_id
+                }
+                
             except Exception as e:
                 logger.error(f"❌ Optimization {optimization_id} failed: {e}")
-                
                 # Store error result
                 if not hasattr(app.state, 'optimization_results'):
                     app.state.optimization_results = {}
