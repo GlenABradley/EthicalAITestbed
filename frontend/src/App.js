@@ -200,7 +200,7 @@ function App() {
       });
       
       // Evaluate button
-      const evaluateButton = document.querySelector('button:has-text("Evaluate"), button[data-action="evaluate"]');
+      const evaluateButton = document.querySelector('button[data-action="evaluate"]');
       if (evaluateButton) {
         evaluateButton.removeEventListener('click', evaluateButton._nativeClickHandler);
         
