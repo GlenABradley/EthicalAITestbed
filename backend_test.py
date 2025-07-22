@@ -647,35 +647,78 @@ class BackendTestSuite:
         self.log_test_result("bayesian_tests", "Parameter Application", not_found_handled, response_time, details)
         return not_found_handled
     
-    async def bayesian_test_integration_with_ethical_engine(self):
-        """Test integration between Bayesian optimization and ethical engine."""
-        print("🧠 Testing Bayesian-Ethical engine integration...")
+    async def bayesian_test_optimization_completion(self):
+        """Test that optimization completes within reasonable time (under 30 seconds)."""
+        print("⏱️ Testing optimization completion within 30 seconds...")
         
-        # Start a small optimization to test integration
+        # Start a minimal optimization that should complete quickly
         test_data = {
             "test_texts": [
-                "Integration test for ethical AI optimization.",
-                "Testing the connection between Bayesian optimization and ethical evaluation."
+                "Quick test for optimized Bayesian cluster resolution.",
+                "Performance improvements should make this much faster."
             ],
-            "n_initial_samples": 2,  # Minimal for testing
-            "n_optimization_iterations": 3,  # Minimal for testing
-            "max_optimization_time": 30.0,  # Short timeout
-            "parallel_evaluations": False,  # Simpler for testing
+            "n_initial_samples": 3,
+            "n_optimization_iterations": 5,
+            "max_optimization_time": 20.0,
+            "parallel_evaluations": False,
             "max_workers": 1
         }
         
-        success, response_time, result = await self.test_endpoint("POST", "/optimization/start", test_data)
+        # Start optimization
+        start_success, start_time, start_result = await self.test_endpoint("POST", "/optimization/start", test_data)
         
-        details = f"Response time: {response_time:.3f}s"
-        if success:
-            details += f" | Integration successful"
-            details += f" | Optimization started: {result.get('status') == 'started'}"
-            details += f" | Has configuration: {'configuration' in result}"
-        else:
-            details += f" | Integration failed: {result.get('error', 'Unknown error')}"
+        if not start_success:
+            details = f"Failed to start optimization: {start_result.get('error', 'Unknown error')}"
+            self.log_test_result("bayesian_tests", "Optimization Completion Test", False, start_time, details)
+            return False
         
-        self.log_test_result("bayesian_tests", "Ethical Engine Integration", success, response_time, details)
-        return success
+        optimization_id = start_result.get('optimization_id', '')
+        
+        # Monitor optimization progress for up to 35 seconds (5s buffer beyond max_optimization_time)
+        max_wait_time = 35.0
+        check_interval = 2.0
+        elapsed_time = 0
+        completed = False
+        final_status = "unknown"
+        
+        print(f"    Monitoring optimization {optimization_id[:12]}... (max wait: {max_wait_time}s)")
+        
+        while elapsed_time < max_wait_time:
+            await asyncio.sleep(check_interval)
+            elapsed_time += check_interval
+            
+            # Check status
+            status_success, status_time, status_result = await self.test_endpoint("GET", f"/optimization/status/{optimization_id}")
+            
+            if status_success:
+                final_status = status_result.get('status', 'unknown')
+                progress = status_result.get('progress', {})
+                
+                print(f"    Status at {elapsed_time:.1f}s: {final_status} | Progress: {progress.get('completion_percentage', 0):.1f}%")
+                
+                if final_status in ['completed', 'failed', 'timeout']:
+                    completed = True
+                    break
+            else:
+                print(f"    Status check failed at {elapsed_time:.1f}s")
+        
+        # Check if optimization completed within expected time
+        completion_within_time = completed and elapsed_time <= 30.0
+        
+        details = f"Start time: {start_time:.3f}s | Total time: {elapsed_time:.1f}s | Status: {final_status} | Completed within 30s: {completion_within_time}"
+        
+        if completed:
+            # Try to get results
+            results_success, results_time, results_data = await self.test_endpoint("GET", f"/optimization/results/{optimization_id}")
+            if results_success:
+                details += f" | Results retrieved: {results_time:.3f}s"
+            else:
+                details += f" | Results retrieval failed"
+        
+        overall_success = start_success and completion_within_time
+        
+        self.log_test_result("bayesian_tests", "Optimization Completion (30s)", overall_success, elapsed_time, details)
+        return overall_success
     
     # ═══════════════════════════════════════════════════════════════════════════════════
     # MAIN TEST EXECUTION
