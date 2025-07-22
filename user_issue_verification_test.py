@@ -23,7 +23,7 @@ from datetime import datetime
 from typing import Dict, List, Any, Tuple
 
 # Backend URL from environment
-BACKEND_URL = "https://87895960-7454-485b-b25b-112b9a7db846.preview.emergentagent.com"
+BACKEND_URL = "https://2965a42d-095f-4e71-8045-7949890c4383.preview.emergentagent.com"
 API_BASE = f"{BACKEND_URL}/api"
 
 class UserIssueVerificationSuite:
