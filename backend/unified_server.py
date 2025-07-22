@@ -330,10 +330,11 @@ async def lifespan(app: FastAPI):
         logger.info("🏛️ Initializing unified orchestrator...")
         
         # Convert unified config to orchestrator config format
+        from dataclasses import asdict
         orchestrator_config = {
-            "ethical_frameworks": config.ethical_frameworks.to_dict(),
-            "knowledge_sources": config.knowledge_sources.to_dict(),
-            "performance_limits": config.performance.to_dict(),
+            "ethical_frameworks": asdict(config.ethical_frameworks),
+            "knowledge_sources": asdict(config.knowledge_sources),
+            "performance_limits": asdict(config.performance),
             "cache_settings": {"enabled": config.performance.enable_caching},
             "monitoring_config": {"log_level": "INFO"}
         }
