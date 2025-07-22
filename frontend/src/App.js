@@ -987,6 +987,10 @@ function App() {
           {activeTab === 'ml-assistant' && (
             <MLTrainingAssistant backendUrl={BACKEND_URL} />
           )}
+
+          {activeTab === 'streaming' && (
+            <RealTimeStreamingInterface backendUrl={BACKEND_URL} />
+          )}
         </div>
       </div>
     </div>
