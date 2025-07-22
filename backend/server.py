@@ -1073,11 +1073,12 @@ async def get_heat_map_mock(request: Dict[str, Any]):
             },
             "textLength": len(text),
             "originalEvaluation": {
-                "dataset_source": "unified_ethical_engine_v10.0_REAL_ANALYSIS",
-                "processing_time": evaluation.processing_time if hasattr(evaluation, 'processing_time') else 0.1,
-                "overall_ethical": evaluation.overall_ethical if hasattr(evaluation, 'overall_ethical') else True,
+                "dataset_source": "unified_ethical_engine_v10.0_FULL_ANALYSIS",
+                "processing_time": getattr(evaluation, 'processing_time', 0.1),
+                "overall_ethical": getattr(evaluation, 'overall_ethical', True),
                 "total_spans": len(real_spans),
-                "violations_found": sum(1 for span in real_spans if span.any_violation)
+                "violations_found": sum(1 for span in real_spans if span.any_violation),
+                "analysis_mode": "comprehensive_local_hardware"
             }
         }
         
