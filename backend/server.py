@@ -84,6 +84,13 @@ from multi_modal_evaluation import (
     EvaluationContext, UnifiedEvaluationResult, initialize_orchestrator, get_orchestrator
 )
 
+# Import Enhanced Ethics Pipeline - Phase 5
+from enhanced_ethics_pipeline import (
+    EnhancedEthicsPipelineOrchestrator, EnhancedEthicsAnalysis,
+    MetaEthicalAnalysis, NormativeEthicsAnalysis, AppliedEthicsAnalysis,
+    initialize_enhanced_ethics_pipeline, get_enhanced_ethics_pipeline
+)
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
