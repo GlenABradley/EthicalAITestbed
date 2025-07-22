@@ -686,91 +686,39 @@ async def evaluate_text(
         clean_text = request.text
         delta_summary = {}
         
-        # Simple REAL ethical analysis that is fast and works
+        # FULL POWER ETHICAL ANALYSIS - NO COMPROMISES FOR LOCAL HARDWARE
         core_eval = None
         
         try:
-            logger.info("Running simple real ethical analysis")
+            logger.info("🚀 Initializing FULL ethical analysis engine for local hardware")
             
-            text = request.text
-            words = text.split()
+            # Use the complete ethical evaluator with full embeddings and analysis
+            from ethical_engine import EthicalEvaluator
             
-            # Real ethical keyword analysis with comprehensive terms
-            ethical_keywords = {
-                'unethical': ['exploit', 'manipulate', 'deceive', 'fraud', 'discriminate', 'harm', 'unfair', 'unethical', 'corrupt', 'abuse', 
-                             'scraping', 'violation', 'loophole', 'misleading', 'dishonest', 'deceptive', 'unauthorized', 'coerce', 'compel'],
-                'ethical': ['ethical', 'fair', 'honest', 'transparent', 'respectful', 'beneficial', 'good', 'moral', 'right', 'virtuous',
-                           'charitable', 'donate', 'consent', 'open', 'community', 'service']
-            }
+            # Initialize or get cached engine
+            ethical_engine = get_cached_ethical_engine()
             
-            # Analyze words for ethical content
-            spans_data = []
-            for word in words:
-                word_clean = word.lower().strip('.,!?;:"()[]{}')
-                if len(word_clean) >= 3:  # Only analyze meaningful words
-                    
-                    # Real ethical scoring based on content
-                    is_unethical = any(keyword in word_clean for keyword in ethical_keywords['unethical'])
-                    is_ethical = any(keyword in word_clean for keyword in ethical_keywords['ethical'])
-                    
-                    if is_unethical:
-                        virtue_score = 0.2
-                        deontological_score = 0.15
-                        consequentialist_score = 0.1
-                        any_violation = True
-                    elif is_ethical:
-                        virtue_score = 0.9
-                        deontological_score = 0.85
-                        consequentialist_score = 0.95
-                        any_violation = False
-                    else:
-                        # Neutral words get moderate scores
-                        virtue_score = 0.6
-                        deontological_score = 0.55
-                        consequentialist_score = 0.65
-                        any_violation = False
-                    
-                    # Find position in text
-                    start_pos = text.lower().find(word_clean)
-                    if start_pos >= 0:
-                        span_data = {
-                            "text": word,
-                            "start": start_pos,
-                            "end": start_pos + len(word),
-                            "virtue_score": virtue_score,
-                            "deontological_score": deontological_score,
-                            "consequentialist_score": consequentialist_score,
-                            "virtue_violation": virtue_score < 0.3,
-                            "deontological_violation": deontological_score < 0.3,
-                            "consequentialist_violation": consequentialist_score < 0.3,
-                            "any_violation": any_violation
-                        }
-                        spans_data.append(span_data)
+            logger.info(f"🧠 Running comprehensive ethical analysis on {len(request.text)} characters")
+            logger.info("📊 Full sentence transformers, embeddings, and graph attention enabled")
             
-            # Create evaluation result
-            if spans_data:
-                evaluation_details = {
-                    "overall_ethical": not any(span["any_violation"] for span in spans_data),
-                    "processing_time": 0.001,
-                    "minimal_violation_count": sum(1 for span in spans_data if span["any_violation"]),
-                    "spans": spans_data,
-                    "minimal_spans": [span for span in spans_data if span["any_violation"]],
-                    "evaluation_id": result.request_id
-                }
-                
-                clean_text = request.text
-                delta_summary = {
-                    "original_length": len(request.text),
-                    "clean_length": len(clean_text),
-                    "changes_made": any(span["any_violation"] for span in spans_data)
-                }
-                
-                logger.info(f"Simple real analysis complete with {len(spans_data)} spans, {len([s for s in spans_data if s['any_violation']])} violations")
-                core_eval = "SIMPLE_REAL_ANALYSIS_COMPLETE"  # Flag that we have real data
+            # Run FULL ethical evaluation - no timeouts, no shortcuts
+            core_eval = ethical_engine.evaluate_text(request.text)
+            
+            logger.info(f"✅ Full ethical analysis complete with {len(getattr(core_eval, 'spans', []))} spans")
+            logger.info(f"⚡ Processing time: {getattr(core_eval, 'processing_time', 0):.3f}s")
             
         except Exception as e:
-            logger.error(f"Simple real analysis failed: {e}")
-            core_eval = None
+            logger.error(f"❌ Full ethical analysis failed: {e}")
+            logger.info("🔄 Attempting direct engine initialization as backup")
+            
+            try:
+                from ethical_engine import EthicalEvaluator
+                direct_engine = EthicalEvaluator()
+                core_eval = direct_engine.evaluate_text(request.text)
+                logger.info(f"✅ Direct engine analysis complete with {len(getattr(core_eval, 'spans', []))} spans")
+            except Exception as e2:
+                logger.error(f"❌ Direct engine also failed: {e2}")
+                core_eval = None
         
         # If we have detailed core evaluation with spans
         if core_eval and hasattr(core_eval, 'spans') and core_eval.spans:
