@@ -78,6 +78,12 @@ from smart_buffer import (
     create_smart_buffer, BufferState
 )
 
+# Import Multi-Modal Evaluation System
+from multi_modal_evaluation import (
+    MultiModalEvaluationOrchestrator, EvaluationMode, EvaluationPriority,
+    EvaluationContext, UnifiedEvaluationResult, initialize_orchestrator, get_orchestrator
+)
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
