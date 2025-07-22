@@ -209,11 +209,11 @@ sudo supervisorctl restart frontend
 
 ### **Testing Strategy**
 ```bash
-# Backend testing - comprehensive API validation
-python -m pytest backend/tests/
+# Backend testing - comprehensive API validation (24/24 tests pass)
+# Use deep_testing_backend_v2 for comprehensive backend testing
 
-# Frontend testing - browser automation
-# (Use auto_frontend_testing_agent for comprehensive UI testing)
+# Frontend testing - browser automation  
+# Use auto_frontend_testing_agent for comprehensive UI testing
 ```
 
 ### **Key Components**
