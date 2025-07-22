@@ -1178,6 +1178,272 @@ def create_integrated_app():
             raise HTTPException(status_code=500, detail=f"Advanced analysis failed: {str(e)}")
     
     # ============================================================================
+    # SMART BUFFER STREAMING API - PHASE 3 IMPLEMENTATION
+    # ============================================================================
+    
+    # Global smart buffer instance for training data streams
+    training_stream_buffer = None
+    
+    class StreamTokenRequest(BaseModel):
+        """Request model for streaming tokens."""
+        tokens: List[str] = Field(..., description="List of tokens to add to stream")
+        session_id: str = Field(..., description="Unique session identifier")
+        training_step: Optional[int] = Field(default=None, description="Current training step")
+        batch_id: Optional[str] = Field(default=None, description="Training batch identifier")
+        metadata: Optional[Dict[str, Any]] = Field(default=None, description="Additional metadata")
+        
+    class StreamConfigRequest(BaseModel):
+        """Request model for stream configuration."""
+        max_tokens: int = Field(default=512, description="Maximum tokens before processing")
+        max_time_seconds: float = Field(default=5.0, description="Maximum time before processing")
+        semantic_threshold: float = Field(default=0.7, description="Semantic coherence threshold")
+        performance_threshold_ms: float = Field(default=100.0, description="Performance threshold in ms")
+        pattern_detection: bool = Field(default=True, description="Enable pattern detection")
+        
+    class StreamAnalysisResponse(BaseModel):
+        """Response model for stream analysis results."""
+        analysis_triggered: bool = Field(..., description="Whether analysis was triggered")
+        ethical_score: Optional[float] = Field(None, description="Ethical score if analysis occurred")
+        risk_level: Optional[str] = Field(None, description="Risk level assessment")
+        intervention_required: Optional[bool] = Field(None, description="Whether intervention is required")
+        processing_time: Optional[float] = Field(None, description="Processing time in seconds")
+        warnings: List[str] = Field(default_factory=list, description="Analysis warnings")
+        recommendations: List[str] = Field(default_factory=list, description="Ethical recommendations")
+        buffer_metrics: Optional[Dict[str, Any]] = Field(None, description="Buffer performance metrics")
+        
+    @api_router.post("/ml/stream/configure", response_model=Dict[str, Any])
+    async def configure_stream_buffer(request: StreamConfigRequest):
+        """
+        Configure the smart buffer for streaming training data analysis.
+        
+        Sets up or updates the global streaming buffer with specified parameters
+        for real-time ethical monitoring during ML training.
+        """
+        global training_stream_buffer
+        
+        try:
+            # Create buffer configuration
+            buffer_config = BufferConfig(
+                max_tokens=request.max_tokens,
+                max_time_seconds=request.max_time_seconds,
+                semantic_threshold=request.semantic_threshold,
+                performance_threshold_ms=request.performance_threshold_ms,
+                pattern_detection=request.pattern_detection
+            )
+            
+            # Create evaluator callback that uses our existing evaluator
+            def evaluator_callback(text: str):
+                if evaluator:
+                    return evaluator.evaluate_text(text)
+                return None
+            
+            # Create or update the smart buffer
+            if training_stream_buffer is None:
+                training_stream_buffer = SmartBuffer(
+                    buffer_config,
+                    evaluator_callback=evaluator_callback,
+                    ml_ethics_engine=ml_ethics_engine
+                )
+                logger.info("Smart buffer created for streaming analysis")
+            else:
+                training_stream_buffer.update_config(buffer_config)
+                logger.info("Smart buffer configuration updated")
+            
+            return {
+                "status": "configured",
+                "configuration": {
+                    "max_tokens": request.max_tokens,
+                    "max_time_seconds": request.max_time_seconds,
+                    "semantic_threshold": request.semantic_threshold,
+                    "performance_threshold_ms": request.performance_threshold_ms,
+                    "pattern_detection": request.pattern_detection
+                },
+                "buffer_state": training_stream_buffer.state.value,
+                "message": "Smart buffer configured for streaming analysis"
+            }
+            
+        except Exception as e:
+            logger.error(f"Stream buffer configuration failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Configuration failed: {str(e)}")
+    
+    @api_router.post("/ml/stream/tokens", response_model=StreamAnalysisResponse)
+    async def add_stream_tokens(request: StreamTokenRequest):
+        """
+        Add tokens to the streaming buffer for real-time ethical analysis.
+        
+        Processes incoming token streams and triggers ethical evaluation when
+        semantic boundaries or thresholds are reached.
+        """
+        global training_stream_buffer
+        
+        try:
+            # Ensure buffer is configured
+            if training_stream_buffer is None:
+                # Create default buffer if none exists
+                await configure_stream_buffer(StreamConfigRequest())
+            
+            # Prepare metadata
+            metadata = request.metadata or {}
+            metadata.update({
+                "session_id": request.session_id,
+                "training_step": request.training_step,
+                "batch_id": request.batch_id,
+                "timestamp": time.time()
+            })
+            
+            # Add tokens to buffer
+            analysis = await training_stream_buffer.add_tokens(request.tokens, metadata)
+            
+            # Get current buffer metrics
+            metrics = training_stream_buffer.get_metrics()
+            
+            if analysis:
+                # Analysis was triggered
+                return StreamAnalysisResponse(
+                    analysis_triggered=True,
+                    ethical_score=analysis.ethical_score,
+                    risk_level=analysis.risk_level,
+                    intervention_required=analysis.intervention_required,
+                    processing_time=analysis.processing_time,
+                    warnings=[w for w in analysis.recommendations if "WARNING" in w or "CRITICAL" in w],
+                    recommendations=analysis.recommendations,
+                    buffer_metrics={
+                        "tokens_processed": metrics.tokens_processed,
+                        "evaluations_completed": metrics.evaluations_completed,
+                        "average_processing_time": metrics.average_processing_time,
+                        "buffer_utilization": metrics.buffer_utilization,
+                        "interventions_triggered": metrics.interventions_triggered
+                    }
+                )
+            else:
+                # No analysis triggered - just accumulating
+                return StreamAnalysisResponse(
+                    analysis_triggered=False,
+                    buffer_metrics={
+                        "tokens_processed": metrics.tokens_processed,
+                        "buffer_utilization": metrics.buffer_utilization,
+                        "current_state": training_stream_buffer.state.value
+                    }
+                )
+                
+        except Exception as e:
+            logger.error(f"Stream token processing failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Stream processing failed: {str(e)}")
+    
+    @api_router.post("/ml/stream/flush")
+    async def flush_stream_buffer():
+        """
+        Force flush the current stream buffer and get analysis results.
+        
+        Processes all accumulated tokens immediately regardless of thresholds.
+        """
+        global training_stream_buffer
+        
+        try:
+            if training_stream_buffer is None:
+                raise HTTPException(status_code=400, detail="No active stream buffer")
+            
+            # Force flush the buffer
+            analysis = await training_stream_buffer.force_flush()
+            
+            if analysis:
+                return {
+                    "status": "flushed",
+                    "analysis": {
+                        "ethical_score": analysis.ethical_score,
+                        "violation_count": analysis.violation_count,
+                        "risk_level": analysis.risk_level,
+                        "intervention_required": analysis.intervention_required,
+                        "processing_time": analysis.processing_time,
+                        "patterns_detected": analysis.patterns_detected,
+                        "recommendations": analysis.recommendations
+                    },
+                    "buffer_metrics": training_stream_buffer.get_metrics().__dict__
+                }
+            else:
+                return {
+                    "status": "flushed",
+                    "message": "Buffer was empty",
+                    "buffer_metrics": training_stream_buffer.get_metrics().__dict__
+                }
+                
+        except Exception as e:
+            logger.error(f"Stream buffer flush failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Buffer flush failed: {str(e)}")
+    
+    @api_router.get("/ml/stream/metrics")
+    async def get_stream_metrics():
+        """
+        Get current streaming buffer performance metrics.
+        
+        Returns comprehensive metrics about buffer performance, throughput,
+        and processing statistics.
+        """
+        global training_stream_buffer
+        
+        try:
+            if training_stream_buffer is None:
+                return {
+                    "status": "no_active_buffer",
+                    "message": "No streaming buffer is currently active"
+                }
+            
+            metrics = training_stream_buffer.get_metrics()
+            
+            return {
+                "status": "active",
+                "buffer_state": training_stream_buffer.state.value,
+                "metrics": {
+                    "tokens_processed": metrics.tokens_processed,
+                    "evaluations_completed": metrics.evaluations_completed,
+                    "average_processing_time": metrics.average_processing_time,
+                    "cache_hit_rate": metrics.cache_hit_rate,
+                    "buffer_utilization": metrics.buffer_utilization,
+                    "boundary_detections": metrics.boundary_detections,
+                    "interventions_triggered": metrics.interventions_triggered,
+                    "total_runtime": metrics.total_runtime,
+                    "memory_usage_mb": metrics.memory_usage_mb
+                },
+                "configuration": {
+                    "max_tokens": training_stream_buffer.config.max_tokens,
+                    "max_time_seconds": training_stream_buffer.config.max_time_seconds,
+                    "pattern_detection": training_stream_buffer.config.pattern_detection,
+                    "auto_resize": training_stream_buffer.config.auto_resize
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"Stream metrics retrieval failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Metrics retrieval failed: {str(e)}")
+    
+    @api_router.post("/ml/stream/reset")
+    async def reset_stream_buffer():
+        """
+        Reset the streaming buffer system.
+        
+        Clears all accumulated data and resets metrics for a fresh start.
+        """
+        global training_stream_buffer
+        
+        try:
+            if training_stream_buffer is not None:
+                await training_stream_buffer.cleanup()
+                training_stream_buffer = None
+            
+            return {
+                "status": "reset",
+                "message": "Streaming buffer has been reset"
+            }
+            
+        except Exception as e:
+            logger.error(f"Stream buffer reset failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Buffer reset failed: {str(e)}")
+    
+    # ============================================================================
+    # END SMART BUFFER STREAMING API - PHASE 3
+    # ============================================================================
+    
+    # ============================================================================
     # END ML ETHICS API - PHASE 2
     # ============================================================================
     
