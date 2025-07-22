@@ -3,6 +3,7 @@ import './App.css';
 import axios from 'axios';
 import EthicalChart from './components/EthicalChart';
 import MLTrainingAssistant from './components/MLTrainingAssistant';
+import RealTimeStreamingInterface from './components/RealTimeStreamingInterface';
 
 // Backend API endpoint from environment variables
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
