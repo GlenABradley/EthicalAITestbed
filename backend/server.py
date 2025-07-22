@@ -72,6 +72,12 @@ from ml_ethics_engine import (
     DatasetType, TrainingPhase, ml_ethics_engine
 )
 
+# Import Smart Buffer System
+from smart_buffer import (
+    SmartBuffer, BufferConfig, BufferMetrics, BufferAnalysis,
+    create_smart_buffer, BufferState
+)
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
