@@ -682,12 +682,15 @@ async def evaluate_text(
             try:
                 # Get detailed evaluation directly from core engine
                 core_engine = orchestrator._components['core_engine']
+                logger.info(f"Core engine available, calling evaluate_text with {len(request.text)} characters")
                 core_eval = core_engine.evaluate_text(request.text)
                 logger.info(f"Core evaluation obtained with {len(getattr(core_eval, 'spans', []))} spans")
             except Exception as e:
                 logger.warning(f"Failed to get core evaluation: {e}")
-        
-        # If we have detailed core evaluation with spans
+        elif hasattr(orchestrator, '_components'):
+            logger.warning(f"Core engine not in components. Available: {list(orchestrator._components.keys())}")
+        else:
+            logger.warning("Orchestrator has no _components attribute")
         if core_eval and hasattr(core_eval, 'spans') and core_eval.spans:
             # Convert spans to frontend-compatible format
             spans = []
