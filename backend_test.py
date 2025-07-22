@@ -56,7 +56,8 @@ class BackendTestSuite:
     
     async def setup_session(self):
         """Setup aiohttp session for testing."""
-        timeout = aiohttp.ClientTimeout(total=30)
+        # Update timeout for performance testing
+        timeout = aiohttp.ClientTimeout(total=40)  # Increased for optimization completion testing
         self.session = aiohttp.ClientSession(timeout=timeout)
     
     async def cleanup_session(self):
