@@ -674,21 +674,49 @@ async def evaluate_text(
         clean_text = request.text
         delta_summary = {}
         
-        # Try to get core evaluation results with detailed span analysis
+        # Try to get core evaluation results with detailed span analysis (with timeout protection)
         core_eval = None
         
-        # Direct core engine initialization as fallback
+        # Use a timeout wrapper to prevent API hanging
+        import asyncio
+        import concurrent.futures
+        
+        async def timeout_evaluation():
+            try:
+                from ethical_engine import EthicalEvaluator
+                logger.info("Initializing direct core engine for detailed analysis")
+                direct_core_engine = EthicalEvaluator()
+                logger.info(f"Direct core engine initialized, calling evaluate_text with {len(request.text)} characters")
+                
+                # Run evaluation in thread pool with timeout
+                loop = asyncio.get_event_loop()
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(direct_core_engine.evaluate_text, request.text)
+                    try:
+                        # Wait maximum 5 seconds for evaluation
+                        core_result = await asyncio.wait_for(
+                            loop.run_in_executor(None, future.result), 
+                            timeout=5.0
+                        )
+                        logger.info(f"Direct core evaluation completed with {len(getattr(core_result, 'spans', []))} spans")
+                        return core_result
+                    except asyncio.TimeoutError:
+                        logger.warning("Core evaluation timed out after 5 seconds - using fallback")
+                        future.cancel()
+                        return None
+                        
+            except Exception as e:
+                logger.warning(f"Direct core engine failed: {e}")
+                return None
+        
         try:
-            from ethical_engine import EthicalEvaluator
-            logger.info("Initializing direct core engine for detailed analysis")
-            direct_core_engine = EthicalEvaluator()
-            logger.info(f"Direct core engine initialized, calling evaluate_text with {len(request.text)} characters")
-            core_eval = direct_core_engine.evaluate_text(request.text)
-            logger.info(f"Direct core evaluation obtained with {len(getattr(core_eval, 'spans', []))} spans")
+            core_eval = await timeout_evaluation()
         except Exception as e:
-            logger.warning(f"Direct core engine failed: {e}")
-            
-            # First check if we can access core evaluation from orchestrator  
+            logger.warning(f"Timeout evaluation wrapper failed: {e}")
+            core_eval = None
+        
+        # If timeout protection didn't work, try orchestrator fallback
+        if core_eval is None:
             if hasattr(orchestrator, '_components') and 'core_engine' in orchestrator._components:
                 try:
                     # Get detailed evaluation directly from core engine
