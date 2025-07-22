@@ -167,8 +167,8 @@ sudo supervisorctl restart frontend
 - `POST /api/update-parameters` - Update system parameters
 
 ### **Visualization Endpoints**
-- `POST /api/heat-map-mock` - Fast heat-map generation for UI
-- `POST /api/heat-map-visualization` - Complete heat-map analysis
+- `POST /api/heat-map-mock` - Fast heat-map generation for UI (fully operational with mock data)
+- `POST /api/heat-map-visualization` - Complete heat-map analysis framework (needs implementation)
 
 ### **Advanced Features**
 - `GET /api/learning-stats` - Learning system statistics (operational)
