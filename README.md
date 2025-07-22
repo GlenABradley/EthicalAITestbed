@@ -148,9 +148,9 @@ sudo supervisorctl restart frontend
 
 #### **🚀 Real-Time Streaming**
 1. Open "🚀 Real-Time Streaming" tab
-2. Connect to WebSocket streaming service
-3. Stream text for real-time ethical evaluation
-4. Monitor interventions and ethical guidance
+2. Access WebSocket streaming service interface
+3. Stream text for real-time ethical evaluation capability
+4. Monitor interventions and ethical guidance (feature implementation ready)
 
 #### **⚙️ Parameter Tuning**
 1. Navigate to "Parameter Tuning" tab
