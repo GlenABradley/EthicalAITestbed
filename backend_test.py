@@ -717,7 +717,8 @@ class BackendTestSuite:
             ("performance_tests", "⚡ PERFORMANCE TESTS"),
             ("content_tests", "📝 CONTENT TESTS"),
             ("integration_tests", "🔧 INTEGRATION TESTS"),
-            ("reliability_tests", "🏥 RELIABILITY TESTS")
+            ("reliability_tests", "🏥 RELIABILITY TESTS"),
+            ("bayesian_tests", "🎯 BAYESIAN OPTIMIZATION TESTS")
         ]
         
         for category, title in categories:
