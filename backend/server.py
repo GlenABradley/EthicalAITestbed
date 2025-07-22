@@ -977,7 +977,7 @@ async def get_learning_stats():
 # 🎯 Heat-map endpoints for visualization compatibility
 @app.post("/api/heat-map-mock", tags=["Visualization"])
 async def get_heat_map_mock(request: Dict[str, Any]):
-    """Generate mock heat-map data for UI visualization."""
+    """Generate REAL heat-map data from ethical analysis for UI visualization."""
     
     text = request.get("text", "")
     
@@ -987,46 +987,96 @@ async def get_heat_map_mock(request: Dict[str, Any]):
             detail="Text is required"
         )
     
-    # Generate mock heat-map data for compatibility
-    import random
-    
-    words = text.split()
-    spans = []
-    
-    for i, word in enumerate(words[:10]):  # Limit to 10 spans for performance
-        start = text.find(word)
-        end = start + len(word)
+    try:
+        # Use REAL ethical analysis for heat map data
+        from ethical_engine import EthicalEvaluator
+        ethical_engine = EthicalEvaluator()
         
-        spans.append({
-            "span": [start, end],
-            "text": word,
-            "scores": {
-                "V": round(random.random(), 3),
-                "A": round(random.random(), 3), 
-                "C": round(random.random(), 3)
+        logger.info(f"Generating REAL heat-map from ethical analysis for {len(text)} characters")
+        
+        # Get real evaluation with spans
+        evaluation = ethical_engine.evaluate_text(text)
+        real_spans = getattr(evaluation, 'spans', [])
+        
+        logger.info(f"Got {len(real_spans)} real spans for heat-map")
+        
+        # Convert real spans to heat-map format
+        spans = []
+        for span in real_spans[:10]:  # Limit to 10 spans for performance
+            spans.append({
+                "span": [span.start, span.end],
+                "text": span.text,
+                "scores": {
+                    "V": round(span.virtue_score, 3),
+                    "A": round(span.deontological_score, 3), 
+                    "C": round(span.consequentialist_score, 3)
+                },
+                "uncertainty": round(1.0 - span.virtue_score, 3),  # Uncertainty based on virtue score
+                "violations": {
+                    "virtue": span.virtue_violation,
+                    "deontological": span.deontological_violation, 
+                    "consequentialist": span.consequentialist_violation
+                }
+            })
+        
+        # Calculate real overall grades based on actual scores
+        def calculate_grade(avg_score):
+            if avg_score >= 0.9: return "A+"
+            elif avg_score >= 0.8: return "A"
+            elif avg_score >= 0.7: return "B+"
+            elif avg_score >= 0.6: return "B"
+            elif avg_score >= 0.5: return "C+"
+            elif avg_score >= 0.4: return "C"
+            else: return "D"
+        
+        # Calculate grades from real span data
+        short_spans = spans[:3]
+        medium_spans = spans[3:7] if len(spans) > 3 else spans
+        long_spans = spans[7:10] if len(spans) > 7 else spans
+        stochastic_spans = spans[-3:] if len(spans) > 3 else spans
+        
+        def get_avg_score(span_list):
+            if not span_list:
+                return 0.5
+            total = sum((s["scores"]["V"] + s["scores"]["A"] + s["scores"]["C"]) / 3 for s in span_list)
+            return total / len(span_list)
+        
+        return {
+            "evaluations": {
+                "short": short_spans,
+                "medium": medium_spans,
+                "long": long_spans,
+                "stochastic": stochastic_spans
             },
-            "uncertainty": round(random.random(), 3)
-        })
-    
-    return {
-        "evaluations": {
-            "short": spans[:3] if len(spans) > 3 else spans,
-            "medium": spans[3:7] if len(spans) > 7 else spans,
-            "long": spans[7:10] if len(spans) > 10 else spans,
-            "stochastic": spans[-3:] if len(spans) > 3 else spans
-        },
-        "overallGrades": {
-            "short": f"A{random.choice(['+', '', '-'])}",
-            "medium": f"B{random.choice(['+', '', '-'])}",
-            "long": f"C{random.choice(['+', '', '-'])}",
-            "stochastic": f"B{random.choice(['+', '', '-'])}"
-        },
-        "textLength": len(text),
-        "originalEvaluation": {
-            "dataset_source": "unified_ethical_engine_v10.0",
-            "processing_time": round(random.uniform(0.01, 0.1), 3)
+            "overallGrades": {
+                "short": calculate_grade(get_avg_score(short_spans)),
+                "medium": calculate_grade(get_avg_score(medium_spans)),
+                "long": calculate_grade(get_avg_score(long_spans)),
+                "stochastic": calculate_grade(get_avg_score(stochastic_spans))
+            },
+            "textLength": len(text),
+            "originalEvaluation": {
+                "dataset_source": "unified_ethical_engine_v10.0_REAL_ANALYSIS",
+                "processing_time": evaluation.processing_time if hasattr(evaluation, 'processing_time') else 0.1,
+                "overall_ethical": evaluation.overall_ethical if hasattr(evaluation, 'overall_ethical') else True,
+                "total_spans": len(real_spans),
+                "violations_found": sum(1 for span in real_spans if span.any_violation)
+            }
         }
-    }
+        
+    except Exception as e:
+        logger.error(f"Real heat-map analysis failed: {e}")
+        # Fallback to indicate analysis failure
+        return {
+            "evaluations": {"short": [], "medium": [], "long": [], "stochastic": []},
+            "overallGrades": {"short": "N/A", "medium": "N/A", "long": "N/A", "stochastic": "N/A"},
+            "textLength": len(text),
+            "originalEvaluation": {
+                "dataset_source": "ANALYSIS_FAILED",
+                "processing_time": 0.001,
+                "error": str(e)
+            }
+        }
 
 # 🧠 ML ETHICS ASSISTANT ENDPOINTS
 # ═══════════════════════════════════════════════════════════════════════════════════
