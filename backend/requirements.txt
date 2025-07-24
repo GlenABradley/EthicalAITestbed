@@ -1,45 +1,32 @@
 fastapi==0.110.1
-uvicorn==0.25.0
-motor==3.3.1
-python-dotenv>=1.0.1
-sentence-transformers>=3.0.0
-transformers>=4.30.0
-torch>=2.0.0
-torchvision
-scikit-learn>=1.3.0
-huggingface_hub
-safetensors
-tokenizers
-numpy>=1.26.0
-pandas>=2.2.0
-spacy
-textstat
-python-multipart>=0.0.9
-aiofiles==23.2.1
-websockets==12.0
-pydantic>=2.6.4
-scipy>=1.11.0
-matplotlib
-seaborn
-networkx
-dowhy
-emergentintegrations
-sympy
-tqdm
-peft
-torch-geometric
+uvicorn==0.29.0
+python-dotenv==1.0.1
+motor==3.4.0
+pymongo==4.6.2
 
-# Performance Optimization Dependencies
-asyncio-mqtt
-cachetools
-memory-profiler
-psutil
+# Core ML & Data Science
+numpy==1.26.4
+torch==2.2.1
+scikit-learn==1.4.1.post1
+pandas==2.2.1
 
-# Development and Testing Dependencies  
-pytest>=8.0.0
-pytest-asyncio
-httpx
-faiss-cpu==1.7.4
-beautifulsoup4==4.12.2
+# Knowledge Integration Layer
+sentence-transformers==2.5.1
+faiss-cpu==1.8.0
+requests==2.31.0
+beautifulsoup4==4.12.3
+lxml==5.1.0
 rdflib==7.0.0
-aiohttp==3.9.1
+aiohttp==3.9.3
+
+# Advanced AI Features (Optional but recommended)
+torch-geometric==2.5.2
+peft==0.9.0
+transformers==4.38.2
+accelerate==0.27.2
+bitsandbytes==0.42.0
+dowhy==0.11.1
+econml==0.15.0
+
+# Other
+Jinja2==3.1.3
