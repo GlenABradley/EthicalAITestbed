@@ -41,6 +41,47 @@ The system transforms raw text into a structured ethical vector through a sophis
 - **Bayesian Optimization**: Includes a framework for automatically tuning ethical scalar parameters to maximize cluster resolution.
 - **Unified Architecture**: Implements Clean Architecture principles for maintainability, testability, and scalability.
 
+## What's New in Version 1.2: Advanced Ethical Oversight
+
+Version 1.2 represents a major architectural evolution, transforming the testbed into a dynamic, real-time ethical oversight platform. The system now includes a modular pipeline, multiple evaluation modes, and a sophisticated streaming analysis engine, enabling it to act as an intelligent ethical firewall for LLMs and AI agents.
+
+### 1. Modular & Layered Architecture
+
+The core has been re-engineered into a highly modular, multi-layered pipeline, ensuring separation of concerns and enhancing scalability.
+
+-   **Knowledge Layer**: Integrates and indexes external knowledge sources into vector stores and relational data, providing a rich, queryable context for the evaluation engine.
+-   **Ethics Evaluation Pipeline**: A three-tiered engine for comprehensive analysis:
+    -   **Foundational Layer**: Establishes the meta-ethical framework and resolves conflicts between different ethical perspectives.
+    -   **Normative Layer**: Performs the core evaluation using the orthogonal Virtue, Deontological, and Consequentialist models.
+    -   **Applied Layer**: Specializes the analysis for specific domains, including Digital Ethics (Privacy, Transparency) and AI Ethics (Fairness, Accountability).
+-   **Execution Pipeline**: Takes the ethical requirements and constraints from the evaluation and translates them into actionable decisions, including routing requests to LLMs and monitoring their outputs.
+
+### 2. Dynamic Evaluation Modes
+
+The system now operates in three distinct modes, offering flexible ethical oversight across the entire lifecycle of an AI interaction:
+
+-   **Pre-Evaluation Mode**: Analyzes prompts *before* they are sent to an LLM to check for malicious intent, safety risks, and context violations.
+-   **Post-Evaluation Mode**: Validates LLM outputs *after* generation to ensure they align with ethical boundaries and do not contain harmful content.
+-   **Streaming Mode**: Provides real-time, continuous evaluation of token streams as they are generated, enabling immediate intervention and dynamic adaptation.
+
+### 3. Real-Time Streaming with a Smart Buffer System
+
+At the heart of the new streaming capability is a sophisticated **Smart Buffer System**. This is not a simple queue; it is an intelligent, adaptive mechanism designed for real-time analysis.
+
+-   **Adaptive Analysis**: Uses pattern recognition and semantic understanding to intelligently chunk token streams, ensuring that evaluations happen at meaningful semantic boundaries (e.g., complete phrases or sentences).
+-   **Resource Optimization**: Dynamically resizes the buffer, prioritizes critical content, and manages system load to ensure high performance and low latency.
+-   **Control System Integration**: Feeds real-time performance metrics to a control system that can dynamically adjust thresholds and resource allocation, creating a robust feedback loop.
+
+### 4. Expanded API for Ethical Oversight
+
+To support these new capabilities, the API has been expanded with dedicated endpoints:
+
+-   `/pre-evaluation/`: For analyzing input prompts.
+-   `/post-evaluation/`: For validating LLM responses.
+-   `/stream-evaluation/`: For managing real-time WebSocket connections.
+-   `/configuration/`: For dynamically tuning the system's ethical parameters and buffer settings.
+
+
 ## For Researchers & Developers
 
 This testbed is designed for two primary audiences:
