@@ -577,33 +577,26 @@ class UncertaintyAnalyzer:
         self.dropout_rate = 0.15       # Dropout rate for variance generation
         self.uncertainty_threshold = 0.25  # Variance threshold for human routing
         
-    def bootstrap_evaluation(self, text: str, n_samples: int = None, _recursion_guard: bool = False):
+    def bootstrap_evaluation(self, text: str, n_samples: int = None) -> List[Dict[str, float]]:
         """
         Perform bootstrap evaluation with dropout to generate variance estimates.
         
         Args:
             text: Input text to evaluate
             n_samples: Number of bootstrap samples (default: self.n_bootstrap_samples)
-            _recursion_guard: Internal flag to prevent recursive calls (do not set manually)
             
         Returns:
             List of evaluation results from bootstrap samples
         """
-        # Prevent recursive calls to avoid infinite loops
-        if _recursion_guard or not self.evaluator.parameters.enable_uncertainty_analysis:
-            return []
-            
         n_samples = n_samples or self.n_bootstrap_samples
         bootstrap_results = []
         
-        # Store original settings
+        # Store original parameters
         original_causal_setting = self.evaluator.parameters.enable_causal_analysis
-        original_uncertainty_setting = self.evaluator.parameters.enable_uncertainty_analysis
         
         try:
-            # Disable analysis features that could cause recursion during bootstrap
+            # Disable causal analysis for bootstrap to prevent recursion and speed up
             self.evaluator.parameters.enable_causal_analysis = False
-            self.evaluator.parameters.enable_uncertainty_analysis = False
             
             for i in range(n_samples):
                 # Add controlled randomness via threshold perturbation
@@ -627,8 +620,8 @@ class UncertaintyAnalyzer:
                 self.evaluator.parameters.deontological_threshold = perturbed_params['deontological_threshold']
                 self.evaluator.parameters.consequentialist_threshold = perturbed_params['consequentialist_threshold']
                 
-                # Evaluate with perturbed parameters and recursion guard
-                eval_result = self.evaluator.evaluate_text(text, _skip_uncertainty_analysis=True)
+                # Evaluate with perturbed parameters
+                eval_result = self.evaluator.evaluate_text(text)
                 
                 # Restore original thresholds
                 self.evaluator.parameters.virtue_threshold = orig_virtue
@@ -636,28 +629,22 @@ class UncertaintyAnalyzer:
                 self.evaluator.parameters.consequentialist_threshold = orig_conseq
                 
                 # Extract key metrics
-                if eval_result and hasattr(eval_result, 'spans'):
-                    bootstrap_sample = {
-                        'overall_ethical': getattr(eval_result, 'overall_ethical', True),
-                        'violation_count': getattr(eval_result, 'violation_count', 0),
-                        'processing_time': getattr(eval_result, 'processing_time', 0.0),
-                        'max_virtue_score': max([s.virtue_score for s in eval_result.spans], default=0.0),
-                        'max_deonto_score': max([s.deontological_score for s in eval_result.spans], default=0.0),
-                        'max_conseq_score': max([s.consequentialist_score for s in eval_result.spans], default=0.0),
-                        'bootstrap_index': i,
-                        'threshold_perturbation': perturbation
-                    }
-                    
-                    bootstrap_results.append(bootstrap_sample)
+                bootstrap_sample = {
+                    'overall_ethical': eval_result.overall_ethical,
+                    'violation_count': eval_result.violation_count,
+                    'processing_time': eval_result.processing_time,
+                    'max_virtue_score': max([s.virtue_score for s in eval_result.spans], default=0.0),
+                    'max_deonto_score': max([s.deontological_score for s in eval_result.spans], default=0.0),
+                    'max_conseq_score': max([s.consequentialist_score for s in eval_result.spans], default=0.0),
+                    'bootstrap_index': i,
+                    'threshold_perturbation': perturbation
+                }
                 
-        except Exception as e:
-            logger.error(f"Error during bootstrap evaluation: {str(e)}")
-            # Return partial results if any
+                bootstrap_results.append(bootstrap_sample)
                 
         finally:
-            # Restore original settings
+            # Restore causal analysis setting
             self.evaluator.parameters.enable_causal_analysis = original_causal_setting
-            self.evaluator.parameters.enable_uncertainty_analysis = original_uncertainty_setting
         
         return bootstrap_results
     
@@ -1962,37 +1949,15 @@ class EthicalEvaluator:
         tokens = re.findall(r'\b\w+\b|[^\w\s]', text.lower())
         return tokens
     
-    def get_span_embedding(self, tokens: List[str], start: int, end: int, context_window: int = 3) -> np.ndarray:
-        """
-        Get embedding for a span of tokens with context awareness
-        
-        Args:
-            tokens: List of all tokens in the text
-            start: Start index of the span
-            end: End index of the span (inclusive)
-            context_window: Number of tokens to include before and after the span for context
-            
-        Returns:
-            Context-aware embedding for the span
-        """
-        # Get the span text
+    def get_span_embedding(self, tokens: List[str], start: int, end: int) -> np.ndarray:
+        """Get embedding for a span of tokens with caching"""
         span_text = ' '.join(tokens[start:end+1])
         
-        # Include context if available
-        context_start = max(0, start - context_window)
-        context_end = min(len(tokens), end + 1 + context_window)
-        context_text = ' '.join(tokens[context_start:context_end])
-        
-        # Create a unique key that includes both span and its context
-        cache_key = f"{context_start}:{context_end}:{span_text}"
-        
         # Use cache for efficiency
-        if cache_key not in self.embedding_cache:
-            # Encode with context but only use the span's portion
-            context_embedding = self.model.encode([context_text])[0]
-            self.embedding_cache[cache_key] = context_embedding
+        if span_text not in self.embedding_cache:
+            self.embedding_cache[span_text] = self.model.encode([span_text])[0]
         
-        return self.embedding_cache[cache_key]
+        return self.embedding_cache[span_text]
     
     def compute_perspective_score(self, embedding: np.ndarray, perspective_vector: np.ndarray) -> float:
         """Compute s_P(i,j) = x_{i:j} · p_P"""
@@ -2005,42 +1970,17 @@ class EthicalEvaluator:
         return float(score)  # Convert to Python float for JSON serialization
     
     def evaluate_span(self, tokens: List[str], start: int, end: int, 
-                     adjusted_thresholds: Dict[str, float] = None,
-                     context_window: int = 3) -> EthicalSpan:
-        """
-        Evaluate a single span of tokens with dynamic thresholds and context awareness
-        
-        Args:
-            tokens: List of all tokens in the text
-            start: Start index of the span
-            end: End index of the span (inclusive)
-            adjusted_thresholds: Optional dictionary of adjusted threshold values
-            context_window: Number of tokens to include before and after the span for context
-            
-        Returns:
-            EthicalSpan containing evaluation results
-        """
+                     adjusted_thresholds: Dict[str, float] = None) -> EthicalSpan:
+        """Evaluate a single span of tokens with dynamic thresholds"""
         span_text = ' '.join(tokens[start:end+1])
+        span_embedding = self.get_span_embedding(tokens, start, end)
         
-        # Get context-aware embedding
-        span_embedding = self.get_span_embedding(tokens, start, end, context_window)
-        
-        # Apply dynamic threshold scaling if adjusted_thresholds is provided
-        if adjusted_thresholds is not None:
-            thresholds = {
-                'virtue_threshold': adjusted_thresholds.get('virtue_threshold', 
-                    self.parameters.virtue_threshold),
-                'deontological_threshold': adjusted_thresholds.get('deontological_threshold',
-                    self.parameters.deontological_threshold),
-                'consequentialist_threshold': adjusted_thresholds.get('consequentialist_threshold',
-                    self.parameters.consequentialist_threshold),
-            }
-        else:
-            thresholds = {
-                'virtue_threshold': self.parameters.virtue_threshold,
-                'deontological_threshold': self.parameters.deontological_threshold,
-                'consequentialist_threshold': self.parameters.consequentialist_threshold,
-            }
+        # Use adjusted thresholds if provided, otherwise use parameters
+        thresholds = adjusted_thresholds or {
+            'virtue_threshold': self.parameters.virtue_threshold,
+            'deontological_threshold': self.parameters.deontological_threshold,
+            'consequentialist_threshold': self.parameters.consequentialist_threshold
+        }
         
         # Compute scores for each perspective
         virtue_score = self.compute_perspective_score(span_embedding, self.p_v) * self.parameters.virtue_weight
@@ -2246,17 +2186,8 @@ class EthicalEvaluator:
             return spans
     
     
-    def evaluate_text(self, text: str, _skip_uncertainty_analysis: bool = False) -> EthicalEvaluation:
-        """
-        Evaluate text using the complete mathematical framework with dynamic scaling
-        
-        Args:
-            text: The text to evaluate
-            _skip_uncertainty_analysis: Internal flag to skip uncertainty analysis (prevents recursion)
-            
-        Returns:
-            EthicalEvaluation: The evaluation results
-        """
+    def evaluate_text(self, text: str) -> EthicalEvaluation:
+        """Evaluate text using the complete mathematical framework with dynamic scaling"""
         start_time = time.time()
         
         # Handle empty or whitespace-only text
@@ -2329,26 +2260,8 @@ class EthicalEvaluator:
         adjusted_thresholds = None
         if self.parameters.enable_dynamic_scaling:
             dynamic_result.processing_stages.append("dynamic_scaling")
-            
-            # Calculate ambiguity score for dynamic scaling
-            text_embedding = self.model.encode([text])[0]
-            virtue_score = float(np.dot(text_embedding, self.p_v) * self.parameters.virtue_weight)
-            deontological_score = float(np.dot(text_embedding, self.p_d) * self.parameters.deontological_weight)
-            consequentialist_score = float(np.dot(text_embedding, self.p_c) * self.parameters.consequentialist_weight)
-            
-            # Calculate ambiguity score using learning layer
-            ambiguity_score = self.learning_layer.calculate_ambiguity_score(
-                virtue_score, deontological_score, consequentialist_score, self.parameters
-            )
-            
-            # Apply dynamic scaling
             adjusted_thresholds = self.apply_dynamic_scaling(text, ambiguity_score)
             dynamic_result.adjusted_thresholds = adjusted_thresholds
-            dynamic_result.ambiguity_score = ambiguity_score
-            
-            logger.info(f"Applied dynamic scaling - Ambiguity: {ambiguity_score:.3f}, "
-                      f"Original thresholds: {dynamic_result.original_thresholds}, "
-                      f"Adjusted thresholds: {adjusted_thresholds}")
             
             # Record learning entry if learning is enabled
             if self.parameters.enable_learning_mode:

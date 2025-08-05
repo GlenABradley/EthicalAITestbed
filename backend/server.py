@@ -52,27 +52,29 @@ Engineering Excellence: Modern distributed systems patterns
 
 import asyncio
 import logging
+import math
 import random
 import time
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Union
+from typing import Dict, List, Optional, Any, Union, Tuple
 
 # 🎓 PROFESSOR'S NOTE: Modern FastAPI Imports
 # ═══════════════════════════════════════════════
 # We use the latest FastAPI patterns with proper async context management,
 # dependency injection, and comprehensive middleware stack
-from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Request, status
+from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Request, status, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, validator, HttpUrl
 from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 import os
+import json
 
 # 🏛️ Import our unified architecture components
 from unified_ethical_orchestrator import (
@@ -113,6 +115,14 @@ logger = logging.getLogger(__name__)
 # Global instance of ethical engine to avoid reinitialization
 _global_ethical_engine = None
 
+def get_ethical_engine() -> EthicalEvaluator:
+    """Dependency to get the global ethical engine instance."""
+    global _global_ethical_engine
+    if _global_ethical_engine is None:
+        _global_ethical_engine = EthicalEvaluator()
+        logger.info("Initialized new EthicalEvaluator instance")
+    return _global_ethical_engine
+
 def get_cached_ethical_engine():
     """Get or create a cached instance of the ethical engine for local hardware."""
     global _global_ethical_engine
@@ -130,10 +140,49 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 # 🎓 PROFESSOR'S EXPLANATION: Pydantic Models
-# ══════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════════════════════════
 # These models define our API contracts with comprehensive validation,
 # documentation, and type safety. They represent the "interface" layer
 # in our hexagonal architecture.
+
+class ThresholdScalingRequest(BaseModel):
+    """🎓 THRESHOLD SCALING REQUEST MODEL:
+    ═══════════════════════════════════
+    
+    This model defines the structure for threshold scaling requests.
+    It's used to dynamically adjust the sensitivity of the ethical evaluation.
+    """
+    slider_value: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Slider value between 0.0 and 1.0 to scale the threshold",
+        example=0.5
+    )
+    use_exponential: bool = Field(
+        default=True,
+        description="Whether to use exponential scaling (provides more granularity at lower values)",
+        example=True
+    )
+
+
+class ThresholdScalingResponse(BaseModel):
+    """🎓 THRESHOLD SCALING RESPONSE MODEL:
+    ════════════════════════════════════
+    
+    This model defines the response structure for threshold scaling operations.
+    It provides detailed information about the applied scaling.
+    """
+    status: str = Field(..., description="Operation status (success/error)")
+    slider_value: float = Field(..., description="Original slider value (0.0 to 1.0)")
+    scaled_threshold: float = Field(..., description="Resulting threshold value (0.0 to 0.5)")
+    scaling_type: str = Field(..., description="Type of scaling applied (exponential/linear)")
+    formula: str = Field(..., description="Mathematical formula used for scaling")
+    updated_parameters: Dict[str, float] = Field(
+        ...,
+        description="Updated parameter values that were affected by this scaling"
+    )
+
 
 class EvaluationRequest(BaseModel):
     """
@@ -944,25 +993,122 @@ async def get_parameters():
         )
 
 @app.post("/api/update-parameters", tags=["Legacy Compatibility"])
-async def update_parameters(params: Dict[str, Any]):
+async def update_parameters(params: Dict[str, Any], evaluator: EthicalEvaluator = Depends(get_ethical_engine)):
     """Update evaluation parameters (legacy compatibility)."""
     
     try:
         # Log the parameter update for auditing
         logger.info(f"Parameter update requested: {params}")
         
-        # For now, we acknowledge the update but maintain unified config
+        # Update the evaluator's parameters
+        evaluator.update_parameters(params)
+        
+        # Also update the unified config for consistency
+        try:
+            config = app.state.config
+            if hasattr(config, 'ethical_frameworks'):
+                for key in ['virtue_weight', 'deontological_weight', 'consequentialist_weight']:
+                    if key in params:
+                        setattr(config.ethical_frameworks, key, params[key])
+        except Exception as config_error:
+            logger.warning(f"Could not update unified config: {config_error}")
+        
         return {
             "message": "Parameters updated successfully",
             "parameters": params,
-            "note": "Updates are applied to the unified configuration system"
+            "note": "Parameters have been applied to the active evaluation engine"
         }
         
     except Exception as e:
-        logger.error(f"Failed to update parameters: {e}")
+        logger.error(f"Failed to update parameters: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update parameters: {str(e)}"
+        )
+
+
+@app.post(
+    "/api/threshold-scaling",
+    response_model=ThresholdScalingResponse,
+    tags=["Evaluation"],
+    summary="Adjust evaluation thresholds using a slider value",
+    description="""
+    Dynamically adjust the sensitivity thresholds for ethical evaluation
+    using a normalized slider value (0.0 to 1.0).
+    
+    - Lower values make the evaluation more strict (more violations detected)
+    - Higher values make it more lenient (fewer violations detected)
+    
+    Uses exponential scaling by default for better control in the critical 0.0-0.2 range.
+    """
+)
+async def update_threshold_scaling(
+    request: ThresholdScalingRequest,
+    evaluator: EthicalEvaluator = Depends(get_ethical_engine)
+):
+    """Update evaluation thresholds based on a normalized slider value."""
+    try:
+        slider_value = request.slider_value
+        use_exponential = request.use_exponential
+        
+        # Log the threshold scaling request
+        logger.info(
+            f"Threshold scaling requested - Slider: {slider_value:.2f}, "
+            f"Exponential: {use_exponential}"
+        )
+        
+        # Calculate the new threshold based on scaling type
+        if use_exponential:
+            # Exponential scaling for better control in the 0.0-0.2 range
+            threshold = (math.exp(6 * slider_value) - 1) / (math.exp(6) - 1) * 0.5
+            scaling_type = "exponential"
+            formula = f"(e^(6*{slider_value:.2f})-1)/(e^6-1)*0.5"
+        else:
+            # Linear scaling (simple 0.0 to 0.5 mapping)
+            threshold = slider_value * 0.5
+            scaling_type = "linear"
+            formula = f"{slider_value:.2f} * 0.5"
+        
+        # Create parameters to update
+        params = {
+            'virtue_threshold': threshold,
+            'deontological_threshold': threshold,
+            'consequentialist_threshold': threshold,
+            'enable_dynamic_scaling': True,
+            'exponential_scaling': use_exponential
+        }
+        
+        # Update the evaluator's parameters
+        evaluator.update_parameters(params)
+        
+        # Log the successful update
+        logger.info(
+            f"Threshold scaling applied - New threshold: {threshold:.4f}, "
+            f"Type: {scaling_type}"
+        )
+        
+        # Return detailed response
+        return {
+            "status": "success",
+            "slider_value": slider_value,
+            "scaled_threshold": threshold,
+            "scaling_type": scaling_type,
+            "formula": formula,
+            "updated_parameters": {
+                "virtue_threshold": threshold,
+                "deontological_threshold": threshold,
+                "consequentialist_threshold": threshold,
+                "enable_dynamic_scaling": True,
+                "exponential_scaling": use_exponential
+            }
+        }
+        
+    except Exception as e:
+        error_msg = f"Failed to update threshold scaling: {str(e)}"
+        logger.error(error_msg, exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=error_msg
         )
 
 @app.get("/api/learning-stats", tags=["Legacy Compatibility"])

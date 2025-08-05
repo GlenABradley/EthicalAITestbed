@@ -1,0 +1,93 @@
+{
+  "results": [
+    {
+      "endpoint": "/api/health",
+      "method": "GET",
+      "success": false,
+      "status": 404,
+      "time_ms": 10.7,
+      "error": "Not Found"
+    },
+    {
+      "endpoint": "/api/evaluate",
+      "method": "POST",
+      "success": false,
+      "status": 404,
+      "time_ms": 3.33,
+      "error": "Not Found"
+    },
+    {
+      "endpoint": "/api/parameters",
+      "method": "GET",
+      "success": false,
+      "status": 404,
+      "time_ms": 3.32,
+      "error": "Not Found"
+    },
+    {
+      "endpoint": "/api/learning-stats",
+      "method": "GET",
+      "success": false,
+      "status": 404,
+      "time_ms": 4.98,
+      "error": "Not Found"
+    },
+    {
+      "endpoint": "/api/heat-map-mock",
+      "method": "POST",
+      "success": false,
+      "status": 404,
+      "time_ms": 5.72,
+      "error": "Not Found"
+    },
+    {
+      "endpoint": "/api/ethics/comprehensive-analysis",
+      "method": "POST",
+      "success": false,
+      "status": 404,
+      "time_ms": 3.46,
+      "error": "Not Found"
+    },
+    {
+      "endpoint": "/api/ethics/meta-analysis",
+      "method": "POST",
+      "success": false,
+      "status": 404,
+      "time_ms": 3.39,
+      "error": "Not Found"
+    },
+    {
+      "endpoint": "/api/ethics/normative-analysis",
+      "method": "POST",
+      "success": false,
+      "status": 404,
+      "time_ms": 3.57,
+      "error": "Not Found"
+    },
+    {
+      "endpoint": "/api/ethics/applied-analysis",
+      "method": "POST",
+      "success": false,
+      "status": 404,
+      "time_ms": 3.46,
+      "error": "Not Found"
+    },
+    {
+      "endpoint": "/api/ethics/ml-training-guidance",
+      "method": "POST",
+      "success": false,
+      "status": 404,
+      "time_ms": 8.3,
+      "error": "Not Found"
+    },
+    {
+      "endpoint": "/api/streaming/status",
+      "method": "GET",
+      "success": false,
+      "status": 404,
+      "time_ms": 3.27,
+      "error": "Not Found"
+    }
+  ],
+  "success_rate": 0.0
+}

@@ -1,0 +1,27 @@
+{
+  "timestamp": "20250805_081925",
+  "total_tests": 9,
+  "passed_tests": 0,
+  "failed_tests": 9,
+  "total_duration": 6.163534879684448,
+  "test_results": {
+    "health_check": {
+      "success": 0,
+      "fail": 3,
+      "total_duration": 0.0,
+      "durations": []
+    },
+    "basic_evaluation": {
+      "success": 0,
+      "fail": 3,
+      "total_duration": 0.0,
+      "durations": []
+    },
+    "long_evaluation": {
+      "success": 0,
+      "fail": 3,
+      "total_duration": 0.0,
+      "durations": []
+    }
+  }
+}
