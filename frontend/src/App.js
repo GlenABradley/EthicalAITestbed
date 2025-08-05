@@ -29,7 +29,15 @@ function App() {
   const [learningStats, setLearningStats] = useState({});
   const [activeResultTab, setActiveResultTab] = useState('violations');
   const [feedbackMessage, setFeedbackMessage] = useState('');
-  const [thresholdScalingTest, setThresholdScalingTest] = useState({});
+  
+  // State for threshold scaling
+  const [thresholdScaling, setThresholdScaling] = useState({
+    sliderValue: 0.5,  // Default to middle position
+    isUpdating: false,  // Loading state
+    lastUpdate: null,   // Timestamp of last update
+    scalingType: 'exponential',  // Default to exponential scaling
+    error: null        // Error message if any
+  });
   
   // Phase 4: Heat-map visualization state
   const [heatMapData, setHeatMapData] = useState(null);
@@ -284,23 +292,81 @@ function App() {
     }
   };
 
-  const testThresholdScaling = (sliderValue, useExponential = true) => {
-    fetch(`${API}/threshold-scaling`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        slider_value: sliderValue,
-        use_exponential: useExponential
-      })
-    })
-    .then(response => response.json())
-    .then(data => {
-      console.log('Threshold scaling test:', data);
-      setThresholdScalingTest(data);
-    })
-    .catch(error => console.error('Threshold scaling test error:', error));
+  /**
+   * Updates the threshold scaling values and triggers a re-evaluation if needed
+   * @param {number} newValue - The new slider value (0.0 to 1.0)
+   * @param {boolean} triggerEvaluation - Whether to trigger a re-evaluation after updating
+   */
+  const updateThresholdScaling = async (newValue, triggerEvaluation = true) => {
+    try {
+      // Update local state optimistically
+      setThresholdScaling(prev => ({
+        ...prev,
+        sliderValue: newValue,
+        isUpdating: true,
+        error: null
+      }));
+
+      // Send update to backend
+      const response = await axios.post(`${API}/threshold-scaling`, {
+        slider_value: newValue,
+        use_exponential: thresholdScaling.scalingType === 'exponential'
+      });
+
+      // Update state with response
+      setThresholdScaling(prev => ({
+        ...prev,
+        isUpdating: false,
+        lastUpdate: new Date().toISOString(),
+        error: null
+      }));
+
+      console.log('Threshold scaling updated:', response.data);
+      
+      // If we have an evaluation result and we should trigger a re-evaluation
+      if (evaluationResult && triggerEvaluation) {
+        await evaluateText();
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error updating threshold scaling:', error);
+      const errorMsg = error.response?.data?.detail || error.message || 'Failed to update threshold';
+      
+      setThresholdScaling(prev => ({
+        ...prev,
+        isUpdating: false,
+        error: errorMsg
+      }));
+      
+      // Show error to user
+      setFeedbackMessage({
+        type: 'error',
+        text: `Failed to update threshold: ${errorMsg}`
+      });
+      
+      throw error;
+    }
+  };
+  
+  /**
+   * Toggles between exponential and linear scaling
+   */
+  const toggleScalingType = async () => {
+    const newScalingType = thresholdScaling.scalingType === 'exponential' ? 'linear' : 'exponential';
+    
+    setThresholdScaling(prev => ({
+      ...prev,
+      scalingType: newScalingType,
+      isUpdating: true
+    }));
+    
+    // Re-apply the current slider value with the new scaling type
+    try {
+      await updateThresholdScaling(thresholdScaling.sliderValue, true);
+    } catch (error) {
+      // Error is already handled in updateThresholdScaling
+    }
   };
 
   return (
@@ -677,26 +743,72 @@ function App() {
                         </div>
                         
                         <div className="bg-gray-50 p-4 rounded-md">
-                          <h4 className="font-semibold text-gray-800 mb-3">Threshold Scaling Test</h4>
-                          <div className="flex space-x-2 mb-3">
-                            <input
-                              type="range"
-                              min="0"
-                              max="1"
-                              step="0.1"
-                              onChange={(e) => testThresholdScaling(parseFloat(e.target.value))}
-                              className="flex-1"
-                            />
-                            <span className="text-sm w-16">Test Slider</span>
-                          </div>
-                          {thresholdScalingTest.slider_value !== undefined && (
-                            <div className="text-sm space-y-1">
-                              <div>Slider Value: {thresholdScalingTest.slider_value}</div>
-                              <div>Scaled Threshold: {thresholdScalingTest.scaled_threshold?.toFixed(4)}</div>
-                              <div>Scaling Type: {thresholdScalingTest.scaling_type}</div>
-                              <div>Formula: {thresholdScalingTest.formula}</div>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <h4 className="font-semibold text-gray-800">Threshold Sensitivity</h4>
+                              <button
+                                onClick={toggleScalingType}
+                                className={`px-2 py-1 text-xs rounded-md ${
+                                  thresholdScaling.scalingType === 'exponential'
+                                    ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                                    : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                                } transition-colors`}
+                                title={thresholdScaling.scalingType === 'exponential' 
+                                  ? 'Using exponential scaling (better for fine-tuning)' 
+                                  : 'Using linear scaling'}
+                                disabled={thresholdScaling.isUpdating}
+                              >
+                                {thresholdScaling.scalingType === 'exponential' ? 'Exponential' : 'Linear'}
+                              </button>
                             </div>
-                          )}
+                            
+                            <div className="flex items-center space-x-3">
+                              <span className="text-xs text-gray-500 w-8">Low</span>
+                              <input
+                                type="range"
+                                min="0"
+                                max="1"
+                                step="0.01"
+                                value={thresholdScaling.sliderValue}
+                                onChange={(e) => updateThresholdScaling(parseFloat(e.target.value), true)}
+                                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                disabled={thresholdScaling.isUpdating}
+                              />
+                              <span className="text-xs text-gray-500 w-12 text-right">High</span>
+                            </div>
+                            
+                            <div className="text-sm space-y-1 text-gray-600">
+                              <div className="flex justify-between">
+                                <span>Sensitivity:</span>
+                                <span className="font-medium">
+                                  {Math.round(thresholdScaling.sliderValue * 100)}%
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Threshold:</span>
+                                <span className="font-mono">
+                                  {thresholdScaling.scalingType === 'exponential'
+                                    ? ((Math.exp(6 * thresholdScaling.sliderValue) - 1) / (Math.exp(6) - 1) * 0.5).toFixed(4)
+                                    : (thresholdScaling.sliderValue * 0.5).toFixed(4)
+                                  }
+                                </span>
+                              </div>
+                              {thresholdScaling.isUpdating && (
+                                <div className="text-blue-600 text-xs flex items-center">
+                                  <svg className="animate-spin -ml-1 mr-2 h-3 w-3 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                  Updating...
+                                </div>
+                              )}
+                              {thresholdScaling.error && (
+                                <div className="text-red-500 text-xs">
+                                  Error: {thresholdScaling.error}
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     )}
