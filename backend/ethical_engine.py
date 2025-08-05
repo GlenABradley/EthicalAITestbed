@@ -1869,11 +1869,26 @@ class EthicalEvaluator:
         }
     
     def apply_threshold_scaling(self, slider_value: float) -> float:
-        """Apply exponential or linear scaling to threshold values"""
+        """
+        Apply exponential or linear scaling to threshold values
+        
+        Args:
+            slider_value: Value between 0.0 and 1.0 from the frontend slider
+                         0.0 = most sensitive (low threshold), 1.0 = least sensitive (high threshold)
+        
+        Returns:
+            float: Scaled threshold value between 0.01 and 0.5
+        """
+        # Clamp value to [0, 1] range
+        slider_value = max(0.0, min(1.0, slider_value))
+        
         if self.parameters.exponential_scaling:
-            return exponential_threshold_scaling(slider_value)
+            # Exponential scaling for more granular control in lower ranges
+            # Maps 0.0 -> ~0.01 (very sensitive) to 1.0 -> 0.5 (least sensitive)
+            return 0.01 + (exponential_threshold_scaling(slider_value) * 0.49)
         else:
-            return linear_threshold_scaling(slider_value)
+            # Linear scaling as fallback
+            return 0.01 + (linear_threshold_scaling(slider_value) * 0.49)
     
     def fast_cascade_evaluation(self, text: str) -> Tuple[Optional[bool], float]:
         """Stage 1: Fast cascade filtering for obvious cases"""
@@ -2025,32 +2040,45 @@ class EthicalEvaluator:
         # Get context-aware embedding
         span_embedding = self.get_span_embedding(tokens, start, end, context_window)
         
+        # Get current thresholds from parameters
+        default_thresholds = {
+            'virtue_threshold': self.parameters.virtue_threshold,
+            'deontological_threshold': self.parameters.deontological_threshold,
+            'consequentialist_threshold': self.parameters.consequentialist_threshold,
+        }
+        
         # Apply dynamic threshold scaling if adjusted_thresholds is provided
         if adjusted_thresholds is not None:
             thresholds = {
                 'virtue_threshold': adjusted_thresholds.get('virtue_threshold', 
-                    self.parameters.virtue_threshold),
+                    default_thresholds['virtue_threshold']),
                 'deontological_threshold': adjusted_thresholds.get('deontological_threshold',
-                    self.parameters.deontological_threshold),
+                    default_thresholds['deontological_threshold']),
                 'consequentialist_threshold': adjusted_thresholds.get('consequentialist_threshold',
-                    self.parameters.consequentialist_threshold),
+                    default_thresholds['consequentialist_threshold']),
             }
+            logger.debug(f"Using adjusted thresholds: {thresholds}")
         else:
-            thresholds = {
-                'virtue_threshold': self.parameters.virtue_threshold,
-                'deontological_threshold': self.parameters.deontological_threshold,
-                'consequentialist_threshold': self.parameters.consequentialist_threshold,
-            }
+            thresholds = default_thresholds
+            logger.debug(f"Using default thresholds: {thresholds}")
         
         # Compute scores for each perspective
         virtue_score = self.compute_perspective_score(span_embedding, self.p_v) * self.parameters.virtue_weight
         deontological_score = self.compute_perspective_score(span_embedding, self.p_d) * self.parameters.deontological_weight
         consequentialist_score = self.compute_perspective_score(span_embedding, self.p_c) * self.parameters.consequentialist_weight
         
+        # Log scores and thresholds
+        logger.debug(f"Span: '{span_text}'")
+        logger.debug(f"  Virtue: {virtue_score:.3f} (threshold: {thresholds['virtue_threshold']:.3f})")
+        logger.debug(f"  Deontological: {deontological_score:.3f} (threshold: {thresholds['deontological_threshold']:.3f})")
+        logger.debug(f"  Consequentialist: {consequentialist_score:.3f} (threshold: {thresholds['consequentialist_threshold']:.3f})")
+        
         # Apply thresholds to determine violations
         virtue_violation = virtue_score > thresholds['virtue_threshold']
         deontological_violation = deontological_score > thresholds['deontological_threshold']
         consequentialist_violation = consequentialist_score > thresholds['consequentialist_threshold']
+        
+        logger.debug(f"  Violations - Virtue: {virtue_violation}, Deontological: {deontological_violation}, Consequentialist: {consequentialist_violation}")
         
         # v1.1 UPGRADE: Add intent hierarchy classification
         intent_scores = {}
@@ -2246,18 +2274,44 @@ class EthicalEvaluator:
             return spans
     
     
-    def evaluate_text(self, text: str, _skip_uncertainty_analysis: bool = False) -> EthicalEvaluation:
+    def evaluate_text(self, text: str, _skip_uncertainty_analysis: bool = False, tau_slider: float = None, _recursion_depth: int = 0) -> EthicalEvaluation:
+        # Set up logging for this evaluation
+        logger.info("\n" + "="*80)
+        logger.info(f"Starting evaluation of text (length: {len(text)} chars, tau_slider: {tau_slider}, recursion_depth: {_recursion_depth})")
+        
+        # Safety check for maximum recursion depth
+        MAX_RECURSION_DEPTH = 3
+        if _recursion_depth > MAX_RECURSION_DEPTH:
+            logger.error(f"Maximum recursion depth ({MAX_RECURSION_DEPTH}) exceeded in evaluate_text")
+            raise RecursionError(f"Maximum recursion depth ({MAX_RECURSION_DEPTH}) exceeded in evaluate_text")
+        
         """
         Evaluate text using the complete mathematical framework with dynamic scaling
         
         Args:
             text: The text to evaluate
             _skip_uncertainty_analysis: Internal flag to skip uncertainty analysis (prevents recursion)
+            tau_slider: Optional 0-1 value from frontend slider controlling threshold sensitivity
             
         Returns:
             EthicalEvaluation: The evaluation results
         """
         start_time = time.time()
+        
+        # Apply tau slider scaling if provided (0-1 value from frontend)
+        adjusted_thresholds = None
+        if tau_slider is not None and 0 <= tau_slider <= 1:
+            # Convert 0-1 slider to threshold value (lower tau = more sensitive)
+            base_threshold = self.apply_threshold_scaling(1.0 - tau_slider)  # Invert so 0=strict, 1=lenient
+            adjusted_thresholds = {
+                'virtue_threshold': base_threshold,
+                'deontological_threshold': base_threshold,
+                'consequentialist_threshold': base_threshold
+            }
+            logger.info(f"Applied tau slider value {tau_slider:.2f} -> base threshold: {base_threshold:.3f}")
+            logger.info(f"Adjusted thresholds: {adjusted_thresholds}")
+        else:
+            logger.info("Using default thresholds")
         
         # Handle empty or whitespace-only text
         if not text or not text.strip():
@@ -2270,7 +2324,7 @@ class EthicalEvaluator:
                 processing_time=time.time() - start_time,
                 parameters=self.parameters,
                 dynamic_scaling_result=DynamicScalingResult(
-                    used_dynamic_scaling=False,
+                    used_dynamic_scaling=tau_slider is not None,
                     used_cascade_filtering=False,
                     ambiguity_score=0.0,
                     original_thresholds={
@@ -2278,7 +2332,11 @@ class EthicalEvaluator:
                         'deontological_threshold': self.parameters.deontological_threshold,
                         'consequentialist_threshold': self.parameters.consequentialist_threshold
                     },
-                    adjusted_thresholds={},
+                    adjusted_thresholds={
+                        'virtue_threshold': self.parameters.virtue_threshold,
+                        'deontological_threshold': self.parameters.deontological_threshold,
+                        'consequentialist_threshold': self.parameters.consequentialist_threshold
+                    } if tau_slider is not None else {},
                     processing_stages=['empty_text_handling']
                 )
             )
@@ -2377,12 +2435,27 @@ class EthicalEvaluator:
         
         # Evaluate spans with dynamic thresholds
         all_spans = []
-        max_spans_to_check = 200  # Reasonable limit for real-time use
+        
+        # Calculate max spans based on text length but with reasonable limits
+        max_span_length = min(self.parameters.max_span_length, 10)  # Cap at 10 tokens max span length
+        max_spans_to_check = min(len(tokens) * 2, 100)  # More dynamic limit based on text length, max 100 spans
         spans_checked = 0
+        
+        logger.info(f"Evaluating text with {len(tokens)} tokens, max_span_length={max_span_length}, max_spans_to_check={max_spans_to_check}")
+        
+        # Log the thresholds being used for this evaluation
+        current_thresholds = {
+            'virtue_threshold': self.parameters.virtue_threshold,
+            'deontological_threshold': self.parameters.deontological_threshold,
+            'consequentialist_threshold': self.parameters.consequentialist_threshold
+        }
+        logger.info(f"Current parameter thresholds: {current_thresholds}")
+        if adjusted_thresholds:
+            logger.info(f"Using adjusted thresholds: {adjusted_thresholds}")
         
         # Prioritize shorter spans (more likely to be minimal violations)
         for span_length in range(self.parameters.min_span_length, 
-                                min(self.parameters.max_span_length, len(tokens)) + 1):
+                                min(max_span_length, len(tokens)) + 1):
             if spans_checked >= max_spans_to_check:
                 break
                 
@@ -2392,12 +2465,18 @@ class EthicalEvaluator:
                     
                 end = start + span_length - 1
                 span = self.evaluate_span(tokens, start, end, adjusted_thresholds)
+                logger.debug(f"Evaluated span '{span.text}': {span.to_dict()}")
                 all_spans.append(span)
                 spans_checked += 1
                 
                 # Early exit if we find violations (for faster feedback)
                 if span.any_violation and span_length <= 3:
                     logger.info(f"Early violation found: {span.text}")
+                    # Don't break here as we want to find all minimal spans
+                    # But we can limit further processing of longer spans
+                    if len(minimal_spans) >= 5:  # Limit to 5 violations to prevent excessive processing
+                        logger.info("Reached maximum number of violations (5), stopping evaluation")
+                        break
         
         # v1.1 UPGRADE: Apply graph attention to enhance span embeddings for distributed patterns
         if self.parameters.enable_graph_attention and all_spans and len(all_spans) > 1:
@@ -2427,7 +2506,8 @@ class EthicalEvaluator:
         # v1.1 UPGRADE: Perform causal counterfactual analysis if violations found
         causal_analysis = None
         if (self.parameters.enable_causal_analysis and self.causal_analyzer and 
-            minimal_spans and not overall_ethical):
+            minimal_spans and not overall_ethical and _recursion_depth == 0):
+            # Only run causal analysis on the first level of recursion
             
             dynamic_result.processing_stages.append("causal_analysis")
             
@@ -2457,12 +2537,17 @@ class EthicalEvaluator:
         
         # v1.1 UPGRADE: Perform uncertainty analysis for safety certification
         uncertainty_analysis = None
-        if (self.parameters.enable_uncertainty_analysis and self.uncertainty_analyzer):
+        if (self.parameters.enable_uncertainty_analysis and self.uncertainty_analyzer and not _skip_uncertainty_analysis):
             
             dynamic_result.processing_stages.append("uncertainty_analysis")
             
             try:
-                uncertainty_analysis = self.uncertainty_analyzer.analyze_uncertainty(text)
+                # Skip uncertainty analysis if we're already in a recursive call to prevent loops
+                if _recursion_depth > 0:
+                    logger.info("Skipping uncertainty analysis in recursive call")
+                    uncertainty_analysis = {"skipped": "Recursive call"}
+                else:
+                    uncertainty_analysis = self.uncertainty_analyzer.analyze_uncertainty(text)
                 
                 # Log uncertainty results
                 uncertainty_metrics = uncertainty_analysis.get("uncertainty_metrics", {})
@@ -2482,8 +2567,8 @@ class EthicalEvaluator:
         
         # v1.1 UPGRADE: Perform IRL purpose alignment analysis for user intent alignment
         purpose_alignment_analysis = None
-        if (self.parameters.enable_purpose_alignment and self.purpose_alignment):
-            
+        if (self.parameters.enable_purpose_alignment and self.purpose_alignment and _recursion_depth == 0):
+            # Only run purpose alignment on the first level of recursion
             dynamic_result.processing_stages.append("purpose_alignment")
             
             try:
@@ -2539,11 +2624,32 @@ class EthicalEvaluator:
         )
     
     def update_parameters(self, new_parameters: Dict[str, Any]):
-        """Update evaluation parameters for calibration"""
+        """
+        Update evaluation parameters for calibration
+        
+        Args:
+            new_parameters: Dictionary of parameter names and values to update
+            
+        Special handling for tau_slider (0-1) which maps to threshold values
+        """
+        # Handle tau_slider specially if provided
+        if 'tau_slider' in new_parameters:
+            tau_slider = new_parameters.pop('tau_slider')
+            if 0 <= tau_slider <= 1:
+                # Convert 0-1 slider to threshold value (lower tau = more sensitive)
+                base_threshold = self.apply_threshold_scaling(1.0 - tau_slider)  # Invert so 0=strict, 1=lenient
+                self.parameters.virtue_threshold = base_threshold
+                self.parameters.deontological_threshold = base_threshold
+                self.parameters.consequentialist_threshold = base_threshold
+                logger.info(f"Updated thresholds from tau_slider={tau_slider:.2f} -> {base_threshold:.3f}")
+        
+        # Update other parameters normally
         for key, value in new_parameters.items():
             if hasattr(self.parameters, key):
                 setattr(self.parameters, key, value)
-                logger.info(f"Updated parameter {key} to {value}")
+        
+        logger.info(f"Updated parameters: {new_parameters}")
+        return self.parameters
     
     def generate_clean_text(self, evaluation: EthicalEvaluation) -> str:
         """Generate clean text by removing minimal unethical spans"""

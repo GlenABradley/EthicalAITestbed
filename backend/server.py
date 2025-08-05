@@ -719,15 +719,68 @@ async def evaluate_text(
     try:
         logger.info(f"🎯 Starting evaluation for request {request_id}")
         
-        # Create unified evaluation context
+        # Extract and process tau_slider and scaling_type from parameters
+        parameters = request.parameters or {}
+        tau_slider = parameters.pop('tau_slider', None)
+        scaling_type = parameters.pop('scaling_type', 'exponential')
+        
+        # Apply threshold scaling if tau_slider is provided
+        if tau_slider is not None:
+            try:
+                # Get the ethical engine instance
+                ethical_engine = get_ethical_engine()
+                
+                # Calculate the threshold based on scaling type
+                if scaling_type == 'exponential':
+                    threshold = (math.exp(6 * tau_slider) - 1) / (math.exp(6) - 1) * 0.5
+                else:
+                    threshold = tau_slider * 0.5
+                
+                # Update the evaluator's parameters
+                params = {
+                    'virtue_threshold': threshold,
+                    'deontological_threshold': threshold,
+                    'consequentialist_threshold': threshold,
+                    'enable_dynamic_scaling': True,
+                    'exponential_scaling': scaling_type == 'exponential'
+                }
+                ethical_engine.update_parameters(params)
+                
+                logger.info(f"Applied threshold scaling - Slider: {tau_slider}, "
+                          f"Type: {scaling_type}, Threshold: {threshold:.4f}")
+                
+            except Exception as e:
+                logger.error(f"Failed to apply threshold scaling: {str(e)}")
+                # Continue with default thresholds if scaling fails
+        
+        # Create evaluation context with processed parameters
+        # Build metadata with all parameters and settings
+        metadata = {
+            "mode": request.mode,
+            "priority": request.priority,
+            **request.context,
+            "tau_slider": tau_slider,
+            "scaling_type": scaling_type,
+            # Include parameters in metadata
+            **parameters
+        }
+        
+        # Add client_info if it exists in the request
+        if hasattr(request, 'client_info') and request.client_info:
+            metadata["client_info"] = request.client_info
+            
+        # Create context with required parameters
         context = UnifiedEthicalContext(
             request_id=request_id,
-            mode=EthicalAIMode(request.mode),
-            priority=ProcessingPriority(request.priority),
             domain=request.context.get("domain", "general"),
             cultural_context=request.context.get("cultural_context", "western"),
-            metadata=request.context
+            metadata=metadata
         )
+        
+        # Set text content in metadata since UnifiedEthicalContext doesn't have a text parameter
+        metadata["text"] = request.text
+        
+        logger.info(f"Processing evaluation with tau_slider={tau_slider}, scaling_type={scaling_type}")
         
         # Perform unified evaluation
         result = await orchestrator.evaluate_content(request.text, context)
@@ -743,16 +796,15 @@ async def evaluate_text(
         try:
             logger.info("🚀 Initializing FULL ethical analysis engine for local hardware")
             
-            # Use the complete ethical evaluator with full embeddings and analysis
-            from ethical_engine import EthicalEvaluator
-            
-            # Initialize or get cached engine
-            ethical_engine = get_cached_ethical_engine()
+            # Use the same evaluator instance that was updated by threshold scaling
+            ethical_engine = get_ethical_engine()
             
             logger.info(f"🧠 Running comprehensive ethical analysis on {len(request.text)} characters")
-            logger.info("📊 Full sentence transformers, embeddings, and graph attention enabled")
+            logger.info(f"📊 Using thresholds - Virtue: {getattr(ethical_engine, 'virtue_threshold', 'default')}, "
+                      f"Deontological: {getattr(ethical_engine, 'deontological_threshold', 'default')}, "
+                      f"Consequentialist: {getattr(ethical_engine, 'consequentialist_threshold', 'default')}")
             
-            # Run FULL ethical evaluation - no timeouts, no shortcuts
+            # Run ethical evaluation with current thresholds
             core_eval = ethical_engine.evaluate_text(request.text)
             
             logger.info(f"✅ Full ethical analysis complete with {len(getattr(core_eval, 'spans', []))} spans")
@@ -764,7 +816,8 @@ async def evaluate_text(
             
             try:
                 from ethical_engine import EthicalEvaluator
-                direct_engine = EthicalEvaluator()
+                # Use the global evaluator instance that has the updated thresholds
+                direct_engine = get_ethical_engine()
                 core_eval = direct_engine.evaluate_text(request.text)
                 logger.info(f"✅ Direct engine analysis complete with {len(getattr(core_eval, 'spans', []))} spans")
             except Exception as e2:

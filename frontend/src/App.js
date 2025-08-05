@@ -99,7 +99,13 @@ function App() {
       },
       body: JSON.stringify({
         text: inputText,
-        parameters: parameters || {}
+        parameters: {
+          ...(parameters || {}),
+          // Include the tau slider value in the parameters
+          tau_slider: thresholdScaling.sliderValue,
+          // Include the scaling type (exponential/linear)
+          scaling_type: thresholdScaling.scalingType
+        }
       })
     })
     .then(response => {
@@ -291,6 +297,10 @@ function App() {
       setHeatMapLoading(false);
     }
   };
+  
+  // Ref to track the last evaluation time to prevent rapid re-evaluations
+  const lastEvaluationTimeRef = React.useRef(0);
+  const EVALUATION_COOLDOWN = 1000; // 1 second cooldown between evaluations
 
   /**
    * Updates the threshold scaling values and triggers a re-evaluation if needed
@@ -299,6 +309,21 @@ function App() {
    */
   const updateThresholdScaling = async (newValue, triggerEvaluation = true) => {
     try {
+      // Prevent unnecessary updates if the value hasn't changed
+      if (Math.abs(thresholdScaling.sliderValue - newValue) < 0.001) {
+        return;
+      }
+
+      // Prevent rapid updates
+      const now = Date.now();
+      if (now - lastEvaluationTimeRef.current < EVALUATION_COOLDOWN) {
+        console.log('Skipping rapid threshold update');
+        return;
+      }
+      lastEvaluationTimeRef.current = now;
+
+      console.log('Updating threshold scaling to:', newValue);
+      
       // Update local state optimistically
       setThresholdScaling(prev => ({
         ...prev,
@@ -307,28 +332,40 @@ function App() {
         error: null
       }));
 
-      // Send update to backend
-      const response = await axios.post(`${API}/threshold-scaling`, {
-        slider_value: newValue,
-        use_exponential: thresholdScaling.scalingType === 'exponential'
-      });
+      try {
+        // Send update to backend
+        const response = await axios.post(`${API}/threshold-scaling`, {
+          slider_value: newValue,
+          use_exponential: thresholdScaling.scalingType === 'exponential'
+        });
 
-      // Update state with response
-      setThresholdScaling(prev => ({
-        ...prev,
-        isUpdating: false,
-        lastUpdate: new Date().toISOString(),
-        error: null
-      }));
+        // Update state with response
+        setThresholdScaling(prev => ({
+          ...prev,
+          isUpdating: false,
+          lastUpdate: new Date().toISOString(),
+          error: null
+        }));
 
-      console.log('Threshold scaling updated:', response.data);
-      
-      // If we have an evaluation result and we should trigger a re-evaluation
-      if (evaluationResult && triggerEvaluation) {
-        await evaluateText();
+        console.log('Threshold scaling updated:', response.data);
+        
+        // If we have an evaluation result and we should trigger a re-evaluation
+        if (evaluationResult && triggerEvaluation && inputText.trim()) {
+          console.log('Triggering re-evaluation with new threshold');
+          await handleEvaluate();
+        }
+        
+        return response.data;
+      } catch (error) {
+        // If there's an error, reset the slider to the last good value
+        setThresholdScaling(prev => ({
+          ...prev,
+          sliderValue: thresholdScaling.sliderValue,
+          isUpdating: false,
+          error: error.message
+        }));
+        throw error;
       }
-      
-      return response.data;
     } catch (error) {
       console.error('Error updating threshold scaling:', error);
       const errorMsg = error.response?.data?.detail || error.message || 'Failed to update threshold';
