@@ -1158,6 +1158,24 @@ class EthicalParameters:
     auto_purpose_inference: bool = True          # Automatically infer user purpose from context
     purpose_weight_adaptation: bool = False      # Adapt evaluation weights based on inferred purpose
     
+    def __post_init__(self):
+        """Validate parameters after initialization"""
+        # Validate threshold values
+        if self.virtue_threshold < 0 or self.deontological_threshold < 0 or self.consequentialist_threshold < 0:
+            raise ValueError("All threshold values must be non-negative")
+        
+        # Validate max_span_length
+        if self.max_span_length <= 0:
+            raise ValueError("max_span_length must be a positive integer")
+            
+        # Validate min_span_length
+        if self.min_span_length <= 0:
+            raise ValueError("min_span_length must be a positive integer")
+            
+        # Ensure max_span_length >= min_span_length
+        if self.max_span_length < self.min_span_length:
+            raise ValueError("max_span_length must be greater than or equal to min_span_length")
+    
     def to_dict(self) -> Dict[str, Any]:
         """Convert parameters to dictionary for API responses"""
         return {
