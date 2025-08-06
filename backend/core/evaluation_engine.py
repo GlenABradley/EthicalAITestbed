@@ -39,14 +39,18 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as ConcurrentTimeoutError
 
 # Import our optimization modules
-from core.embedding_service import EmbeddingService, global_embedding_service
-from utils.caching_manager import CacheManager, global_cache_manager
+from backend.core.embedding_service import EmbeddingService, global_embedding_service
+from backend.utils.caching_manager import CacheManager, global_cache_manager
 
-# Import original components (we'll gradually replace these)
-from ethical_engine import (
-    EthicalParameters, EthicalEvaluation, EthicalSpan,
-    DynamicScalingResult, LearningLayer
-)
+# Import components from modular structure
+from backend.core.domain.value_objects.ethical_parameters import EthicalParameters
+from backend.core.domain.entities.ethical_evaluation import EthicalEvaluation, DynamicScalingResult
+from backend.core.domain.entities.ethical_span import EthicalSpan
+
+# TODO: Update LearningLayer import once it's migrated to the new structure
+class LearningLayer:
+    """Temporary placeholder for LearningLayer until it's migrated"""
+    pass
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -318,18 +322,55 @@ class OptimizedEvaluationEngine:
             # Tokenize text efficiently
             tokens = text.split()  # Simple tokenization for now
             
-            # Create spans for analysis (optimized)
+            # Create spans for analysis (optimized) - always create spans for all text content
             spans = self._create_optimized_spans(text, tokens, embedding)
             
-            # Compute ethical scores for each span
+            # Debug span creation
+            logger.debug(f"Created {len(spans)} initial spans for analysis")
+            
+            # Extract ethical parameters from the provided parameters dict
+            # Default values if not provided
+            virtue_threshold = parameters.get('virtue_threshold', 0.15)
+            deontological_threshold = parameters.get('deontological_threshold', 0.15)
+            consequentialist_threshold = parameters.get('consequentialist_threshold', 0.15)
+            
+            virtue_weight = parameters.get('virtue_weight', 1.0)
+            deontological_weight = parameters.get('deontological_weight', 1.0)
+            consequentialist_weight = parameters.get('consequentialist_weight', 1.0)
+            
+            # Global violation threshold (eventually make configurable)
+            violation_threshold = parameters.get('violation_threshold', 0.7)
+            
+            # Compute ethical scores for each span - ensure all spans are scored and returned
             evaluated_spans = []
-            for span in spans:
-                span_scores = self._compute_span_scores(span, embedding)
+            for i, span in enumerate(spans):
+                # Debug per-span tau scalar application
+                if i == 0:  # Only log first span for brevity
+                    logger.debug(f"Applying tau scalars: V={virtue_threshold}, D={deontological_threshold}, C={consequentialist_threshold} with violation threshold {violation_threshold}")
+                
+                span_scores = self._compute_span_scores(
+                    span, 
+                    embedding, 
+                    virtue_threshold, 
+                    deontological_threshold,
+                    consequentialist_threshold,
+                    virtue_weight,
+                    deontological_weight,
+                    consequentialist_weight,
+                    violation_threshold
+                )
                 evaluated_spans.append(span_scores)
+                
+                # Debug the scores for the first span
+                if i == 0:  # Only log first span for brevity
+                    logger.debug(f"Span scores: V={span_scores.virtue_score:.4f}, D={span_scores.deontological_score:.4f}, C={span_scores.consequentialist_score:.4f}, violations: V={span_scores.virtue_violation}, D={span_scores.deontological_violation}, C={span_scores.consequentialist_violation}")
             
             # Determine violations and overall ethical status
             violations = [span for span in evaluated_spans if span.has_violation()]
             overall_ethical = len(violations) == 0
+            
+            # Debug - confirm spans are being returned
+            logger.debug(f"Returning {len(evaluated_spans)} total spans, of which {len(violations)} are violations")
             
             return {
                 "spans": evaluated_spans,
@@ -341,6 +382,9 @@ class OptimizedEvaluationEngine:
             
         except Exception as e:
             logger.error(f"Error in core ethics computation: {e}")
+            # Add stack trace for debugging
+            import traceback
+            logger.error(f"Stack trace: {traceback.format_exc()}")
             return {
                 "spans": [],
                 "violations": [],
@@ -357,18 +401,28 @@ class OptimizedEvaluationEngine:
         This implementation creates spans for each token in the input text,
         ensuring that we always have spans to work with for ethical evaluation.
         """
+        # ====== DEBUG: SPAN CREATION TRACKING ======
+        # These debug statements track span creation throughout the pipeline
+        # This section can be easily removed or commented out when not needed
+        logger.info(f"DEBUG_SPANS: === CREATING SPANS FOR TEXT (length={len(text)}) ===")
+        logger.info(f"DEBUG_SPANS: Input has {len(tokens)} tokens for span creation")
         spans = []
         current_pos = 0
         
         # Simple token-based span creation
+        token_count = 0
+        skipped_count = 0
         for token in tokens:
             if not token.strip():
+                skipped_count += 1
                 continue
                 
             # Find the token in the text starting from current_pos
             start = text.find(token, current_pos)
             if start == -1:
                 # If we can't find the token, skip it
+                skipped_count += 1
+                logger.info(f"DEBUG_SPANS: Could not find token '{token}' in text, skipping")
                 continue
                 
             end = start + len(token)
@@ -382,13 +436,20 @@ class OptimizedEvaluationEngine:
                 virtue_score=0.0,
                 deontological_score=0.0,
                 consequentialist_score=0.0,
+                combined_score=0.0,  # Required field
+                is_violation=False,  # Required field
                 virtue_violation=False,
                 deontological_violation=False,
                 consequentialist_violation=False,
                 is_minimal=True
             )
             spans.append(span)
+            token_count += 1
             
+            # Log first few spans for debugging
+            if len(spans) <= 3:
+                logger.info(f"DEBUG_SPANS: Created span #{len(spans)}: '{token}' at positions {start}-{end}")
+                
             # Update current position to avoid searching the same text again
             current_pos = end
         
@@ -402,6 +463,8 @@ class OptimizedEvaluationEngine:
                 virtue_score=0.0,
                 deontological_score=0.0,
                 consequentialist_score=0.0,
+                combined_score=0.0,  # Required field
+                is_violation=False,  # Required field
                 virtue_violation=False,
                 deontological_violation=False,
                 consequentialist_violation=False,
@@ -409,9 +472,17 @@ class OptimizedEvaluationEngine:
             )
             spans.append(span)
             
+        logger.info(f"DEBUG_SPANS: FINAL SPAN COUNT: {len(spans)} spans created ({token_count} from tokens, {skipped_count} tokens skipped)")
         return spans
     
-    def _compute_span_scores(self, span: EthicalSpan, context_embedding: np.ndarray) -> EthicalSpan:
+    def _compute_span_scores(self, span: EthicalSpan, context_embedding: np.ndarray,
+                        virtue_threshold: float = 0.15, 
+                        deontological_threshold: float = 0.15,
+                        consequentialist_threshold: float = 0.15,
+                        virtue_weight: float = 1.0,
+                        deontological_weight: float = 1.0,
+                        consequentialist_weight: float = 1.0,
+                        violation_threshold: float = 0.7) -> EthicalSpan:
         """
         Compute ethical scores for a text span using optimized algorithms.
         
@@ -423,47 +494,295 @@ class OptimizedEvaluationEngine:
         - 0.0 = Very ethical
         - 0.5 = Neutral
         - 1.0 = Very unethical
+        
+        The tau scalars (thresholds) control contrast/resolution on each axis,
+        while the weights control the importance of each ethical dimension.
+        The violation_threshold is a separate global setting that determines
+        when a score is high enough to be considered a violation.
         """
         try:
-            # Simple heuristic: look for potentially problematic terms
-            problematic_terms = [
-                'harm', 'danger', 'dangerous', 'illegal', 'unethical', 'wrong',
-                'steal', 'cheat', 'lie', 'hurt', 'kill', 'attack', 'threat',
-                'hate', 'discriminate', 'bias', 'unfair', 'exploit', 'abuse'
-            ]
+            # Framework-specific ethical evaluation
+            # Each ethical framework evaluates text from a different perspective
             
             # Convert text to lowercase for case-insensitive matching
             text_lower = span.text.lower()
             
-            # Calculate base scores (0.0-1.0)
-            virtue_score = 0.5  # Neutral by default
+            # VIRTUE ETHICS: Focus on character traits, virtues, and moral character
+            virtue_positive_terms = [
+                # Core virtues
+                'honest', 'integrity', 'courage', 'compassion', 'wisdom', 'justice',
+                'temperance', 'fortitude', 'prudence', 'kindness', 'generous', 'noble',
+                'virtuous', 'ethical', 'moral', 'good', 'righteous', 'honorable',
+                # Character traits
+                'authentic', 'sincere', 'truthful', 'trustworthy', 'reliable', 'loyal',
+                'faithful', 'devoted', 'dedicated', 'committed', 'responsible', 'accountable',
+                'humble', 'modest', 'patient', 'tolerant', 'understanding', 'empathetic',
+                'caring', 'loving', 'gentle', 'peaceful', 'calm', 'serene',
+                # Excellence and flourishing
+                'excellent', 'exemplary', 'admirable', 'praiseworthy', 'commendable',
+                'inspiring', 'uplifting', 'encouraging', 'supportive', 'nurturing',
+                'flourishing', 'thriving', 'growing', 'developing', 'improving',
+                # Professional virtues
+                'professional', 'competent', 'skilled', 'diligent', 'conscientious',
+                'thorough', 'careful', 'meticulous', 'precise', 'accurate',
+                # Social virtues
+                'respectful', 'courteous', 'polite', 'civil', 'diplomatic',
+                'cooperative', 'collaborative', 'inclusive', 'welcoming', 'accepting'
+            ]
+            virtue_negative_terms = [
+                # Core vices
+                'dishonest', 'corrupt', 'coward', 'cruel', 'foolish', 'unjust',
+                'greedy', 'selfish', 'vicious', 'immoral', 'evil', 'dishonorable',
+                'deceitful', 'malicious', 'vindictive', 'petty', 'spiteful',
+                # Character flaws
+                'arrogant', 'prideful', 'boastful', 'conceited', 'narcissistic',
+                'envious', 'jealous', 'resentful', 'bitter', 'hateful', 'vengeful',
+                'lazy', 'slothful', 'negligent', 'careless', 'reckless', 'irresponsible',
+                'unreliable', 'untrustworthy', 'disloyal', 'unfaithful', 'treacherous',
+                # Destructive traits
+                'aggressive', 'violent', 'abusive', 'bullying', 'intimidating',
+                'manipulative', 'exploitative', 'predatory', 'parasitic',
+                'destructive', 'harmful', 'toxic', 'poisonous', 'corrupting',
+                # Professional vices
+                'incompetent', 'unprofessional', 'sloppy', 'careless', 'negligent',
+                'fraudulent', 'deceptive', 'misleading', 'false', 'lying',
+                # Social vices
+                'disrespectful', 'rude', 'insulting', 'offensive', 'discriminatory',
+                'prejudiced', 'biased', 'bigoted', 'intolerant', 'exclusionary'
+            ]
+            
+            # DEONTOLOGICAL ETHICS: Focus on rules, duties, rights, and obligations
+            deontological_positive_terms = [
+                # Core deontological concepts
+                'duty', 'obligation', 'rights', 'law', 'rule', 'principle', 'respect',
+                'consent', 'autonomy', 'dignity', 'fairness', 'justice', 'legal',
+                'legitimate', 'authorized', 'permitted', 'proper', 'appropriate',
+                # Rights and freedoms
+                'freedom', 'liberty', 'privacy', 'confidentiality', 'security',
+                'protection', 'safety', 'welfare', 'wellbeing', 'rights',
+                'entitlement', 'privilege', 'immunity', 'guarantee', 'assurance',
+                # Legal and procedural
+                'lawful', 'constitutional', 'statutory', 'regulatory', 'compliant',
+                'procedural', 'formal', 'official', 'certified', 'validated',
+                'approved', 'sanctioned', 'endorsed', 'ratified', 'confirmed',
+                # Moral imperatives
+                'imperative', 'categorical', 'universal', 'absolute', 'unconditional',
+                'mandatory', 'required', 'necessary', 'essential', 'fundamental',
+                'inalienable', 'inviolable', 'sacred', 'protected', 'guaranteed',
+                # Professional duties
+                'professional', 'ethical', 'responsible', 'accountable', 'transparent',
+                'honest', 'truthful', 'accurate', 'complete', 'thorough',
+                # Procedural justice
+                'fair', 'impartial', 'neutral', 'objective', 'unbiased',
+                'equitable', 'equal', 'consistent', 'uniform', 'standardized'
+            ]
+            deontological_negative_terms = [
+                # Legal violations
+                'illegal', 'unlawful', 'forbidden', 'prohibited', 'unauthorized',
+                'violation', 'breach', 'transgression', 'wrong', 'improper',
+                'inappropriate', 'disrespectful', 'coercive', 'manipulative',
+                # Rights violations
+                'abuse', 'exploitation', 'oppression', 'discrimination', 'harassment',
+                'intimidation', 'coercion', 'force', 'violence', 'assault',
+                'invasion', 'intrusion', 'trespass', 'theft', 'fraud',
+                # Procedural violations
+                'arbitrary', 'capricious', 'unfair', 'biased', 'prejudiced',
+                'discriminatory', 'partial', 'subjective', 'inconsistent', 'irregular',
+                'unauthorized', 'illegitimate', 'invalid', 'null', 'void',
+                # Professional misconduct
+                'malpractice', 'negligence', 'incompetence', 'misconduct', 'corruption',
+                'bribery', 'kickback', 'conflict', 'breach', 'violation',
+                'deception', 'misrepresentation', 'falsification', 'forgery', 'perjury',
+                # Moral violations
+                'immoral', 'unethical', 'wrong', 'evil', 'wicked',
+                'sinful', 'corrupt', 'depraved', 'perverted', 'twisted',
+                # Consent violations
+                'nonconsensual', 'involuntary', 'forced', 'coerced', 'pressured',
+                'manipulated', 'deceived', 'tricked', 'misled', 'exploited'
+            ]
+            
+            # CONSEQUENTIALIST ETHICS: Focus on outcomes, consequences, and utility
+            consequentialist_positive_terms = [
+                # Core positive outcomes
+                'benefit', 'help', 'improve', 'enhance', 'positive', 'constructive',
+                'useful', 'valuable', 'effective', 'successful', 'productive',
+                'advantageous', 'beneficial', 'helpful', 'supportive', 'healing',
+                # Utility and welfare
+                'utility', 'welfare', 'wellbeing', 'happiness', 'satisfaction',
+                'pleasure', 'joy', 'fulfillment', 'prosperity', 'flourishing',
+                'progress', 'advancement', 'development', 'growth', 'improvement',
+                # Efficiency and optimization
+                'efficient', 'optimal', 'maximized', 'optimized', 'streamlined',
+                'cost-effective', 'economical', 'practical', 'pragmatic', 'rational',
+                'logical', 'reasonable', 'sensible', 'wise', 'smart',
+                # Social good
+                'collective', 'community', 'society', 'public', 'common',
+                'shared', 'universal', 'widespread', 'broad', 'inclusive',
+                'equitable', 'fair', 'just', 'balanced', 'proportionate',
+                # Prevention and protection
+                'prevent', 'protect', 'safeguard', 'secure', 'shield',
+                'defend', 'preserve', 'maintain', 'sustain', 'conserve',
+                'save', 'rescue', 'recover', 'restore', 'repair',
+                # Innovation and solutions
+                'innovative', 'creative', 'solution', 'breakthrough', 'discovery',
+                'invention', 'advancement', 'revolutionary', 'transformative', 'game-changing'
+            ]
+            consequentialist_negative_terms = [
+                # Core negative outcomes
+                'harm', 'damage', 'hurt', 'injure', 'destroy', 'ruin', 'negative',
+                'destructive', 'dangerous', 'risky', 'threat', 'attack', 'abuse',
+                'exploit', 'suffer', 'pain', 'loss', 'waste', 'ineffective',
+                # Suffering and distress
+                'suffering', 'distress', 'anguish', 'agony', 'torment', 'torture',
+                'misery', 'unhappiness', 'sadness', 'depression', 'despair',
+                'trauma', 'grief', 'sorrow', 'regret', 'disappointment',
+                # Inefficiency and waste
+                'inefficient', 'wasteful', 'costly', 'expensive', 'burdensome',
+                'counterproductive', 'futile', 'useless', 'pointless', 'meaningless',
+                'irrational', 'illogical', 'unreasonable', 'foolish', 'stupid',
+                # Social harm
+                'inequality', 'injustice', 'unfairness', 'discrimination', 'oppression',
+                'exploitation', 'marginalization', 'exclusion', 'segregation', 'isolation',
+                'division', 'conflict', 'tension', 'discord', 'strife',
+                # Systemic problems
+                'corruption', 'fraud', 'scandal', 'crisis', 'disaster',
+                'catastrophe', 'emergency', 'breakdown', 'failure', 'collapse',
+                'decline', 'deterioration', 'degradation', 'erosion', 'decay',
+                # Risk and uncertainty
+                'risk', 'danger', 'hazard', 'peril', 'jeopardy',
+                'vulnerability', 'exposure', 'liability', 'uncertainty', 'instability',
+                'unpredictable', 'volatile', 'chaotic', 'turbulent', 'disruptive'
+            ]
+            
+            # Calculate framework-specific scores (0.0-1.0)
+            virtue_score = 0.5  # Start neutral
             deontological_score = 0.5
             consequentialist_score = 0.5
             
-            # Check for problematic terms
-            for term in problematic_terms:
-                if term in text_lower:
-                    # Increase scores if problematic term is found
-                    virtue_score = min(1.0, virtue_score + 0.3)
-                    deontological_score = min(1.0, deontological_score + 0.3)
-                    consequentialist_score = min(1.0, consequentialist_score + 0.3)
+            # VIRTUE ETHICS SCORING - Enhanced sensitivity
+            virtue_positive_count = sum(1 for term in virtue_positive_terms if term in text_lower)
+            virtue_negative_count = sum(1 for term in virtue_negative_terms if term in text_lower)
             
-            # Check for negation (e.g., "not harmful")
+            # More aggressive scoring for virtue ethics (character-focused)
+            if virtue_positive_count > 0:
+                virtue_adjustment = min(0.4, 0.15 * virtue_positive_count)  # Cap at 0.4 adjustment
+                virtue_score = max(0.0, virtue_score - virtue_adjustment)  # Lower score = more ethical
+            if virtue_negative_count > 0:
+                virtue_adjustment = min(0.5, 0.25 * virtue_negative_count)  # Cap at 0.5 adjustment
+                virtue_score = min(1.0, virtue_score + virtue_adjustment)  # Higher score = less ethical
+            
+            # DEONTOLOGICAL ETHICS SCORING - Enhanced sensitivity
+            deont_positive_count = sum(1 for term in deontological_positive_terms if term in text_lower)
+            deont_negative_count = sum(1 for term in deontological_negative_terms if term in text_lower)
+            
+            # More aggressive scoring for deontological ethics (rule/duty-focused)
+            if deont_positive_count > 0:
+                deont_adjustment = min(0.4, 0.15 * deont_positive_count)  # Cap at 0.4 adjustment
+                deontological_score = max(0.0, deontological_score - deont_adjustment)
+            if deont_negative_count > 0:
+                deont_adjustment = min(0.5, 0.25 * deont_negative_count)  # Cap at 0.5 adjustment
+                deontological_score = min(1.0, deontological_score + deont_adjustment)
+            
+            # CONSEQUENTIALIST ETHICS SCORING - Enhanced sensitivity
+            conseq_positive_count = sum(1 for term in consequentialist_positive_terms if term in text_lower)
+            conseq_negative_count = sum(1 for term in consequentialist_negative_terms if term in text_lower)
+            
+            # More aggressive scoring for consequentialist ethics (outcome-focused)
+            if conseq_positive_count > 0:
+                conseq_adjustment = min(0.4, 0.15 * conseq_positive_count)  # Cap at 0.4 adjustment
+                consequentialist_score = max(0.0, consequentialist_score - conseq_adjustment)
+            if conseq_negative_count > 0:
+                conseq_adjustment = min(0.5, 0.25 * conseq_negative_count)  # Cap at 0.5 adjustment
+                consequentialist_score = min(1.0, consequentialist_score + conseq_adjustment)
+            
+            # Handle negation (affects all frameworks but may have different impacts)
             if 'not ' in text_lower or 'no ' in text_lower:
-                # Lower scores if the term is negated
-                virtue_score = max(0.0, virtue_score - 0.2)
-                deontological_score = max(0.0, deontological_score - 0.2)
-                consequentialist_score = max(0.0, consequentialist_score - 0.2)
+                # Negation reverses the polarity - reduce negative scores
+                if virtue_score > 0.5:
+                    virtue_score = max(0.3, virtue_score - 0.3)
+                if deontological_score > 0.5:
+                    deontological_score = max(0.3, deontological_score - 0.3)
+                if consequentialist_score > 0.5:
+                    consequentialist_score = max(0.3, consequentialist_score - 0.3)
+            
+            # ======== DEBUG: TAU SCALAR APPLICATION TRACKING ========
+            # These debug statements track how tau scalars are applied to ethical vectors
+            # This section can be easily removed or commented out when not needed
+            
+            logger.info(f"===== DEBUG_TAU_SCALAR: SPAN '{span.text[:20]}{'...' if len(span.text) > 20 else ''}' =====")
+            logger.info(f"DEBUG_TAU_SCALAR: BEFORE tau scaling - V={virtue_score:.4f}, D={deontological_score:.4f}, C={consequentialist_score:.4f}")
+            logger.info(f"DEBUG_TAU_SCALAR: Framework-specific evaluation - V_pos={virtue_positive_count if 'virtue_positive_count' in locals() else 0}, V_neg={virtue_negative_count if 'virtue_negative_count' in locals() else 0}, D_pos={deont_positive_count if 'deont_positive_count' in locals() else 0}, D_neg={deont_negative_count if 'deont_negative_count' in locals() else 0}, C_pos={conseq_positive_count if 'conseq_positive_count' in locals() else 0}, C_neg={conseq_negative_count if 'conseq_negative_count' in locals() else 0}")
+            logger.info(f"DEBUG_TAU_SCALAR: PARAMETERS - V_tau={virtue_threshold:.4f}, D_tau={deontological_threshold:.4f}, C_tau={consequentialist_threshold:.4f}, violation_threshold={violation_threshold:.4f}")
+            logger.info(f"DEBUG_TAU_SCALAR: WEIGHTS - V_weight={virtue_weight:.4f}, D_weight={deontological_weight:.4f}, C_weight={consequentialist_weight:.4f}")
+            
+            # Apply contrast/resolution control using the tau scalars
+            # Higher tau = more contrast, lower tau = less contrast
+            if virtue_threshold > 0:
+                # Apply contrast scaling based on tau
+                # Center at 0.5 (neutral), then apply scaling, then re-center
+                old_virtue_score = virtue_score
+                virtue_score = 0.5 + (virtue_score - 0.5) * (1.0 / virtue_threshold) * virtue_weight
+                # Clamp to valid range
+                virtue_score = max(0.0, min(1.0, virtue_score))
+                # Calculate scaling factor for clarity
+                scaling_factor = (1.0 / virtue_threshold) * virtue_weight
+                logger.info(f"DEBUG_TAU_SCALAR: VIRTUE scaling - formula: 0.5 + (score-0.5) * (1.0/tau) * weight")
+                logger.info(f"DEBUG_TAU_SCALAR: VIRTUE scaling - {old_virtue_score:.4f} -> {virtue_score:.4f} (tau={virtue_threshold:.4f}, factor={scaling_factor:.4f})")
+            
+            if deontological_threshold > 0:
+                old_deont_score = deontological_score
+                deontological_score = 0.5 + (deontological_score - 0.5) * (1.0 / deontological_threshold) * deontological_weight
+                deontological_score = max(0.0, min(1.0, deontological_score))
+                # Calculate scaling factor for clarity
+                scaling_factor = (1.0 / deontological_threshold) * deontological_weight
+                logger.info(f"DEBUG_TAU_SCALAR: DEONTOLOGICAL scaling - formula: 0.5 + (score-0.5) * (1.0/tau) * weight")
+                logger.info(f"DEBUG_TAU_SCALAR: DEONTOLOGICAL scaling - {old_deont_score:.4f} -> {deontological_score:.4f} (tau={deontological_threshold:.4f}, factor={scaling_factor:.4f})")
+            
+            if consequentialist_threshold > 0:
+                old_conseq_score = consequentialist_score
+                consequentialist_score = 0.5 + (consequentialist_score - 0.5) * (1.0 / consequentialist_threshold) * consequentialist_weight
+                consequentialist_score = max(0.0, min(1.0, consequentialist_score))
+                # Calculate scaling factor for clarity
+                scaling_factor = (1.0 / consequentialist_threshold) * consequentialist_weight
+                logger.info(f"DEBUG_TAU_SCALAR: CONSEQUENTIALIST scaling - formula: 0.5 + (score-0.5) * (1.0/tau) * weight")
+                logger.info(f"DEBUG_TAU_SCALAR: CONSEQUENTIALIST scaling - {old_conseq_score:.4f} -> {consequentialist_score:.4f} (tau={consequentialist_threshold:.4f}, factor={scaling_factor:.4f})")
             
             # Update span with calculated scores
             span.virtue_score = round(virtue_score, 2)
             span.deontological_score = round(deontological_score, 2)
             span.consequentialist_score = round(consequentialist_score, 2)
             
-            # Set violation flags based on thresholds (0.7 threshold for violation)
-            span.virtue_violation = virtue_score > 0.7
-            span.deontological_violation = deontological_score > 0.7
-            span.consequentialist_violation = consequentialist_score > 0.7
+            # Log final scores after rounding
+            logger.info(f"DEBUG_TAU_SCALAR: FINAL SCORES (after rounding) - V={span.virtue_score:.4f}, D={span.deontological_score:.4f}, C={span.consequentialist_score:.4f}")
+            
+            # Calculate combined score (required by EthicalSpan model)
+            # Simple average of the three ethical dimensions
+            combined_score = (virtue_score + deontological_score + consequentialist_score) / 3.0
+            span.combined_score = round(combined_score, 2)
+            
+            # Set violation flags based on the global violation threshold
+            span.virtue_violation = virtue_score > violation_threshold
+            span.deontological_violation = deontological_score > violation_threshold
+            span.consequentialist_violation = consequentialist_score > violation_threshold
+            
+            # Set overall violation flag (required by EthicalSpan model)
+            span.is_violation = span.virtue_violation or span.deontological_violation or span.consequentialist_violation
+            
+            # Log violation detection
+            logger.info(f"DEBUG_TAU_SCALAR: VIOLATIONS - V={span.virtue_violation}, D={span.deontological_violation}, C={span.consequentialist_violation}, any={span.is_violation}")
+            logger.info(f"DEBUG_TAU_SCALAR: VIOLATION detection used global threshold: {violation_threshold:.4f} (independent from tau scalars)")
+            
+            # Set violation_type if is_violation is True (required by validation)
+            if span.is_violation:
+                # Determine the primary violation type
+                if span.virtue_violation:
+                    span.violation_type = "virtue_ethics"
+                elif span.deontological_violation:
+                    span.violation_type = "deontological"
+                elif span.consequentialist_violation:
+                    span.violation_type = "consequentialist"
+                else:
+                    span.violation_type = "combined"  # Fallback
             
             return span
             
@@ -544,24 +863,64 @@ class OptimizedEvaluationEngine:
         await asyncio.sleep(0.1)  # Simulate processing
         return {"dominant_intent": "neutral", "confidence": 0.5}
     
-    def _combine_analysis_results(self, 
-                                text: str, 
-                                core_analysis: Dict[str, Any], 
-                                advanced_results: Dict[str, Any], 
-                                parameters: Dict[str, Any]) -> EthicalEvaluation:
+    def _combine_analysis_results(self,
+                               text: str,
+                               core_analysis: Dict[str, Any],
+                               advanced_results: Dict[str, Any],
+                               parameters: Dict[str, Any]) -> EthicalEvaluation:
         """
-        Combine all analysis results into a final evaluation.
+        Combine core analysis with advanced features into a complete evaluation.
         
-        For Novice Developers:
-        This is like writing the final report card. We take all the individual
-        grades and assessments and combine them into one comprehensive evaluation
-        that tells the complete story.
+        This is where we assemble the final EthicalEvaluation object from all the
+        individual analysis components.
         """
-        return EthicalEvaluation(
+        # ======== DEBUG: SPAN INCLUSION TRACKING ========
+        # These debug statements track how spans are included in the final evaluation
+        # This section can be easily removed or commented out when not needed
+        
+        logger.info(f"DEBUG_FINAL: === COMBINING FINAL RESULTS ====")
+        
+        # Debug what parameters are being used
+        if isinstance(parameters, dict):
+            v_tau = parameters.get('virtue_threshold', 'not found')
+            d_tau = parameters.get('deontological_threshold', 'not found')
+            c_tau = parameters.get('consequentialist_threshold', 'not found')
+            v_threshold = parameters.get('violation_threshold', 'not found')
+            logger.info(f"DEBUG_FINAL: Parameters: virtue_tau={v_tau}, deont_tau={d_tau}, conseq_tau={c_tau}, violation_threshold={v_threshold}")
+        
+        # Debug what's in core_analysis
+        spans = core_analysis.get('spans', [])
+        violations = core_analysis.get('violations', [])
+        logger.info(f"DEBUG_FINAL: Core analysis has {len(spans)} spans and {len(violations)} minimal_spans")
+        
+        # Debug some sample spans
+        if spans:
+            for i, span in enumerate(spans[:3]):  # Show first 3 spans
+                logger.info(f"DEBUG_FINAL: Sample span #{i+1}: '{span.text[:20]}{'...' if len(span.text) > 20 else ''}' with scores V={span.virtue_score}, D={span.deontological_score}, C={span.consequentialist_score}")
+                logger.info(f"DEBUG_FINAL: Sample span #{i+1}: Violations: V={span.virtue_violation}, D={span.deontological_violation}, C={span.consequentialist_violation}, is_violation={span.is_violation}")
+        else:
+            logger.warning("DEBUG_FINAL: CRITICAL WARNING - No spans found in core_analysis!")
+            
+        # Ensure we have valid span lists to work with
+        if spans is None:
+            logger.warning("DEBUG_FINAL: Core analysis returned None for spans, using empty list instead")
+            spans = []
+        if violations is None:
+            logger.warning("DEBUG_FINAL: Core analysis returned None for violations, using empty list instead")
+            violations = []
+        
+        """        
+        Combine core analysis with advanced features into a complete evaluation.
+        
+        This is where we assemble the final EthicalEvaluation object from all the
+        individual analysis components that tells the complete story.
+        """
+        # Create the final evaluation object
+        final_evaluation = EthicalEvaluation(
             input_text=text,
             tokens=text.split(),
-            spans=core_analysis.get("spans", []),
-            minimal_spans=core_analysis.get("violations", []),
+            spans=spans,  # Use the validated spans list directly
+            minimal_spans=violations,  # Use the validated violations list directly
             overall_ethical=core_analysis.get("overall_ethical", True),
             processing_time=0.0,  # Will be set by caller
             parameters=self.parameters,
@@ -570,6 +929,13 @@ class OptimizedEvaluationEngine:
             causal_analysis=advanced_results.get("graph_attention_result"),
             uncertainty_analysis=advanced_results.get("intent_classification")
         )
+        
+        # Debug what's in the final evaluation
+        logger.info(f"DEBUG_FINAL: Final evaluation created with {len(final_evaluation.spans)} spans and {len(final_evaluation.minimal_spans)} violations")
+        if not final_evaluation.spans:
+            logger.error("DEBUG_FINAL: CRITICAL ERROR - No spans in final evaluation!")
+        
+        return final_evaluation
     
     def _create_empty_evaluation(self, text: str, processing_time: float) -> EthicalEvaluation:
         """Create evaluation for empty text."""

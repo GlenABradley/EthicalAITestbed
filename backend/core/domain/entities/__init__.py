@@ -12,8 +12,8 @@ Author: AI Developer Testbed Team
 Version: 1.1.0 - Clean Architecture Implementation
 """
 
-from core.domain.entities.ethical_span import EthicalSpan
-from core.domain.entities.ethical_evaluation import EthicalEvaluation
+from backend.core.domain.entities.ethical_span import EthicalSpan
+from backend.core.domain.entities.ethical_evaluation import EthicalEvaluation
 
 __all__ = [
     'EthicalSpan',

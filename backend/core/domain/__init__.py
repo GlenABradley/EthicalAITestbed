@@ -15,7 +15,9 @@ Version: 1.1.0 - Clean Architecture Implementation
 """
 
 # Import core domain components for easy access
-from core.domain.entities import *
-from core.domain.value_objects import *
-from core.domain.aggregates import *
-from core.domain.services import *
+from backend.core.domain.entities import *
+from backend.core.domain.value_objects import *
+
+# Note: aggregates module not fully implemented yet
+# from backend.core.domain.aggregates import *
+from backend.core.domain.services import *

@@ -29,8 +29,8 @@ from datetime import datetime
 from typing import Dict, List, Optional, Any
 from pydantic import BaseModel, Field
 
-from core.domain.entities.ethical_span import EthicalSpan
-from core.domain.value_objects.ethical_parameters import EthicalParameters
+from backend.core.domain.entities.ethical_span import EthicalSpan
+from backend.core.domain.value_objects.ethical_parameters import EthicalParameters
 
 class DynamicScalingResult(BaseModel):
     """Results of dynamic threshold scaling"""

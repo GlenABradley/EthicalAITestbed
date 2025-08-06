@@ -11,7 +11,7 @@ Author: AI Developer Testbed Team
 Version: 1.1.0 - Clean Architecture Implementation
 """
 
-from core.domain.value_objects.ethical_parameters import EthicalParameters
+from backend.core.domain.value_objects.ethical_parameters import EthicalParameters
 
 __all__ = [
     'EthicalParameters'
