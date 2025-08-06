@@ -43,9 +43,10 @@ import re
 import time
 import torch
 import torch.nn as nn
-from typing import List, Dict, Tuple, Optional, Any
+from typing import List, Dict, Tuple, Optional, Any, Union
 from dataclasses import dataclass, field
 from datetime import datetime
+from pydantic import BaseModel, Field, field_validator, model_validator
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 import logging
@@ -577,33 +578,26 @@ class UncertaintyAnalyzer:
         self.dropout_rate = 0.15       # Dropout rate for variance generation
         self.uncertainty_threshold = 0.25  # Variance threshold for human routing
         
-    def bootstrap_evaluation(self, text: str, n_samples: int = None, _recursion_guard: bool = False):
+    def bootstrap_evaluation(self, text: str, n_samples: int = None) -> List[Dict[str, float]]:
         """
         Perform bootstrap evaluation with dropout to generate variance estimates.
         
         Args:
             text: Input text to evaluate
             n_samples: Number of bootstrap samples (default: self.n_bootstrap_samples)
-            _recursion_guard: Internal flag to prevent recursive calls (do not set manually)
             
         Returns:
             List of evaluation results from bootstrap samples
         """
-        # Prevent recursive calls to avoid infinite loops
-        if _recursion_guard or not self.evaluator.parameters.enable_uncertainty_analysis:
-            return []
-            
         n_samples = n_samples or self.n_bootstrap_samples
         bootstrap_results = []
         
-        # Store original settings
+        # Store original parameters
         original_causal_setting = self.evaluator.parameters.enable_causal_analysis
-        original_uncertainty_setting = self.evaluator.parameters.enable_uncertainty_analysis
         
         try:
-            # Disable analysis features that could cause recursion during bootstrap
+            # Disable causal analysis for bootstrap to prevent recursion and speed up
             self.evaluator.parameters.enable_causal_analysis = False
-            self.evaluator.parameters.enable_uncertainty_analysis = False
             
             for i in range(n_samples):
                 # Add controlled randomness via threshold perturbation
@@ -627,8 +621,8 @@ class UncertaintyAnalyzer:
                 self.evaluator.parameters.deontological_threshold = perturbed_params['deontological_threshold']
                 self.evaluator.parameters.consequentialist_threshold = perturbed_params['consequentialist_threshold']
                 
-                # Evaluate with perturbed parameters and recursion guard
-                eval_result = self.evaluator.evaluate_text(text, _skip_uncertainty_analysis=True)
+                # Evaluate with perturbed parameters
+                eval_result = self.evaluator.evaluate_text(text)
                 
                 # Restore original thresholds
                 self.evaluator.parameters.virtue_threshold = orig_virtue
@@ -636,28 +630,22 @@ class UncertaintyAnalyzer:
                 self.evaluator.parameters.consequentialist_threshold = orig_conseq
                 
                 # Extract key metrics
-                if eval_result and hasattr(eval_result, 'spans'):
-                    bootstrap_sample = {
-                        'overall_ethical': getattr(eval_result, 'overall_ethical', True),
-                        'violation_count': getattr(eval_result, 'violation_count', 0),
-                        'processing_time': getattr(eval_result, 'processing_time', 0.0),
-                        'max_virtue_score': max([s.virtue_score for s in eval_result.spans], default=0.0),
-                        'max_deonto_score': max([s.deontological_score for s in eval_result.spans], default=0.0),
-                        'max_conseq_score': max([s.consequentialist_score for s in eval_result.spans], default=0.0),
-                        'bootstrap_index': i,
-                        'threshold_perturbation': perturbation
-                    }
-                    
-                    bootstrap_results.append(bootstrap_sample)
+                bootstrap_sample = {
+                    'overall_ethical': eval_result.overall_ethical,
+                    'violation_count': eval_result.violation_count,
+                    'processing_time': eval_result.processing_time,
+                    'max_virtue_score': max([s.virtue_score for s in eval_result.spans], default=0.0),
+                    'max_deonto_score': max([s.deontological_score for s in eval_result.spans], default=0.0),
+                    'max_conseq_score': max([s.consequentialist_score for s in eval_result.spans], default=0.0),
+                    'bootstrap_index': i,
+                    'threshold_perturbation': perturbation
+                }
                 
-        except Exception as e:
-            logger.error(f"Error during bootstrap evaluation: {str(e)}")
-            # Return partial results if any
+                bootstrap_results.append(bootstrap_sample)
                 
         finally:
-            # Restore original settings
+            # Restore causal analysis setting
             self.evaluator.parameters.enable_causal_analysis = original_causal_setting
-            self.evaluator.parameters.enable_uncertainty_analysis = original_uncertainty_setting
         
         return bootstrap_results
     
@@ -1090,8 +1078,7 @@ class LearningEntry:
             'created_at': self.created_at
         }
 
-@dataclass
-class DynamicScalingResult:
+class DynamicScalingResult(BaseModel):
     """Result of dynamic scaling process"""
     used_dynamic_scaling: bool
     used_cascade_filtering: bool
@@ -1101,161 +1088,323 @@ class DynamicScalingResult:
     processing_stages: List[str]
     cascade_result: Optional[str] = None  # "ethical", "unethical", or None
 
-@dataclass
-class EthicalParameters:
+class EthicalParameters(BaseModel):
     """Configuration parameters for ethical evaluation"""
     # Thresholds for each perspective (τ_P) - Optimized for granular sensitivity
-    virtue_threshold: float = 0.15  # Fine-tuned for better granularity
-    deontological_threshold: float = 0.15  # Fine-tuned for better granularity
-    consequentialist_threshold: float = 0.15  # Fine-tuned for better granularity
+    virtue_threshold: float = Field(default=0.15, description="Virtue ethics threshold (0-1)")
+    deontological_threshold: float = Field(default=0.15, description="Deontological ethics threshold (0-1)")
+    consequentialist_threshold: float = Field(default=0.15, description="Consequentialist ethics threshold (0-1)")
     
     # Vector magnitudes for ethical axes
-    virtue_weight: float = 1.0
-    deontological_weight: float = 1.0
-    consequentialist_weight: float = 1.0
+    virtue_weight: float = Field(default=1.0, description="Weight for virtue ethics")
+    deontological_weight: float = Field(default=1.0, description="Weight for deontological ethics")
+    consequentialist_weight: float = Field(default=1.0, description="Weight for consequentialist ethics")
     
     # Span detection parameters (optimized for performance)
-    max_span_length: int = 5  # Reduced from 10 for better performance
-    min_span_length: int = 1
+    max_span_length: int = Field(default=5, gt=0, description="Maximum token span length to evaluate")
+    min_span_length: int = Field(default=1, gt=0, description="Minimum token span length to evaluate")
     
     # Model parameters - v1.1 UPGRADE: Keep proven MiniLM but add graph attention
-    embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+    embedding_model: str = Field(
+        default="sentence-transformers/all-MiniLM-L6-v2",
+        description="Sentence transformer model to use for embeddings"
+    )
     
     # Dynamic scaling parameters
-    enable_dynamic_scaling: bool = False
-    enable_cascade_filtering: bool = False
-    enable_learning_mode: bool = False
-    exponential_scaling: bool = True
+    enable_dynamic_scaling: bool = Field(default=False, description="Enable dynamic threshold scaling")
+    enable_cascade_filtering: bool = Field(default=False, description="Enable cascade filtering")
+    enable_learning_mode: bool = Field(default=False, description="Enable learning from feedback")
+    exponential_scaling: bool = Field(default=True, description="Use exponential scaling for thresholds")
     
     # Cascade filtering thresholds - fine-tuned for better accuracy
-    cascade_high_threshold: float = 0.25  # Adjusted for better granular range
-    cascade_low_threshold: float = 0.08   # Lower for more granular detection
+    cascade_high_threshold: float = Field(
+        default=0.25,
+        ge=0.0,
+        le=1.0,
+        description="High threshold for cascade filtering (0-1)"
+    )
+    cascade_low_threshold: float = Field(
+        default=0.08,
+        ge=0.0,
+        le=1.0,
+        description="Low threshold for cascade filtering (0-1)"
+    )
     
     # Learning parameters
     learning_weight: float = 0.3
     min_learning_samples: int = 5
     
     # v1.1 UPGRADE: Graph Attention Parameters for Distributed Pattern Detection
-    enable_graph_attention: bool = True  # Enable graph attention for cross-span analysis
-    graph_decay_lambda: float = 5.0      # Distance decay parameter (λ)
-    graph_similarity_threshold: float = 0.1  # Minimum similarity for graph edges
-    graph_attention_heads: int = 4       # Number of attention heads in GAT layer
+    enable_graph_attention: bool = Field(
+        default=True,
+        description="Enable Graph Attention Network for distributed patterns"
+    )
+    graph_decay_lambda: float = Field(
+        default=5.0,
+        description="Decay factor for graph attention distance weighting",
+        gt=0.0
+    )
+    graph_similarity_threshold: float = Field(
+        default=0.1,
+        description="Minimum similarity for graph edges (0-1)",
+        ge=0.0,
+        le=1.0
+    )
+    graph_attention_heads: int = Field(
+        default=4,
+        description="Number of attention heads in graph attention layer",
+        gt=0
+    )
     
-    # v1.1 UPGRADE: Intent Hierarchy Parameters for Structured Harm Classification
-    enable_intent_hierarchy: bool = True  # Enable hierarchical intent classification
-    intent_threshold: float = 0.6        # Confidence threshold for intent detection
-    intent_categories: List[str] = field(default_factory=lambda: [
-        "fraud", "manipulation", "coercion", "deception", 
-        "harassment", "discrimination", "violence", "exploitation"
-    ])
-    enable_contrastive_learning: bool = False  # Enable contrastive learning mode
+    # v1.1 UPGRADE: Intent Hierarchy parameters
+    enable_intent_hierarchy: bool = Field(
+        default=True,
+        description="Enable intent hierarchy for harm classification"
+    )
+    intent_threshold: float = Field(
+        default=0.6,
+        description="Confidence threshold for intent classification (0-1)",
+        ge=0.0,
+        le=1.0
+    )
+    intent_categories: List[str] = Field(
+        default_factory=lambda: [
+            "fraud", "manipulation", "coercion", "deception", 
+            "harassment", "discrimination", "violence", "exploitation"
+        ],
+        description="List of intent categories for harm classification"
+    )
+    enable_contrastive_learning: bool = Field(
+        default=False,
+        description="Enable contrastive learning for intent classification"
+    )
     
-    # v1.1 UPGRADE: Causal Counterfactual Parameters for Autonomy Delta Analysis
-    enable_causal_analysis: bool = True      # Enable causal counterfactual analysis
-    autonomy_delta_threshold: float = 0.1    # Minimum delta for meaningful intervention
-    causal_intervention_types: List[str] = field(default_factory=lambda: [
-        "removal", "masking", "neutralize", "soften"
-    ])
-    max_counterfactuals_per_span: int = 4    # Maximum counterfactuals to generate per span
+    # v1.1 UPGRADE: Causal Analysis parameters
+    enable_causal_analysis: bool = Field(
+        default=True,
+        description="Enable causal counterfactual analysis"
+    )
+    autonomy_delta_threshold: float = Field(
+        default=0.1,
+        description="Minimum autonomy delta for significant causal impact (0-1)",
+        ge=0.0,
+        le=1.0
+    )
+    causal_intervention_types: List[str] = Field(
+        default_factory=lambda: ["removal", "masking", "neutralize", "soften"],
+        description="Types of interventions to apply for causal analysis"
+    )
+    max_counterfactuals_per_span: int = Field(
+        default=4,
+        description="Maximum number of counterfactuals to generate per span",
+        gt=0
+    )
     
-    # v1.1 UPGRADE: Uncertainty Analysis Parameters for Safety Certification
-    enable_uncertainty_analysis: bool = True     # Enable uncertainty analysis and routing
-    uncertainty_threshold: float = 0.25         # Variance threshold for human review routing
-    bootstrap_samples: int = 3                  # Number of bootstrap samples for uncertainty (demo: 3)
-    uncertainty_dropout_rate: float = 0.15      # Dropout rate for variance generation
-    auto_human_routing: bool = True              # Automatically route uncertain cases to human review
+    # v1.1 UPGRADE: Uncertainty Analysis parameters
+    enable_uncertainty_analysis: bool = Field(
+        default=True,
+        description="Enable uncertainty estimation and human routing"
+    )
+    uncertainty_threshold: float = Field(
+        default=0.25,
+        description="Uncertainty threshold for human routing (0-1)",
+        ge=0.0,
+        le=1.0
+    )
+    bootstrap_samples: int = Field(
+        default=3,
+        description="Number of bootstrap samples for uncertainty estimation",
+        gt=0
+    )
+    uncertainty_dropout_rate: float = Field(
+        default=0.15,
+        description="Dropout rate for uncertainty estimation (0-1)",
+        ge=0.0,
+        le=1.0
+    )
+    auto_human_routing: bool = Field(
+        default=True,
+        description="Automatically route uncertain cases to human review"
+    )
     
-    # v1.1 UPGRADE: IRL Purpose Alignment Parameters for User Intent Alignment
-    enable_purpose_alignment: bool = True        # Enable IRL purpose alignment analysis
-    purpose_alignment_threshold: float = 0.95    # Minimum alignment score for safety certification
-    auto_purpose_inference: bool = True          # Automatically infer user purpose from context
-    purpose_weight_adaptation: bool = False      # Adapt evaluation weights based on inferred purpose
+    # v1.1 UPGRADE: IRL Purpose Alignment parameters
+    enable_purpose_alignment: bool = Field(
+        default=True,
+        description="Enable purpose alignment analysis"
+    )
+    purpose_alignment_threshold: float = Field(
+        default=0.95,
+        description="Minimum alignment score for purpose verification (0.5-1.0)",
+        ge=0.5,
+        le=1.0
+    )
+    auto_purpose_inference: bool = Field(
+        default=True,
+        description="Automatically infer purpose from context"
+    )
+    purpose_weight_adaptation: bool = Field(
+        default=False,
+        description="Dynamically adjust weights based on purpose alignment"
+    )
     
-    def __post_init__(self):
+    @field_validator('cascade_high_threshold', 'cascade_low_threshold', mode='after')
+    @classmethod
+    def validate_cascade_thresholds(cls, v, info):
+        if info.field_name == 'cascade_low_threshold' and hasattr(info.data, 'cascade_high_threshold'):
+            if v >= info.data.cascade_high_threshold:
+                raise ValueError('cascade_low_threshold must be less than cascade_high_threshold')
+        return v
+    
+    @field_validator('min_span_length', mode='after')
+    @classmethod
+    def validate_span_lengths(cls, v, info):
+        if hasattr(info.data, 'max_span_length') and v > info.data.max_span_length:
+            raise ValueError('min_span_length must be less than or equal to max_span_length')
+        return v
+    
+    @model_validator(mode='after')
+    def validate_parameters(self):
         """Validate parameters after initialization"""
-        # Validate threshold values
-        if self.virtue_threshold < 0 or self.deontological_threshold < 0 or self.consequentialist_threshold < 0:
-            raise ValueError("All threshold values must be non-negative")
+        # Ensure thresholds are within valid range (0-1)
+        for threshold_field in ['virtue_threshold', 'deontological_threshold', 'consequentialist_threshold']:
+            threshold_value = getattr(self, threshold_field, None)
+            if threshold_value is not None and not 0 <= threshold_value <= 1:
+                raise ValueError(f"{threshold_field} must be between 0 and 1")
+                
+        # Ensure span lengths are valid
+        if hasattr(self, 'min_span_length') and hasattr(self, 'max_span_length'):
+            if self.min_span_length <= 0 or self.max_span_length <= 0:
+                raise ValueError("span lengths must be positive integers")
+            if self.min_span_length > self.max_span_length:
+                raise ValueError("min_span_length cannot be greater than max_span_length")
         
-        # Validate max_span_length
-        if self.max_span_length <= 0:
-            raise ValueError("max_span_length must be a positive integer")
-            
-        # Validate min_span_length
-        if self.min_span_length <= 0:
-            raise ValueError("min_span_length must be a positive integer")
-            
-        # Ensure max_span_length >= min_span_length
-        if self.max_span_length < self.min_span_length:
-            raise ValueError("max_span_length must be greater than or equal to min_span_length")
+        # Graph attention validation
+        if getattr(self, 'enable_graph_attention', False):
+            if getattr(self, 'graph_decay_lambda', 0) <= 0:
+                raise ValueError("graph_decay_lambda must be positive")
+            if not 0 <= getattr(self, 'graph_similarity_threshold', 0) <= 1:
+                raise ValueError("graph_similarity_threshold must be between 0 and 1")
+            if getattr(self, 'graph_attention_heads', 0) <= 0:
+                raise ValueError("graph_attention_heads must be positive")
+                
+        # Intent hierarchy validation
+        if getattr(self, 'enable_intent_hierarchy', False) and not 0 <= getattr(self, 'intent_threshold', 0) <= 1:
+            raise ValueError("intent_threshold must be between 0 and 1")
+                
+        # Causal analysis validation
+        if getattr(self, 'enable_causal_analysis', False):
+            if not 0 <= getattr(self, 'autonomy_delta_threshold', 0) <= 1:
+                raise ValueError("autonomy_delta_threshold must be between 0 and 1")
+            if getattr(self, 'max_counterfactuals_per_span', 0) <= 0:
+                raise ValueError("max_counterfactuals_per_span must be positive")
+                
+        # Uncertainty analysis validation
+        if getattr(self, 'enable_uncertainty_analysis', False):
+            if not 0 <= getattr(self, 'uncertainty_threshold', 0) <= 1:
+                raise ValueError("uncertainty_threshold must be between 0 and 1")
+            if getattr(self, 'bootstrap_samples', 0) <= 0:
+                raise ValueError("bootstrap_samples must be positive")
+            if not 0 <= getattr(self, 'uncertainty_dropout_rate', 0) < 1:
+                raise ValueError("uncertainty_dropout_rate must be between 0 and 1")
+                
+        # Purpose alignment validation
+        if getattr(self, 'enable_purpose_alignment', False):
+            if not 0 <= getattr(self, 'purpose_alignment_threshold', 0) <= 1:
+                raise ValueError("purpose_alignment_threshold must be between 0 and 1")
+                
+        return self
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert parameters to dictionary for API responses"""
-        return {
-            'virtue_threshold': self.virtue_threshold,
-            'deontological_threshold': self.deontological_threshold,
-            'consequentialist_threshold': self.consequentialist_threshold,
-            'virtue_weight': self.virtue_weight,
-            'deontological_weight': self.deontological_weight,
-            'consequentialist_weight': self.consequentialist_weight,
-            'max_span_length': self.max_span_length,
-            'min_span_length': self.min_span_length,
-            'embedding_model': self.embedding_model,
-            'enable_dynamic_scaling': self.enable_dynamic_scaling,
-            'enable_cascade_filtering': self.enable_cascade_filtering,
-            'enable_learning_mode': self.enable_learning_mode,
-            'exponential_scaling': self.exponential_scaling,
-            'cascade_high_threshold': self.cascade_high_threshold,
-            'cascade_low_threshold': self.cascade_low_threshold,
-            'learning_weight': self.learning_weight,
-            'min_learning_samples': self.min_learning_samples,
-            # v1.1 Graph attention parameters
-            'enable_graph_attention': self.enable_graph_attention,
-            'graph_decay_lambda': self.graph_decay_lambda,
-            'graph_similarity_threshold': self.graph_similarity_threshold,
-            'graph_attention_heads': self.graph_attention_heads,
-            # v1.1 Intent hierarchy parameters
-            'enable_intent_hierarchy': self.enable_intent_hierarchy,
-            'intent_threshold': self.intent_threshold,
-            'intent_categories': self.intent_categories,
-            'enable_contrastive_learning': self.enable_contrastive_learning,
-            # v1.1 Causal counterfactual parameters
-            'enable_causal_analysis': self.enable_causal_analysis,
-            'autonomy_delta_threshold': self.autonomy_delta_threshold,
-            'causal_intervention_types': self.causal_intervention_types,
-            'max_counterfactuals_per_span': self.max_counterfactuals_per_span,
-            # v1.1 Uncertainty analysis parameters
-            'enable_uncertainty_analysis': self.enable_uncertainty_analysis,
-            'uncertainty_threshold': self.uncertainty_threshold,
-            'bootstrap_samples': self.bootstrap_samples,
-            'uncertainty_dropout_rate': self.uncertainty_dropout_rate,
-            'auto_human_routing': self.auto_human_routing,
-            # v1.1 IRL purpose alignment parameters
-            'enable_purpose_alignment': self.enable_purpose_alignment,
-            'purpose_alignment_threshold': self.purpose_alignment_threshold,
-            'auto_purpose_inference': self.auto_purpose_inference,
-            'purpose_weight_adaptation': self.purpose_weight_adaptation
-        }
+        return self.model_dump()
 
-@dataclass
-class EthicalSpan:
+class EthicalSpan(BaseModel):
     """Represents a span of text with ethical evaluation"""
-    start: int
-    end: int
-    text: str
-    virtue_score: float
-    deontological_score: float
-    consequentialist_score: float
-    virtue_violation: bool
-    deontological_violation: bool
-    consequentialist_violation: bool
-    is_minimal: bool = False
+    text: str = Field(..., description="The text content of the span")
+    start: int = Field(..., ge=0, description="Start character offset of the span")
+    end: int = Field(..., ge=0, description="End character offset of the span")
+    virtue_score: float = Field(..., ge=0.0, le=1.0, description="Virtue ethics score (0-1)")
+    deontological_score: float = Field(..., ge=0.0, le=1.0, description="Deontological ethics score (0-1)")
+    consequentialist_score: float = Field(..., ge=0.0, le=1.0, description="Consequentialist ethics score (0-1)")
+    combined_score: float = Field(..., ge=0.0, le=1.0, description="Combined ethical score (0-1)")
+    is_violation: bool = Field(..., description="Whether this span represents an ethical violation")
+    virtue_violation: bool = Field(False, description="Whether this span violates virtue ethics")
+    deontological_violation: bool = Field(False, description="Whether this span violates deontological ethics")
+    consequentialist_violation: bool = Field(False, description="Whether this span violates consequentialist ethics")
     
-    # v1.1 UPGRADE: Intent hierarchy results
-    intent_scores: Dict[str, float] = field(default_factory=dict)
-    dominant_intent: str = "neutral"
-    intent_confidence: float = 0.0
+    # Optional fields with defaults
+    violation_type: Optional[str] = Field(
+        default=None,
+        description="Type of ethical violation if is_violation is True"
+    )
+    explanation: Optional[str] = Field(
+        default=None,
+        description="Explanation of the ethical evaluation"
+    )
     
+    # v1.1 UPGRADE: Enhanced analysis fields
+    dominant_intent: Optional[str] = Field(
+        default=None,
+        description="The dominant intent detected for this span"
+    )
+    intent_confidence: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Confidence score (0-1) for the dominant intent classification"
+    )
+    intent_category: Optional[str] = Field(
+        default=None,
+        description="Detected intent category for this span"
+    )
+    intent_scores: Optional[Dict[str, float]] = Field(
+        default_factory=dict,
+        description="Dictionary mapping intent categories to their confidence scores"
+    )
+    causal_impact: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Causal impact score (0-1)"
+    )
+    uncertainty: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Uncertainty score (0-1)"
+    )
+    purpose_alignment: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Purpose alignment score (0-1)"
+    )
+    
+    @model_validator(mode='after')
+    def validate_span_indices(self):
+        if hasattr(self, 'start') and hasattr(self, 'end') and self.start > self.end:
+            raise ValueError('start index must be less than or equal to end index')
+        return self
+
+    @model_validator(mode='after')
+    def validate_span(self):
+        """Validate span values"""
+        # If text is provided, validate it matches the span
+        if hasattr(self, 'text') and hasattr(self, 'start') and hasattr(self, 'end'):
+            text_length = len(self.text)
+            span_length = self.end - self.start
+            if span_length <= 0:
+                raise ValueError("end must be greater than start")
+            if span_length != text_length:
+                # Adjust the end index to match the text length
+                self.end = self.start + text_length
+                
+        # If it's a violation, ensure violation_type is provided
+        if getattr(self, 'is_violation', False) and not getattr(self, 'violation_type', None):
+            raise ValueError("violation_type is required when is_violation is True")
+            
+        return self
+
     @property
     def any_violation(self) -> bool:
         """Check if any perspective flags this span as unethical"""
@@ -1289,26 +1438,41 @@ class EthicalSpan:
             'virtue_violation': bool(self.virtue_violation),
             'deontological_violation': bool(self.deontological_violation),
             'consequentialist_violation': bool(self.consequentialist_violation),
-            'any_violation': bool(self.any_violation),
-            'violation_perspectives': self.violation_perspectives,
+            'any_violation': bool(self.any_violation()),
+            'violation_perspectives': self.violation_perspectives(),
             'is_minimal': bool(self.is_minimal)
         }
 
-@dataclass
-class EthicalEvaluation:
+
+class EthicalEvaluation(BaseModel):
     """Complete ethical evaluation result"""
-    input_text: str
-    tokens: List[str]
-    spans: List[EthicalSpan]
-    minimal_spans: List[EthicalSpan]
-    overall_ethical: bool
-    processing_time: float
-    parameters: EthicalParameters
-    dynamic_scaling_result: Optional[DynamicScalingResult] = None
-    evaluation_id: str = field(default_factory=lambda: f"eval_{int(time.time() * 1000)}")
-    causal_analysis: Optional[Dict[str, Any]] = None  # v1.1 UPGRADE: Causal counterfactual results
-    uncertainty_analysis: Optional[Dict[str, Any]] = None  # v1.1 UPGRADE: Uncertainty analysis results
-    purpose_alignment_analysis: Optional[Dict[str, Any]] = None  # v1.1 UPGRADE: IRL purpose alignment results
+    input_text: str = Field(..., description="The input text that was evaluated")
+    tokens: List[str] = Field(default_factory=list, description="List of tokens from the input text")
+    spans: List[EthicalSpan] = Field(default_factory=list, description="List of all evaluated spans")
+    minimal_spans: List[EthicalSpan] = Field(default_factory=list, description="Minimal unethical spans")
+    overall_ethical: bool = Field(..., description="Whether the overall text is considered ethical")
+    processing_time: float = Field(..., ge=0, description="Time taken to process the evaluation in seconds")
+    parameters: EthicalParameters = Field(..., description="Parameters used for this evaluation")
+    dynamic_scaling_result: Optional[DynamicScalingResult] = Field(
+        default=None, 
+        description="Results of dynamic scaling if enabled"
+    )
+    evaluation_id: str = Field(
+        default_factory=lambda: f"eval_{int(time.time() * 1000)}",
+        description="Unique identifier for this evaluation"
+    )
+    causal_analysis: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Results of causal counterfactual analysis if enabled"
+    )
+    uncertainty_analysis: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Results of uncertainty analysis if enabled"
+    )
+    purpose_alignment_analysis: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Results of purpose alignment analysis if enabled"
+    )
     
     @property
     def violation_count(self) -> int:
@@ -1331,8 +1495,8 @@ class EthicalEvaluation:
             'evaluation_id': str(self.evaluation_id),
             'input_text': str(self.input_text),
             'tokens': [str(token) for token in self.tokens],
-            'spans': [s.to_dict() for s in self.spans],
-            'minimal_spans': [s.to_dict() for s in self.minimal_spans],
+            'spans': [span.to_dict() for span in self.spans],
+            'minimal_spans': [span.to_dict() for span in self.minimal_spans],
             'all_spans_with_scores': self.all_spans_with_scores,
             'overall_ethical': bool(self.overall_ethical),
             'processing_time': float(self.processing_time),
@@ -1341,17 +1505,19 @@ class EthicalEvaluation:
             'parameters': self.parameters.to_dict()
         }
         
+        # Add optional fields if they exist
         if self.dynamic_scaling_result:
-            result['dynamic_scaling'] = {
-                'used_dynamic_scaling': bool(self.dynamic_scaling_result.used_dynamic_scaling),
-                'used_cascade_filtering': bool(self.dynamic_scaling_result.used_cascade_filtering),
-                'ambiguity_score': float(self.dynamic_scaling_result.ambiguity_score),
-                'original_thresholds': {k: float(v) for k, v in self.dynamic_scaling_result.original_thresholds.items()},
-                'adjusted_thresholds': {k: float(v) for k, v in self.dynamic_scaling_result.adjusted_thresholds.items()},
-                'processing_stages': [str(stage) for stage in self.dynamic_scaling_result.processing_stages],
-                'cascade_result': str(self.dynamic_scaling_result.cascade_result) if self.dynamic_scaling_result.cascade_result else None
-            }
-        
+            result['dynamic_scaling_result'] = self.dynamic_scaling_result.model_dump() if hasattr(self.dynamic_scaling_result, 'model_dump') else self.dynamic_scaling_result
+            
+        if self.causal_analysis:
+            result['causal_analysis'] = self.causal_analysis
+            
+        if self.uncertainty_analysis:
+            result['uncertainty_analysis'] = self.uncertainty_analysis
+            
+        if self.purpose_alignment_analysis:
+            result['purpose_alignment_analysis'] = self.purpose_alignment_analysis
+            
         return result
 
 async def create_learning_entry_async(db_collection, evaluation_id: str, text: str, 
@@ -1869,27 +2035,66 @@ class EthicalEvaluator:
         }
     
     def apply_threshold_scaling(self, slider_value: float) -> float:
+        """Apply exponential or linear scaling to threshold values"""
+        if self.parameters.exponential_scaling:
+            return exponential_threshold_scaling(slider_value)
+        else:
+            return linear_threshold_scaling(slider_value)
+    
+    def evaluate_text(self, text: str, _skip_uncertainty_analysis: bool = False) -> EthicalEvaluation:
         """
-        Apply exponential or linear scaling to threshold values
+        Main entry point for evaluating text against ethical guidelines.
         
         Args:
-            slider_value: Value between 0.0 and 1.0 from the frontend slider
-                         0.0 = most sensitive (low threshold), 1.0 = least sensitive (high threshold)
-        
+            text: The input text to evaluate
+            _skip_uncertainty_analysis: Whether to skip uncertainty analysis (for performance)
+            
         Returns:
-            float: Scaled threshold value between 0.01 and 0.5
+            EthicalEvaluation: Complete evaluation result
         """
-        # Clamp value to [0, 1] range
-        slider_value = max(0.0, min(1.0, slider_value))
+        logger.info("🔍 EVALUATE_TEXT CALLED - Starting text evaluation")
+        logger.info(f"Text length: {len(text)} characters")
+        logger.info(f"Skip uncertainty analysis: {_skip_uncertainty_analysis}")
         
-        if self.parameters.exponential_scaling:
-            # Exponential scaling for more granular control in lower ranges
-            # Maps 0.0 -> ~0.01 (very sensitive) to 1.0 -> 0.5 (least sensitive)
-            return 0.01 + (exponential_threshold_scaling(slider_value) * 0.49)
-        else:
-            # Linear scaling as fallback
-            return 0.01 + (linear_threshold_scaling(slider_value) * 0.49)
-    
+        start_time = time.time()
+        
+        # Tokenize the input text
+        tokens = self.tokenize(text)
+        
+        # Initialize result containers
+        spans = []
+        minimal_spans = []
+        
+        # Get current threshold values
+        current_thresholds = {
+            'virtue_threshold': self.parameters.virtue_threshold,
+            'deontological_threshold': self.parameters.deontological_threshold,
+            'consequentialist_threshold': self.parameters.consequentialist_threshold
+        }
+        
+        # Evaluate all possible spans
+        for i in range(len(tokens)):
+            for j in range(i + 1, min(i + self.parameters.max_span_length + 1, len(tokens) + 1)):
+                span = self.evaluate_span(tokens, i, j, adjusted_thresholds=current_thresholds)
+                spans.append(span)
+                
+                # If it's a violation, add to minimal spans
+                if span.is_violation:
+                    minimal_spans.append(span)
+        
+        # Create the evaluation result
+        evaluation = EthicalEvaluation(
+            input_text=text,
+            tokens=tokens,
+            spans=spans,
+            minimal_spans=minimal_spans,
+            overall_ethical=not any(span.is_violation for span in spans),
+            processing_time=time.time() - start_time,
+            parameters=self.parameters
+        )
+        
+        return evaluation
+        
     def fast_cascade_evaluation(self, text: str) -> Tuple[Optional[bool], float]:
         """Stage 1: Fast cascade filtering for obvious cases"""
         if not self.parameters.enable_cascade_filtering:
@@ -1947,7 +2152,19 @@ class EthicalEvaluator:
         return None, ambiguity
     
     def apply_dynamic_scaling(self, text: str, ambiguity_score: float) -> Dict[str, float]:
-        """Stage 2: Apply dynamic scaling based on vector distances"""
+        """
+        Apply dynamic scaling to thresholds based on text content and ambiguity.
+        
+        Implements the mathematical framework's dynamic threshold adjustment:
+        τ_P' = f(τ_P, s_amb) where s_amb is the ambiguity score
+        
+        Args:
+            text: Input text being evaluated
+            ambiguity_score: Calculated ambiguity score (0-1)
+            
+        Returns:
+            Dictionary of adjusted thresholds for each perspective
+        """
         if not self.parameters.enable_dynamic_scaling:
             return {
                 'virtue_threshold': self.parameters.virtue_threshold,
@@ -1955,19 +2172,31 @@ class EthicalEvaluator:
                 'consequentialist_threshold': self.parameters.consequentialist_threshold
             }
         
+        # Get current thresholds from parameters (always fresh)
         current_thresholds = {
             'virtue_threshold': self.parameters.virtue_threshold,
             'deontological_threshold': self.parameters.deontological_threshold,
             'consequentialist_threshold': self.parameters.consequentialist_threshold
         }
         
-        # Get suggestions from learning layer
-        adjusted_thresholds = self.learning_layer.suggest_threshold_adjustments(
-            text, ambiguity_score, current_thresholds
-        )
-        
-        logger.info(f"Dynamic scaling: ambiguity={ambiguity_score:.3f}, "
-                   f"original={current_thresholds}, adjusted={adjusted_thresholds}")
+        # Get dynamic adjustments from learning layer
+        try:
+            adjusted_thresholds = self.learning_layer.suggest_threshold_adjustments(
+                text, 
+                ambiguity_score, 
+                current_thresholds
+            )
+            
+            # Ensure thresholds stay within valid ranges (0-1)
+            for key in adjusted_thresholds:
+                adjusted_thresholds[key] = max(0.0, min(1.0, adjusted_thresholds[key]))
+                
+            logger.info(f"Dynamic scaling applied: ambiguity={ambiguity_score:.3f}, "
+                      f"original={current_thresholds}, adjusted={adjusted_thresholds}")
+                      
+        except Exception as e:
+            logger.error(f"Dynamic scaling failed: {e}. Using original thresholds.")
+            adjusted_thresholds = current_thresholds
         
         return adjusted_thresholds
     
@@ -1977,37 +2206,15 @@ class EthicalEvaluator:
         tokens = re.findall(r'\b\w+\b|[^\w\s]', text.lower())
         return tokens
     
-    def get_span_embedding(self, tokens: List[str], start: int, end: int, context_window: int = 3) -> np.ndarray:
-        """
-        Get embedding for a span of tokens with context awareness
-        
-        Args:
-            tokens: List of all tokens in the text
-            start: Start index of the span
-            end: End index of the span (inclusive)
-            context_window: Number of tokens to include before and after the span for context
-            
-        Returns:
-            Context-aware embedding for the span
-        """
-        # Get the span text
+    def get_span_embedding(self, tokens: List[str], start: int, end: int) -> np.ndarray:
+        """Get embedding for a span of tokens with caching"""
         span_text = ' '.join(tokens[start:end+1])
         
-        # Include context if available
-        context_start = max(0, start - context_window)
-        context_end = min(len(tokens), end + 1 + context_window)
-        context_text = ' '.join(tokens[context_start:context_end])
-        
-        # Create a unique key that includes both span and its context
-        cache_key = f"{context_start}:{context_end}:{span_text}"
-        
         # Use cache for efficiency
-        if cache_key not in self.embedding_cache:
-            # Encode with context but only use the span's portion
-            context_embedding = self.model.encode([context_text])[0]
-            self.embedding_cache[cache_key] = context_embedding
+        if span_text not in self.embedding_cache:
+            self.embedding_cache[span_text] = self.model.encode([span_text])[0]
         
-        return self.embedding_cache[cache_key]
+        return self.embedding_cache[span_text]
     
     def compute_perspective_score(self, embedding: np.ndarray, perspective_vector: np.ndarray) -> float:
         """Compute s_P(i,j) = x_{i:j} · p_P"""
@@ -2020,65 +2227,62 @@ class EthicalEvaluator:
         return float(score)  # Convert to Python float for JSON serialization
     
     def evaluate_span(self, tokens: List[str], start: int, end: int, 
-                     adjusted_thresholds: Dict[str, float] = None,
-                     context_window: int = 3) -> EthicalSpan:
-        """
-        Evaluate a single span of tokens with dynamic thresholds and context awareness
+                     adjusted_thresholds: Dict[str, float] = None) -> EthicalSpan:
+        """Evaluate a single span of tokens with dynamic thresholds
+        
+        Implements the mathematical framework's span evaluation:
+        s_P(i,j) = x_{i:j} · p_P  (projection of span embedding onto perspective vector)
+        I_P(i,j) = 1 if s_P(i,j) > τ_P else 0  (violation indicator)
         
         Args:
-            tokens: List of all tokens in the text
+            tokens: List of tokens from the input text
             start: Start index of the span
             end: End index of the span (inclusive)
-            adjusted_thresholds: Optional dictionary of adjusted threshold values
-            context_window: Number of tokens to include before and after the span for context
+            adjusted_thresholds: Optional dictionary of threshold overrides
             
         Returns:
-            EthicalSpan containing evaluation results
+            EthicalSpan object with evaluation results
         """
+        # Initialize adjusted_thresholds as empty dict if None
+        if adjusted_thresholds is None:
+            adjusted_thresholds = {}
+            
         span_text = ' '.join(tokens[start:end+1])
         
-        # Get context-aware embedding
-        span_embedding = self.get_span_embedding(tokens, start, end, context_window)
+        # Get fresh embedding (don't rely on cache)
+        with torch.no_grad():
+            span_embedding = self.model.encode([span_text])[0]
         
-        # Get current thresholds from parameters
-        default_thresholds = {
+        # Always use the most up-to-date parameters
+        current_parameters = {
             'virtue_threshold': self.parameters.virtue_threshold,
             'deontological_threshold': self.parameters.deontological_threshold,
             'consequentialist_threshold': self.parameters.consequentialist_threshold,
+            'virtue_weight': self.parameters.virtue_weight,
+            'deontological_weight': self.parameters.deontological_weight,
+            'consequentialist_weight': self.parameters.consequentialist_weight
         }
         
-        # Apply dynamic threshold scaling if adjusted_thresholds is provided
-        if adjusted_thresholds is not None:
-            thresholds = {
-                'virtue_threshold': adjusted_thresholds.get('virtue_threshold', 
-                    default_thresholds['virtue_threshold']),
-                'deontological_threshold': adjusted_thresholds.get('deontological_threshold',
-                    default_thresholds['deontological_threshold']),
-                'consequentialist_threshold': adjusted_thresholds.get('consequentialist_threshold',
-                    default_thresholds['consequentialist_threshold']),
-            }
-            logger.debug(f"Using adjusted thresholds: {thresholds}")
-        else:
-            thresholds = default_thresholds
-            logger.debug(f"Using default thresholds: {thresholds}")
+        # Apply any dynamic threshold adjustments
+        thresholds = {
+            'virtue_threshold': adjusted_thresholds.get('virtue_threshold', current_parameters['virtue_threshold']),
+            'deontological_threshold': adjusted_thresholds.get('deontological_threshold', current_parameters['deontological_threshold']),
+            'consequentialist_threshold': adjusted_thresholds.get('consequentialist_threshold', current_parameters['consequentialist_threshold'])
+        }
         
-        # Compute scores for each perspective
-        virtue_score = self.compute_perspective_score(span_embedding, self.p_v) * self.parameters.virtue_weight
-        deontological_score = self.compute_perspective_score(span_embedding, self.p_d) * self.parameters.deontological_weight
-        consequentialist_score = self.compute_perspective_score(span_embedding, self.p_c) * self.parameters.consequentialist_weight
+        # Compute scores for each perspective (s_P(i,j) = x_{i:j} · p_P) and ensure non-negative
+        # Clamp scores to [0, 1] range to prevent negative values that would fail Pydantic validation
+        virtue_score = max(0.0, min(1.0, self.compute_perspective_score(span_embedding, self.p_v) * self.parameters.virtue_weight))
+        deontological_score = max(0.0, min(1.0, self.compute_perspective_score(span_embedding, self.p_d) * self.parameters.deontological_weight))
+        consequentialist_score = max(0.0, min(1.0, self.compute_perspective_score(span_embedding, self.p_c) * self.parameters.consequentialist_weight))
         
-        # Log scores and thresholds
-        logger.debug(f"Span: '{span_text}'")
-        logger.debug(f"  Virtue: {virtue_score:.3f} (threshold: {thresholds['virtue_threshold']:.3f})")
-        logger.debug(f"  Deontological: {deontological_score:.3f} (threshold: {thresholds['deontological_threshold']:.3f})")
-        logger.debug(f"  Consequentialist: {consequentialist_score:.3f} (threshold: {thresholds['consequentialist_threshold']:.3f})")
-        
-        # Apply thresholds to determine violations
+        # Apply thresholds to determine violations (I_P(i,j) = 1 if s_P(i,j) > τ_P)
         virtue_violation = virtue_score > thresholds['virtue_threshold']
         deontological_violation = deontological_score > thresholds['deontological_threshold']
         consequentialist_violation = consequentialist_score > thresholds['consequentialist_threshold']
         
-        logger.debug(f"  Violations - Virtue: {virtue_violation}, Deontological: {deontological_violation}, Consequentialist: {consequentialist_violation}")
+        # Combined score as maximum of individual scores (OR logic for violations)
+        combined_score = max(virtue_score, deontological_score, consequentialist_score)
         
         # v1.1 UPGRADE: Add intent hierarchy classification
         intent_scores = {}
@@ -2094,91 +2298,102 @@ class EthicalEvaluator:
             except Exception as e:
                 logger.warning(f"Intent classification failed for span '{span_text}': {e}")
         
-        return EthicalSpan(
+        # Create and return the EthicalSpan with all scores and violations
+        is_violation = any([virtue_violation, deontological_violation, consequentialist_violation])
+        
+        # Generate explanation for the violation
+        violation_explanation = self._generate_span_explanation(
+            virtue_violation, 
+            deontological_violation,
+            consequentialist_violation, 
+            dominant_intent, 
+            intent_confidence
+        ) if hasattr(self, '_generate_span_explanation') else ""
+        
+        # Create the span with all required fields
+        span = EthicalSpan(
             start=start,
             end=end,
             text=span_text,
             virtue_score=virtue_score,
             deontological_score=deontological_score,
             consequentialist_score=consequentialist_score,
-            virtue_violation=virtue_violation,
-            deontological_violation=deontological_violation,
-            consequentialist_violation=consequentialist_violation,
-            intent_scores=intent_scores,
-            dominant_intent=dominant_intent,
-            intent_confidence=intent_confidence
+            combined_score=combined_score,
+            is_violation=is_violation,
+            violation_type=dominant_intent if is_violation else None,
+            explanation=violation_explanation,
+            intent_category=dominant_intent if intent_confidence > 0.5 else None,
+            causal_impact=None,  # Will be set by causal analysis if enabled
+            uncertainty=None,     # Will be set by uncertainty analysis if enabled
+            purpose_alignment=None  # Will be set by purpose alignment if enabled
         )
+        
+        # Add any additional attributes that might be needed
+        span.virtue_violation = virtue_violation
+        span.deontological_violation = deontological_violation
+        span.consequentialist_violation = consequentialist_violation
+        span.dominant_intent = dominant_intent
+        span.intent_confidence = intent_confidence
+        span.intent_scores = intent_scores
+        
+        return span
     
-    def find_minimal_spans(self, tokens: List[str], all_spans: List[EthicalSpan]) -> List[EthicalSpan]:
+    def find_minimal_spans(self, all_spans: List[EthicalSpan]) -> List[EthicalSpan]:
         """Find minimal unethical spans using dynamic programming algorithm.
         
-        Implements the mathematical framework's approach to identifying minimal spans
+        Implements the mathematical framework's approach to identifying minimal spans:
         M_P(S) = {[i,j] : I_P(i,j)=1 ∧ ∀(k,l) ⊂ (i,j), I_P(k,l)=0}
         
-        Uses dynamic programming with memoization for O(n^2) efficiency.
+        Where:
+        - [i,j] is a text span from token i to j (inclusive)
+        - I_P(i,j) = 1 if span [i,j] is a violation from perspective P
+        - M_P(S) is the set of minimal spans for perspective P
+        
+        Uses a two-pass approach for O(n^2) efficiency:
+        1. First pass: Identify all violating spans
+        2. Second pass: Filter to find minimal spans (no proper sub-spans are violations)
         """
-        if not tokens:
+        if not all_spans:
             return []
+            
+        # Filter to only spans with violations
+        violating_spans = [s for s in all_spans if s.is_violation]
         
-        n = len(tokens)
-        minimal_spans = []
+        if not violating_spans:
+            return []
+            
+        # Sort spans by length (shortest first) to find minimal spans first
+        violating_spans.sort(key=lambda s: (s.end - s.start, s.start))
         
-        # Create DP table to track flagged spans by perspective
-        # dp[i][j][perspective] = True if span [i,j] is flagged for that perspective
-        dp_virtue = {}
-        dp_deont = {}
-        dp_conseq = {}
+        # Track which spans are minimal (start with all True, then eliminate non-minimal spans)
+        is_minimal = [True] * len(violating_spans)
         
-        # Initialize DP table with all spans
-        for span in all_spans:
-            if span.virtue_violation:
-                dp_virtue[(span.start, span.end)] = True
-            if span.deontological_violation:
-                dp_deont[(span.start, span.end)] = True
-            if span.consequentialist_violation:
-                dp_conseq[(span.start, span.end)] = True
-        
-        # Find minimal spans using the algorithm from the mathematical framework
-        # Scan by length (shortest first to ensure minimality)
-        for length in range(1, n + 1):
-            for start in range(n - length + 1):
-                end = start + length - 1
+        # Compare each pair of spans to find non-minimal ones
+        for i in range(len(violating_spans)):
+            if not is_minimal[i]:
+                continue
                 
-                # Check each perspective for violations
-                perspectives = [
-                    ('virtue', dp_virtue, 'virtue_violation'),
-                    ('deontological', dp_deont, 'deontological_violation'),
-                    ('consequentialist', dp_conseq, 'consequentialist_violation')
-                ]
+            span_i = violating_spans[i]
+            
+            for j in range(i + 1, len(violating_spans)):
+                if not is_minimal[j]:
+                    continue
+                    
+                span_j = violating_spans[j]
                 
-                for perspective_name, dp_table, violation_attr in perspectives:
-                    if (start, end) in dp_table:
-                        # Check if any sub-span is already flagged for this perspective
-                        has_flagged_subspan = False
-                        
-                        if length > 1:  # Only check sub-spans for length > 1
-                            for sub_length in range(1, length):
-                                for sub_start in range(start, end - sub_length + 2):
-                                    sub_end = sub_start + sub_length - 1
-                                    if (sub_start, sub_end) in dp_table:
-                                        has_flagged_subspan = True
-                                        break
-                                if has_flagged_subspan:
-                                    break
-                        
-                        # If no sub-span is flagged, this is a minimal span
-                        if not has_flagged_subspan:
-                            # Find the corresponding span object
-                            for span in all_spans:
-                                if (span.start == start and span.end == end and 
-                                    getattr(span, violation_attr)):
-                                    span.is_minimal = True
-                                    if span not in minimal_spans:
-                                        minimal_spans.append(span)
-                                    break
+                # Check if span_j is a proper sub-span of span_i
+                if (span_j.start >= span_i.start and 
+                    span_j.end <= span_i.end and 
+                    (span_j.start > span_i.start or span_j.end < span_i.end)):
+                    # span_j is a proper sub-span of span_i, so span_i is not minimal
+                    is_minimal[i] = False
+                    break
         
-        logger.info(f"Found {len(minimal_spans)} minimal spans from {len(all_spans)} total spans")
-        return minimal_spans
+        # Collect all minimal spans
+        minimal_spans = [span for i, span in enumerate(violating_spans) if is_minimal[i]]
+        
+        # Sort by start position for consistent ordering
+        return sorted(minimal_spans, key=lambda s: s.start)
     
     def apply_graph_attention_to_spans(self, spans: List[EthicalSpan], tokens: List[str]) -> List[EthicalSpan]:
         """
@@ -2274,209 +2489,78 @@ class EthicalEvaluator:
             return spans
     
     
-    def evaluate_text(self, text: str, _skip_uncertainty_analysis: bool = False, tau_slider: float = None, _recursion_depth: int = 0) -> EthicalEvaluation:
-        # Set up logging for this evaluation
-        logger.info("\n" + "="*80)
-        logger.info(f"Starting evaluation of text (length: {len(text)} chars, tau_slider: {tau_slider}, recursion_depth: {_recursion_depth})")
-        
-        # Safety check for maximum recursion depth
-        MAX_RECURSION_DEPTH = 3
-        if _recursion_depth > MAX_RECURSION_DEPTH:
-            logger.error(f"Maximum recursion depth ({MAX_RECURSION_DEPTH}) exceeded in evaluate_text")
-            raise RecursionError(f"Maximum recursion depth ({MAX_RECURSION_DEPTH}) exceeded in evaluate_text")
-        
-        """
-        Evaluate text using the complete mathematical framework with dynamic scaling
-        
-        Args:
-            text: The text to evaluate
-            _skip_uncertainty_analysis: Internal flag to skip uncertainty analysis (prevents recursion)
-            tau_slider: Optional 0-1 value from frontend slider controlling threshold sensitivity
-            
-        Returns:
-            EthicalEvaluation: The evaluation results
-        """
-        start_time = time.time()
-        
-        # Apply tau slider scaling if provided (0-1 value from frontend)
-        adjusted_thresholds = None
-        if tau_slider is not None and 0 <= tau_slider <= 1:
-            # Convert 0-1 slider to threshold value (lower tau = more sensitive)
-            base_threshold = self.apply_threshold_scaling(1.0 - tau_slider)  # Invert so 0=strict, 1=lenient
-            adjusted_thresholds = {
-                'virtue_threshold': base_threshold,
-                'deontological_threshold': base_threshold,
-                'consequentialist_threshold': base_threshold
-            }
-            logger.info(f"Applied tau slider value {tau_slider:.2f} -> base threshold: {base_threshold:.3f}")
-            logger.info(f"Adjusted thresholds: {adjusted_thresholds}")
-        else:
-            logger.info("Using default thresholds")
-        
-        # Handle empty or whitespace-only text
-        if not text or not text.strip():
-            return EthicalEvaluation(
-                input_text=text,
-                tokens=[],
-                spans=[],
-                minimal_spans=[],
-                overall_ethical=True,  # Empty text is considered ethical
-                processing_time=time.time() - start_time,
-                parameters=self.parameters,
-                dynamic_scaling_result=DynamicScalingResult(
-                    used_dynamic_scaling=tau_slider is not None,
-                    used_cascade_filtering=False,
-                    ambiguity_score=0.0,
-                    original_thresholds={
-                        'virtue_threshold': self.parameters.virtue_threshold,
-                        'deontological_threshold': self.parameters.deontological_threshold,
-                        'consequentialist_threshold': self.parameters.consequentialist_threshold
-                    },
-                    adjusted_thresholds={
-                        'virtue_threshold': self.parameters.virtue_threshold,
-                        'deontological_threshold': self.parameters.deontological_threshold,
-                        'consequentialist_threshold': self.parameters.consequentialist_threshold
-                    } if tau_slider is not None else {},
-                    processing_stages=['empty_text_handling']
-                )
-            )
-        
-        # Initialize dynamic scaling result
-        dynamic_result = DynamicScalingResult(
-            used_dynamic_scaling=self.parameters.enable_dynamic_scaling,
-            used_cascade_filtering=self.parameters.enable_cascade_filtering,
-            ambiguity_score=0.0,
-            original_thresholds={
-                'virtue_threshold': self.parameters.virtue_threshold,
-                'deontological_threshold': self.parameters.deontological_threshold,
-                'consequentialist_threshold': self.parameters.consequentialist_threshold
-            },
-            adjusted_thresholds={},
-            processing_stages=[]
-        )
-        
-        # Stage 1: Fast cascade filtering (if enabled)
-        cascade_result = None
-        ambiguity_score = 0.0
-        
-        if self.parameters.enable_cascade_filtering:
-            dynamic_result.processing_stages.append("cascade_filtering")
-            cascade_result, ambiguity_score = self.fast_cascade_evaluation(text)
-            dynamic_result.ambiguity_score = ambiguity_score
-            
-            if cascade_result is not None:
-                dynamic_result.cascade_result = "ethical" if cascade_result else "unethical"
-                dynamic_result.processing_stages.append("cascade_decision")
-                
-                # Quick return for obvious cases
-                tokens = self.tokenize(text)
-                processing_time = time.time() - start_time
-                
-                return EthicalEvaluation(
-                    input_text=text,
-                    tokens=tokens,
-                    spans=[],  # No detailed span analysis for cascade decisions
-                    minimal_spans=[],
-                    overall_ethical=cascade_result,
-                    processing_time=processing_time,
-                    parameters=self.parameters,
-                    dynamic_scaling_result=dynamic_result
-                )
-        
-        # Stage 2: Dynamic scaling (if enabled)
-        adjusted_thresholds = None
-        if self.parameters.enable_dynamic_scaling:
-            dynamic_result.processing_stages.append("dynamic_scaling")
-            
-            # Calculate ambiguity score for dynamic scaling
-            text_embedding = self.model.encode([text])[0]
-            virtue_score = float(np.dot(text_embedding, self.p_v) * self.parameters.virtue_weight)
-            deontological_score = float(np.dot(text_embedding, self.p_d) * self.parameters.deontological_weight)
-            consequentialist_score = float(np.dot(text_embedding, self.p_c) * self.parameters.consequentialist_weight)
-            
-            # Calculate ambiguity score using learning layer
-            ambiguity_score = self.learning_layer.calculate_ambiguity_score(
-                virtue_score, deontological_score, consequentialist_score, self.parameters
-            )
-            
-            # Apply dynamic scaling
-            adjusted_thresholds = self.apply_dynamic_scaling(text, ambiguity_score)
-            dynamic_result.adjusted_thresholds = adjusted_thresholds
-            dynamic_result.ambiguity_score = ambiguity_score
-            
-            logger.info(f"Applied dynamic scaling - Ambiguity: {ambiguity_score:.3f}, "
-                      f"Original thresholds: {dynamic_result.original_thresholds}, "
-                      f"Adjusted thresholds: {adjusted_thresholds}")
-            
-            # Record learning entry if learning is enabled
-            if self.parameters.enable_learning_mode:
-                try:
-                    self.learning_layer.record_learning_entry(
-                        evaluation_id=f"eval_{int(time.time() * 1000)}",
-                        text=text,
-                        ambiguity_score=ambiguity_score,
-                        original_thresholds=dynamic_result.original_thresholds,
-                        adjusted_thresholds=adjusted_thresholds
-                    )
-                except Exception as e:
-                    logger.error(f"Error recording learning entry: {e}")
-                    # Continue with evaluation even if learning fails
-        
-        # Stage 3: Detailed evaluation
+    def clear_embedding_cache(self):
+        """Clear the embedding cache to ensure fresh evaluations"""
+        self.embedding_cache.clear()
+        logger.debug("Cleared embedding cache")
+        logger.info("STAGE 3: DETAILED EVALUATION")
+        logger.info("-"*40)
         dynamic_result.processing_stages.append("detailed_evaluation")
         
-        # Tokenize input
-        tokens = self.tokenize(text)
+        logger.info(f"Tokenizing text with min_span_length={self.parameters.min_span_length}, "
+                  f"max_span_length={self.parameters.max_span_length}")
         
         # Limit tokens for performance (can be adjusted)
-        if len(tokens) > 50:
-            logger.warning(f"Text too long ({len(tokens)} tokens), truncating to 50 tokens for performance")
-            tokens = tokens[:50]
+        max_tokens = 50
+        if len(tokens) > max_tokens:
+            logger.warning(f"Text too long ({len(tokens)} tokens), truncating to {max_tokens} tokens for performance")
+            tokens = tokens[:max_tokens]
         
         # Evaluate spans with dynamic thresholds
         all_spans = []
-        
-        # Calculate max spans based on text length but with reasonable limits
-        max_span_length = min(self.parameters.max_span_length, 10)  # Cap at 10 tokens max span length
-        max_spans_to_check = min(len(tokens) * 2, 100)  # More dynamic limit based on text length, max 100 spans
+        max_spans_to_check = 500  # Increased limit for better coverage
         spans_checked = 0
         
-        logger.info(f"Evaluating text with {len(tokens)} tokens, max_span_length={max_span_length}, max_spans_to_check={max_spans_to_check}")
-        
-        # Log the thresholds being used for this evaluation
-        current_thresholds = {
-            'virtue_threshold': self.parameters.virtue_threshold,
-            'deontological_threshold': self.parameters.deontological_threshold,
-            'consequentialist_threshold': self.parameters.consequentialist_threshold
-        }
-        logger.info(f"Current parameter thresholds: {current_thresholds}")
-        if adjusted_thresholds:
-            logger.info(f"Using adjusted thresholds: {adjusted_thresholds}")
-        
-        # Prioritize shorter spans (more likely to be minimal violations)
-        for span_length in range(self.parameters.min_span_length, 
-                                min(max_span_length, len(tokens)) + 1):
-            if spans_checked >= max_spans_to_check:
-                break
-                
+        try:
+            # First pass: Check all spans of minimum length
+            span_length = self.parameters.min_span_length
             for start in range(len(tokens) - span_length + 1):
                 if spans_checked >= max_spans_to_check:
                     break
                     
                 end = start + span_length - 1
                 span = self.evaluate_span(tokens, start, end, adjusted_thresholds)
-                logger.debug(f"Evaluated span '{span.text}': {span.to_dict()}")
                 all_spans.append(span)
                 spans_checked += 1
                 
-                # Early exit if we find violations (for faster feedback)
-                if span.any_violation and span_length <= 3:
-                    logger.info(f"Early violation found: {span.text}")
-                    # Don't break here as we want to find all minimal spans
-                    # But we can limit further processing of longer spans
-                    if len(minimal_spans) >= 5:  # Limit to 5 violations to prevent excessive processing
-                        logger.info("Reached maximum number of violations (5), stopping evaluation")
+                # Log potential violations for debugging
+                if span.any_violation():
+                    logger.debug(f"Potential violation found: {span.text}")
+            
+            # Second pass: Check longer spans if we have capacity
+            if spans_checked < max_spans_to_check and len(tokens) > self.parameters.min_span_length:
+                max_span_length = min(self.parameters.max_span_length, len(tokens))
+                for span_length in range(self.parameters.min_span_length + 1, max_span_length + 1):
+                    if spans_checked >= max_spans_to_check:
                         break
+                        
+                    # Use larger steps for longer spans to maintain performance
+                    step = max(1, span_length // 2)
+                    for start in range(0, len(tokens) - span_length + 1, step):
+                        if spans_checked >= max_spans_to_check:
+                            break
+                            
+                        end = start + span_length - 1
+                        span = self.evaluate_span(tokens, start, end, adjusted_thresholds)
+                        all_spans.append(span)
+                        spans_checked += 1
+                        
+                        if span.any_violation():
+                            logger.debug(f"Violation in span [{start}:{end}]: {span.text}")
+            
+            logger.info(f"Evaluated {spans_checked} spans across {len(tokens)} tokens")
+            
+        except Exception as e:
+            logger.error(f"Error during span evaluation: {e}")
+            # Return partial results if available
+            if not all_spans:
+                return self._create_empty_evaluation(
+                    text=text,
+                    start_time=start_time,
+                    dynamic_result=dynamic_result,
+                    is_ethical=True,
+                    error_message=f"Evaluation failed: {str(e)}"
+                )
         
         # v1.1 UPGRADE: Apply graph attention to enhance span embeddings for distributed patterns
         if self.parameters.enable_graph_attention and all_spans and len(all_spans) > 1:
@@ -2484,7 +2568,10 @@ class EthicalEvaluator:
             all_spans = self.apply_graph_attention_to_spans(all_spans, tokens)
         
         # Find minimal unethical spans
-        minimal_spans = self.find_minimal_spans(tokens, all_spans)
+        minimal_spans = self.find_minimal_spans(all_spans)
+        
+        # Log the number of spans found for debugging
+        logger.info(f"Found {len(all_spans)} total spans and {len(minimal_spans)} minimal spans")
         
         # Apply veto logic: E_v(S) ∨ E_d(S) ∨ E_c(S) = 1
         # Assessment vector E(S) = (E_v(S), E_d(S), E_c(S)) ∈ {0,1}^3
@@ -2506,8 +2593,7 @@ class EthicalEvaluator:
         # v1.1 UPGRADE: Perform causal counterfactual analysis if violations found
         causal_analysis = None
         if (self.parameters.enable_causal_analysis and self.causal_analyzer and 
-            minimal_spans and not overall_ethical and _recursion_depth == 0):
-            # Only run causal analysis on the first level of recursion
+            minimal_spans and not overall_ethical):
             
             dynamic_result.processing_stages.append("causal_analysis")
             
@@ -2537,17 +2623,12 @@ class EthicalEvaluator:
         
         # v1.1 UPGRADE: Perform uncertainty analysis for safety certification
         uncertainty_analysis = None
-        if (self.parameters.enable_uncertainty_analysis and self.uncertainty_analyzer and not _skip_uncertainty_analysis):
+        if (self.parameters.enable_uncertainty_analysis and self.uncertainty_analyzer):
             
             dynamic_result.processing_stages.append("uncertainty_analysis")
             
             try:
-                # Skip uncertainty analysis if we're already in a recursive call to prevent loops
-                if _recursion_depth > 0:
-                    logger.info("Skipping uncertainty analysis in recursive call")
-                    uncertainty_analysis = {"skipped": "Recursive call"}
-                else:
-                    uncertainty_analysis = self.uncertainty_analyzer.analyze_uncertainty(text)
+                uncertainty_analysis = self.uncertainty_analyzer.analyze_uncertainty(text)
                 
                 # Log uncertainty results
                 uncertainty_metrics = uncertainty_analysis.get("uncertainty_metrics", {})
@@ -2565,91 +2646,113 @@ class EthicalEvaluator:
                 logger.error(f"Uncertainty analysis failed: {e}")
                 uncertainty_analysis = {"error": str(e)}
         
-        # v1.1 UPGRADE: Perform IRL purpose alignment analysis for user intent alignment
-        purpose_alignment_analysis = None
-        if (self.parameters.enable_purpose_alignment and self.purpose_alignment and _recursion_depth == 0):
-            # Only run purpose alignment on the first level of recursion
-            dynamic_result.processing_stages.append("purpose_alignment")
-            
+        # v1.1 UPGRADE: Apply graph attention to enhance span embeddings for distributed patterns
+        if self.parameters.enable_graph_attention and all_spans and len(all_spans) > 1:
             try:
-                # Create a temporary evaluation result for purpose alignment
-                temp_eval_result = EthicalEvaluation(
-                    input_text=text,
-                    tokens=tokens,
-                    spans=all_spans,
-                    minimal_spans=minimal_spans,
-                    overall_ethical=overall_ethical,
-                    processing_time=processing_time,
-                    parameters=self.parameters,
-                    dynamic_scaling_result=dynamic_result
+                enhanced_spans = self.graph_attention.enhance_spans(all_spans)
+                if enhanced_spans:
+                    all_spans = enhanced_spans
+                    dynamic_result.processing_stages.append("graph_attention")
+                    logger.debug("Applied graph attention enhancement to spans")
+            except Exception as e:
+                logger.error(f"Graph attention enhancement failed: {e}")
+        
+        # Find minimal spans (non-overlapping violations)
+        try:
+            minimal_spans = self.find_minimal_spans(all_spans)
+            logger.debug(f"Found {len(minimal_spans)} minimal spans")
+        except Exception as e:
+            logger.error(f"Error finding minimal spans: {e}")
+            minimal_spans = []
+        
+        # Apply veto logic (any violation fails the entire evaluation)
+        try:
+            overall_ethical = all(not span.any_violation() for span in minimal_spans)
+            logger.debug(f"Overall ethical evaluation: {overall_ethical}")
+        except Exception as e:
+            logger.error(f"Error in veto logic: {e}")
+            overall_ethical = True  # Fail-safe: assume ethical if veto check fails
+        
+        # v1.1 UPGRADE: Advanced analyses (if enabled)
+        causal_analysis = None
+        uncertainty_analysis = None
+        purpose_alignment = None
+        
+        if self.parameters.enable_advanced_analyses:
+            try:
+                # Causal counterfactual analysis
+                if any(span.any_violation() for span in minimal_spans):
+                    logger.debug("Running causal counterfactual analysis")
+                    causal_analysis = self.causal_analyzer.analyze(text, minimal_spans)
+                    dynamic_result.processing_stages.append("causal_analysis")
+                
+                # Uncertainty analysis
+                logger.debug("Running uncertainty analysis")
+                uncertainty_analysis = self.uncertainty_analyzer.analyze(
+                    text, 
+                    minimal_spans,
+                    ambiguity_score=ambiguity_score
                 )
+                dynamic_result.processing_stages.append("uncertainty_analysis")
                 
-                # Note: In production, context and declared_purpose would come from user input
-                # For now, we'll analyze with empty context to demonstrate the capability
-                purpose_alignment_analysis = self.purpose_alignment.analyze_purpose_alignment(
-                    text=text,
-                    evaluation_result=temp_eval_result,
-                    context="",  # Would be provided by user in production
-                    declared_purpose=""  # Would be provided by user in production
-                )
-                
-                # Log purpose alignment results
-                alignment_score = purpose_alignment_analysis.get("alignment_metrics", {}).get("alignment_score", 1.0)
-                inferred_purpose = purpose_alignment_analysis.get("user_purpose", {}).get("inferred_purpose", "unknown")
-                is_aligned = purpose_alignment_analysis.get("alignment_metrics", {}).get("overall_aligned", True)
-                
-                logger.info(f"Purpose alignment completed: purpose='{inferred_purpose}', "
-                          f"alignment_score={alignment_score:.3f}, aligned={is_aligned}")
-                
-                # Add alignment flag to processing stages
-                if not is_aligned:
-                    dynamic_result.processing_stages.append("purpose_misalignment_detected")
+                # IRL purpose alignment
+                if self.parameters.enable_irl_alignment:
+                    logger.debug("Running IRL purpose alignment analysis")
+                    purpose_alignment = self.purpose_aligner.analyze(
+                        text,
+                        minimal_spans,
+                        self.parameters.purpose_embedding
+                    )
+                    dynamic_result.processing_stages.append("purpose_alignment")
                     
             except Exception as e:
-                logger.error(f"Purpose alignment analysis failed: {e}")
-                purpose_alignment_analysis = {"error": str(e)}
+                logger.error(f"Advanced analysis failed: {e}")
+        else:
+            logger.debug("Advanced analyses are disabled")
         
-        return EthicalEvaluation(
-            input_text=text,
-            tokens=tokens,
-            spans=all_spans,
-            minimal_spans=minimal_spans,
-            overall_ethical=overall_ethical,
-            processing_time=processing_time,
-            parameters=self.parameters,
-            dynamic_scaling_result=dynamic_result,
-            causal_analysis=causal_analysis,  # v1.1 UPGRADE: Add causal analysis results
-            uncertainty_analysis=uncertainty_analysis,  # v1.1 UPGRADE: Add uncertainty analysis results
-            purpose_alignment_analysis=purpose_alignment_analysis  # v1.1 UPGRADE: Add purpose alignment results
-        )
-    
-    def update_parameters(self, new_parameters: Dict[str, Any]):
-        """
-        Update evaluation parameters for calibration
+        # Calculate processing time
+        processing_time = time.time() - start_time
+        logger.info(f"Completed evaluation in {processing_time:.3f} seconds")
         
-        Args:
-            new_parameters: Dictionary of parameter names and values to update
+        # Log final evaluation summary
+        violation_count = sum(1 for span in minimal_spans if span.any_violation())
+        logger.info(f"Evaluation complete - Ethical: {overall_ethical}, Violations: {violation_count}")
+        
+        # Create and return the evaluation result
+        try:
+            evaluation = EthicalEvaluation(
+                input_text=text,
+                tokens=tokens,
+                spans=all_spans,
+                minimal_spans=minimal_spans,
+                overall_ethical=overall_ethical,
+                processing_time=processing_time,
+                parameters=self.parameters,
+                dynamic_scaling_result=dynamic_result,
+                causal_analysis=causal_analysis,
+                uncertainty_analysis=uncertainty_analysis,
+                purpose_alignment=purpose_alignment
+            )
+            logger.debug("Successfully created EthicalEvaluation object")
+            return evaluation
             
-        Special handling for tau_slider (0-1) which maps to threshold values
-        """
-        # Handle tau_slider specially if provided
-        if 'tau_slider' in new_parameters:
-            tau_slider = new_parameters.pop('tau_slider')
-            if 0 <= tau_slider <= 1:
-                # Convert 0-1 slider to threshold value (lower tau = more sensitive)
-                base_threshold = self.apply_threshold_scaling(1.0 - tau_slider)  # Invert so 0=strict, 1=lenient
-                self.parameters.virtue_threshold = base_threshold
-                self.parameters.deontological_threshold = base_threshold
-                self.parameters.consequentialist_threshold = base_threshold
-                logger.info(f"Updated thresholds from tau_slider={tau_slider:.2f} -> {base_threshold:.3f}")
-        
-        # Update other parameters normally
+        except Exception as e:
+            logger.error(f"Failed to create EthicalEvaluation: {e}")
+            # Return minimal valid evaluation with error
+            return self._create_empty_evaluation(
+                text=text,
+                start_time=start_time,
+                dynamic_result=dynamic_result,
+                is_ethical=False,
+                error_message=f"Evaluation failed: {str(e)}"
+            )
+            
+    def update_parameters(self, new_parameters: Dict[str, Any]):
+        """Update evaluation parameters for calibration"""
         for key, value in new_parameters.items():
             if hasattr(self.parameters, key):
                 setattr(self.parameters, key, value)
-        
-        logger.info(f"Updated parameters: {new_parameters}")
-        return self.parameters
+                logger.info(f"Updated parameter {key} to {value}")
     
     def generate_clean_text(self, evaluation: EthicalEvaluation) -> str:
         """Generate clean text by removing minimal unethical spans"""

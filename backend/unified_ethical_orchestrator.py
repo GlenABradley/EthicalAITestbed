@@ -183,6 +183,9 @@ class UnifiedEthicalContext:
     
     # Metadata for traceability
     metadata: Dict[str, Any] = field(default_factory=dict)
+    
+    # Evaluation parameters, including dynamic thresholds
+    parameters: Dict[str, Any] = field(default_factory=dict)
 
 @dataclass
 class UnifiedEthicalResult:
@@ -452,7 +455,8 @@ class UnifiedEthicalOrchestrator:
     async def evaluate_content(
         self, 
         content: Union[str, List[str]], 
-        context: Optional[UnifiedEthicalContext] = None
+        context: Optional[UnifiedEthicalContext] = None,
+        tau_slider: Optional[float] = None
     ) -> UnifiedEthicalResult:
         """
         🎓 MAIN EVALUATION PROCESS LECTURE:
@@ -522,8 +526,17 @@ class UnifiedEthicalOrchestrator:
                 logger.info(f"✅ Cache hit for request {context.request_id}")
                 return cache_result
             
+            # Extract parameters from context for the evaluation pipeline
+            tau_slider_from_context = context.parameters.get('tau_slider')
+            evaluation_params = context.parameters
+
             # 🧠 PHASE 2: MULTI-PERSPECTIVE ETHICAL ANALYSIS
-            analysis_results = await self._perform_comprehensive_analysis(text_content, context)
+            analysis_results = await self._perform_comprehensive_analysis(
+                content=text_content, 
+                context=context, 
+                tau_slider=tau_slider_from_context,
+                parameters=evaluation_params
+            )
             
             # 🌐 PHASE 3: KNOWLEDGE INTEGRATION
             knowledge_results = await self._integrate_relevant_knowledge(text_content, context, analysis_results)
@@ -572,26 +585,45 @@ class UnifiedEthicalOrchestrator:
         # Initialize each component if available
         if DEPENDENCIES_AVAILABLE:
             try:
-                # Core ethical evaluation engine
-                self._components['core_engine'] = EthicalEvaluator()
-                logger.info("✅ Core ethical engine initialized")
+                # Core ethical evaluation engine with proper initialization
+                from ethical_engine import EthicalEvaluator, EthicalParameters
+                
+                # Initialize with default parameters
+                params = EthicalParameters()
+                params.virtue_threshold = 0.7
+                params.deontological_threshold = 0.7
+                params.consequentialist_threshold = 0.7
+                params.max_span_length = 10
+                
+                self._components['core_engine'] = EthicalEvaluator(parameters=params)
+                logger.info("✅ Core ethical engine initialized with default parameters")
                 
                 # Enhanced ethics pipeline
-                from enhanced_ethics_pipeline import get_enhanced_ethics_pipeline
-                pipeline = get_enhanced_ethics_pipeline()
-                if pipeline:
-                    self._components['enhanced_pipeline'] = pipeline
-                    logger.info("✅ Enhanced ethics pipeline initialized")
+                try:
+                    from enhanced_ethics_pipeline import get_enhanced_ethics_pipeline
+                    pipeline = get_enhanced_ethics_pipeline()
+                    if pipeline:
+                        self._components['enhanced_pipeline'] = pipeline
+                        logger.info("✅ Enhanced ethics pipeline initialized")
+                except ImportError as e:
+                    logger.warning(f"Enhanced ethics pipeline not available: {e}")
                 
                 # Knowledge integration layer  
-                from knowledge_integration_layer import get_knowledge_integrator
-                integrator = get_knowledge_integrator()
-                if integrator:
-                    self._components['knowledge_integrator'] = integrator
-                    logger.info("✅ Knowledge integration layer initialized")
+                try:
+                    from knowledge_integration_layer import get_knowledge_integrator
+                    integrator = get_knowledge_integrator()
+                    if integrator:
+                        self._components['knowledge_integrator'] = integrator
+                        logger.info("✅ Knowledge integration layer initialized")
+                except ImportError as e:
+                    logger.warning(f"Knowledge integration layer not available: {e}")
                 
             except Exception as e:
-                logger.warning(f"Some components failed to initialize: {e}")
+                logger.error(f"Failed to initialize core components: {e}", exc_info=True)
+                raise
+        else:
+            logger.error("Required dependencies are not available")
+            raise RuntimeError("Failed to initialize core components: Dependencies not available")
         
         logger.info("🎯 Core component initialization complete")
     
@@ -655,12 +687,53 @@ class UnifiedEthicalOrchestrator:
         # Implementation would check cache based on content hash and context
         return None
     
-    async def _perform_comprehensive_analysis(self, content: str, context: UnifiedEthicalContext) -> Dict[str, Any]:
+    async def _perform_comprehensive_analysis(self, content: str, context: UnifiedEthicalContext, tau_slider: Optional[float] = None, parameters: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Perform multi-layered ethical analysis."""
         analysis_results = {}
         
-        # Enhanced pipeline analysis
-        if 'enhanced_pipeline' in self._components:
+        # Use core engine by default
+        if 'core_engine' in self._components:
+            try:
+                core_engine = self._components['core_engine']
+                
+                # Initialize parameters with defaults
+                ethical_params = EthicalParameters()
+                
+                # Update with provided parameters if any
+                if parameters:
+                    for key, value in parameters.items():
+                        if hasattr(ethical_params, key):
+                            setattr(ethical_params, key, value)
+                
+                # Apply tau_slider if provided
+                if tau_slider is not None:
+                    ethical_params.virtue_threshold = tau_slider * 0.5
+                    ethical_params.deontological_threshold = tau_slider * 0.5
+                    ethical_params.consequentialist_threshold = tau_slider * 0.5
+                
+                logger.info(f"Starting core engine evaluation with params: {ethical_params}")
+                
+                # Perform evaluation
+                try:
+                    # Call evaluate_text directly since it's a synchronous method
+                    evaluation = core_engine.evaluate_text(
+                        text=content,
+                        _skip_uncertainty_analysis=True  # Skip advanced analysis to prevent recursion
+                    )
+                except Exception as e:
+                    logger.error(f"Error in core_engine.evaluate_text: {e}", exc_info=True)
+                    raise
+                
+                # Store the evaluation result
+                if evaluation:
+                    analysis_results['core_evaluation'] = evaluation
+                    logger.info(f"Core engine evaluation completed with {len(evaluation.spans)} spans")
+                
+            except Exception as e:
+                logger.error(f"Core engine evaluation failed: {e}", exc_info=True)
+        
+        # Fallback to enhanced pipeline if core engine fails
+        if not analysis_results and 'enhanced_pipeline' in self._components:
             try:
                 pipeline = self._components['enhanced_pipeline']
                 
@@ -668,27 +741,16 @@ class UnifiedEthicalOrchestrator:
                 meta_analysis = await pipeline.perform_meta_ethical_analysis(content)
                 analysis_results['meta_ethical'] = meta_analysis
                 
-                normative_analysis = await pipeline.perform_normative_analysis(content)
+                normative_analysis = await self._perform_normative_analysis(pipeline, content, context, parameters or {})
                 analysis_results['normative'] = normative_analysis
                 
-                applied_analysis = await pipeline.perform_applied_analysis(content)
+                applied_analysis = await pipeline.perform_applied_analysis(content, context.domain, context.cultural_context)
                 analysis_results['applied'] = applied_analysis
                 
-            except Exception as e:
-                logger.warning(f"Enhanced pipeline analysis failed: {e}")
-        
-        # Core engine analysis (fallback)
-        if 'core_engine' in self._components:
-            try:
-                logger.info(f"Calling core engine for detailed analysis of {len(content)} characters")
-                core_result = self._components['core_engine'].evaluate_text(content)
-                analysis_results['core_evaluation'] = core_result
-                logger.info(f"Core engine returned result with {len(getattr(core_result, 'spans', []))} spans")
+                logger.info("Fell back to enhanced pipeline analysis")
                 
             except Exception as e:
-                logger.error(f"Core engine analysis failed: {e}")
-        else:
-            logger.warning("Core engine not available in components")
+                logger.error(f"Enhanced pipeline analysis also failed: {e}", exc_info=True)
         
         return analysis_results
     

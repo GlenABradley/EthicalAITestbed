@@ -37,7 +37,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 
 # Import our caching system
-from backend.utils.caching_manager import global_cache_manager, CacheManager
+from utils.caching_manager import global_cache_manager, CacheManager
 
 # Configure logging
 logger = logging.getLogger(__name__)

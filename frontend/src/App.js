@@ -6,7 +6,7 @@ import MLTrainingAssistant from './components/MLTrainingAssistant';
 import RealTimeStreamingInterface from './components/RealTimeStreamingInterface';
 
 // Backend API endpoint from environment variables
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
 const API = `${BACKEND_URL}/api`;
 
 /**
@@ -32,7 +32,9 @@ function App() {
   
   // State for threshold scaling
   const [thresholdScaling, setThresholdScaling] = useState({
-    sliderValue: 0.5,  // Default to middle position
+    virtue: 0.5,        // Virtue threshold slider value
+    deontological: 0.5, // Deontological threshold slider value
+    consequentialist: 0.5, // Consequentialist threshold slider value
     isUpdating: false,  // Loading state
     lastUpdate: null,   // Timestamp of last update
     scalingType: 'exponential',  // Default to exponential scaling
@@ -99,12 +101,18 @@ function App() {
       },
       body: JSON.stringify({
         text: inputText,
-        parameters: {
+        // Pass all three threshold values at the top level
+        virtue_threshold: thresholdScaling.virtue,
+        deontological_threshold: thresholdScaling.deontological,
+        consequentialist_threshold: thresholdScaling.consequentialist,
+        parameters: { 
           ...(parameters || {}),
-          // Include the tau slider value in the parameters
-          tau_slider: thresholdScaling.sliderValue,
-          // Include the scaling type (exponential/linear)
-          scaling_type: thresholdScaling.scalingType
+          // Ensure these values are included in the parameters as well for backward compatibility
+          virtue_threshold: thresholdScaling.virtue,
+          deontological_threshold: thresholdScaling.deontological,
+          consequentialist_threshold: thresholdScaling.consequentialist,
+          // Set the scaling type
+          exponential_scaling: thresholdScaling.scalingType === 'exponential'
         }
       })
     })
@@ -117,6 +125,7 @@ function App() {
     })
     .then(data => {
       console.log('📊 Evaluation data received:', data);
+      // FIX: Set the entire response object to preserve structure
       setEvaluationResult(data);
       console.log('✅ Results set successfully');
     })
@@ -128,15 +137,9 @@ function App() {
       setLoading(false);
       console.log('🏁 Evaluation finished');
     });
-  }, [inputText, parameters]);
+  }, [inputText, parameters, thresholdScaling.sliderValue]);
 
-  // Alternative click handler using native DOM events as fallback
-  const handleEvaluateNative = useCallback((event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    console.log('🎯 NATIVE EVENT HANDLER CALLED');
-    handleEvaluate();
-  }, [handleEvaluate]);
+
 
   const updateParameter = useCallback((key, value) => {
     // Handle different parameter types properly
@@ -177,77 +180,9 @@ function App() {
     setActiveTab(tabName);
   }, []);
 
-  // Alternative tab handlers using native events
-  const handleTabSwitchNative = useCallback((event, tabName) => {
-    event.preventDefault();
-    event.stopPropagation();
-    console.log(`🎯 NATIVE TAB HANDLER - switching to: ${tabName}`);
-    setActiveTab(tabName);
-  }, []);
 
-  // Add native DOM event listeners as fallback after component mounts
-  useEffect(() => {
-    console.log('🔧 Setting up fallback event listeners');
-    
-    // Function to add native click listeners to buttons
-    const addNativeListeners = () => {
-      // Tab buttons
-      const tabButtons = document.querySelectorAll('nav button');
-      tabButtons.forEach((button, index) => {
-        const tabNames = ['evaluate', 'heatmap', 'ml-assistant', 'streaming', 'parameters'];
-        const tabName = tabNames[index];
-        
-        if (tabName) {
-          // Remove existing listeners
-          button.removeEventListener('click', button._nativeClickHandler);
-          
-          // Add new listener
-          const clickHandler = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log(`🎯 NATIVE LISTENER - Tab clicked: ${tabName}`);
-            setActiveTab(tabName);
-          };
-          
-          button._nativeClickHandler = clickHandler;
-          button.addEventListener('click', clickHandler, { passive: false });
-        }
-      });
-      
-      // Evaluate button
-      const evaluateButton = document.querySelector('button[data-action="evaluate"]');
-      if (evaluateButton) {
-        evaluateButton.removeEventListener('click', evaluateButton._nativeClickHandler);
-        
-        const evaluateClickHandler = (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          console.log('🎯 NATIVE LISTENER - Evaluate button clicked');
-          handleEvaluate();
-        };
-        
-        evaluateButton._nativeClickHandler = evaluateClickHandler;
-        evaluateButton.addEventListener('click', evaluateClickHandler, { passive: false });
-      }
-    };
 
-    // Add listeners after a short delay to ensure DOM is ready
-    const timer = setTimeout(addNativeListeners, 100);
-    
-    // Also add listeners when the active tab changes
-    addNativeListeners();
-    
-    return () => {
-      clearTimeout(timer);
-      // Cleanup listeners
-      const allButtons = document.querySelectorAll('button');
-      allButtons.forEach(button => {
-        if (button._nativeClickHandler) {
-          button.removeEventListener('click', button._nativeClickHandler);
-        }
-      });
-    };
-  }, [activeTab, handleEvaluate]);
+
 
   // New functions for learning system
   const submitFeedback = (evaluationId, feedbackScore, userComment = '') => {
@@ -303,14 +238,15 @@ function App() {
   const EVALUATION_COOLDOWN = 1000; // 1 second cooldown between evaluations
 
   /**
-   * Updates the threshold scaling values and triggers a re-evaluation if needed
+   * Updates a specific threshold value and triggers a re-evaluation if needed
+   * @param {string} thresholdType - The type of threshold ('virtue', 'deontological', 'consequentialist')
    * @param {number} newValue - The new slider value (0.0 to 1.0)
    * @param {boolean} triggerEvaluation - Whether to trigger a re-evaluation after updating
    */
-  const updateThresholdScaling = async (newValue, triggerEvaluation = true) => {
+  const updateThresholdScaling = async (thresholdType, newValue, triggerEvaluation = true) => {
     try {
       // Prevent unnecessary updates if the value hasn't changed
-      if (Math.abs(thresholdScaling.sliderValue - newValue) < 0.001) {
+      if (Math.abs(thresholdScaling[thresholdType] - newValue) < 0.001) {
         return;
       }
 
@@ -322,21 +258,26 @@ function App() {
       }
       lastEvaluationTimeRef.current = now;
 
-      console.log('Updating threshold scaling to:', newValue);
+      console.log(`Updating ${thresholdType} threshold to:`, newValue);
       
-      // Update local state optimistically
-      setThresholdScaling(prev => ({
-        ...prev,
-        sliderValue: newValue,
+      // Create updated thresholds object with the new value
+      const updatedThresholds = {
+        ...thresholdScaling,
+        [thresholdType]: newValue,
         isUpdating: true,
         error: null
-      }));
+      };
+      
+      // Update local state optimistically
+      setThresholdScaling(updatedThresholds);
 
       try {
-        // Send update to backend
-        const response = await axios.post(`${API}/threshold-scaling`, {
-          slider_value: newValue,
-          use_exponential: thresholdScaling.scalingType === 'exponential'
+        // Send all threshold updates to backend at once
+        const response = await axios.post(`${API}/evaluate/update-thresholds`, {
+          virtue_threshold: thresholdType === 'virtue' ? newValue : updatedThresholds.virtue,
+          deontological_threshold: thresholdType === 'deontological' ? newValue : updatedThresholds.deontological,
+          consequentialist_threshold: thresholdType === 'consequentialist' ? newValue : updatedThresholds.consequentialist,
+          use_exponential: updatedThresholds.scalingType === 'exponential'
         });
 
         // Update state with response
@@ -347,20 +288,20 @@ function App() {
           error: null
         }));
 
-        console.log('Threshold scaling updated:', response.data);
+        console.log('Thresholds updated:', response.data);
         
-        // If we have an evaluation result and we should trigger a re-evaluation
+        // If we have an evaluation result and should trigger a re-evaluation
         if (evaluationResult && triggerEvaluation && inputText.trim()) {
-          console.log('Triggering re-evaluation with new threshold');
+          console.log('Triggering re-evaluation with updated thresholds');
           await handleEvaluate();
         }
         
         return response.data;
       } catch (error) {
-        // If there's an error, reset the slider to the last good value
+        // If there's an error, reset to previous values
         setThresholdScaling(prev => ({
           ...prev,
-          sliderValue: thresholdScaling.sliderValue,
+          [thresholdType]: thresholdScaling[thresholdType],
           isUpdating: false,
           error: error.message
         }));
@@ -387,7 +328,7 @@ function App() {
   };
   
   /**
-   * Toggles between exponential and linear scaling
+   * Toggles between exponential and linear scaling for all threshold sliders
    */
   const toggleScalingType = async () => {
     const newScalingType = thresholdScaling.scalingType === 'exponential' ? 'linear' : 'exponential';
@@ -398,9 +339,13 @@ function App() {
       isUpdating: true
     }));
     
-    // Re-apply the current slider value with the new scaling type
+    // Re-apply all current slider values with the new scaling type
     try {
-      await updateThresholdScaling(thresholdScaling.sliderValue, true);
+      await Promise.all([
+        updateThresholdScaling('virtue', thresholdScaling.virtue, false),
+        updateThresholdScaling('deontological', thresholdScaling.deontological, false),
+        updateThresholdScaling('consequentialist', thresholdScaling.consequentialist, true)
+      ]);
     } catch (error) {
       // Error is already handled in updateThresholdScaling
     }
@@ -423,7 +368,6 @@ function App() {
           <nav className="flex space-x-2 bg-white p-2 rounded-lg shadow">
             <button
               onClick={() => handleTabSwitch('evaluate')}
-              onMouseDown={(e) => handleTabSwitchNative(e, 'evaluate')}
               data-tab="evaluate"
               className={`px-4 py-2 rounded-md font-medium transition-colors ${
                 activeTab === 'evaluate'
@@ -435,7 +379,6 @@ function App() {
             </button>
             <button
               onClick={() => handleTabSwitch('heatmap')}
-              onMouseDown={(e) => handleTabSwitchNative(e, 'heatmap')}
               data-tab="heatmap"
               className={`px-4 py-2 rounded-md font-medium transition-colors ${
                 activeTab === 'heatmap'
@@ -447,7 +390,6 @@ function App() {
             </button>
             <button
               onClick={() => handleTabSwitch('ml-assistant')}
-              onMouseDown={(e) => handleTabSwitchNative(e, 'ml-assistant')}
               data-tab="ml-assistant"
               className={`px-4 py-2 rounded-md font-medium transition-colors ${
                 activeTab === 'ml-assistant'
@@ -459,7 +401,6 @@ function App() {
             </button>
             <button
               onClick={() => handleTabSwitch('streaming')}
-              onMouseDown={(e) => handleTabSwitchNative(e, 'streaming')}
               data-tab="streaming"
               className={`px-4 py-2 rounded-md font-medium transition-colors ${
                 activeTab === 'streaming'
@@ -471,7 +412,6 @@ function App() {
             </button>
             <button
               onClick={() => handleTabSwitch('parameters')}
-              onMouseDown={(e) => handleTabSwitchNative(e, 'parameters')}
               data-tab="parameters"
               className={`px-4 py-2 rounded-md font-medium transition-colors ${
                 activeTab === 'parameters'
@@ -552,7 +492,6 @@ function App() {
                   <div className="flex space-x-4">
                     <button
                       onClick={handleEvaluate}
-                      onMouseDown={handleEvaluateNative}
                       data-action="evaluate"
                       disabled={loading || !inputText.trim()}
                       className="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
@@ -780,7 +719,7 @@ function App() {
                         </div>
                         
                         <div className="bg-gray-50 p-4 rounded-md">
-                          <div className="space-y-3">
+                          <div className="space-y-4">
                             <div className="flex items-center justify-between">
                               <h4 className="font-semibold text-gray-800">Threshold Sensitivity</h4>
                               <button
@@ -799,52 +738,101 @@ function App() {
                               </button>
                             </div>
                             
-                            <div className="flex items-center space-x-3">
-                              <span className="text-xs text-gray-500 w-8">Low</span>
-                              <input
-                                type="range"
-                                min="0"
-                                max="1"
-                                step="0.01"
-                                value={thresholdScaling.sliderValue}
-                                onChange={(e) => updateThresholdScaling(parseFloat(e.target.value), true)}
-                                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                                disabled={thresholdScaling.isUpdating}
-                              />
-                              <span className="text-xs text-gray-500 w-12 text-right">High</span>
-                            </div>
-                            
-                            <div className="text-sm space-y-1 text-gray-600">
-                              <div className="flex justify-between">
-                                <span>Sensitivity:</span>
-                                <span className="font-medium">
-                                  {Math.round(thresholdScaling.sliderValue * 100)}%
-                                </span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span>Threshold:</span>
-                                <span className="font-mono">
+                            {/* Virtue Threshold Slider */}
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-sm">
+                                <span className="font-medium text-purple-700">Virtue</span>
+                                <span className="font-mono text-xs">
                                   {thresholdScaling.scalingType === 'exponential'
-                                    ? ((Math.exp(6 * thresholdScaling.sliderValue) - 1) / (Math.exp(6) - 1) * 0.5).toFixed(4)
-                                    : (thresholdScaling.sliderValue * 0.5).toFixed(4)
+                                    ? ((Math.exp(6 * thresholdScaling.virtue) - 1) / (Math.exp(6) - 1) * 0.5).toFixed(4)
+                                    : (thresholdScaling.virtue * 0.5).toFixed(4)
                                   }
                                 </span>
                               </div>
-                              {thresholdScaling.isUpdating && (
-                                <div className="text-blue-600 text-xs flex items-center">
-                                  <svg className="animate-spin -ml-1 mr-2 h-3 w-3 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                  </svg>
-                                  Updating...
-                                </div>
-                              )}
-                              {thresholdScaling.error && (
-                                <div className="text-red-500 text-xs">
-                                  Error: {thresholdScaling.error}
-                                </div>
-                              )}
+                              <div className="flex items-center space-x-2">
+                                <span className="text-xs text-gray-500 w-6">Low</span>
+                                <input
+                                  type="range"
+                                  min="0"
+                                  max="1"
+                                  step="0.01"
+                                  value={thresholdScaling.virtue}
+                                  onChange={(e) => updateThresholdScaling('virtue', parseFloat(e.target.value))}
+                                  className="flex-1 h-2 bg-purple-100 rounded-lg appearance-none cursor-pointer"
+                                  disabled={thresholdScaling.isUpdating}
+                                />
+                                <span className="text-xs text-gray-500 w-6 text-right">High</span>
+                              </div>
                             </div>
+                            
+                            {/* Deontological Threshold Slider */}
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-sm">
+                                <span className="font-medium text-blue-700">Deontological</span>
+                                <span className="font-mono text-xs">
+                                  {thresholdScaling.scalingType === 'exponential'
+                                    ? ((Math.exp(6 * thresholdScaling.deontological) - 1) / (Math.exp(6) - 1) * 0.5).toFixed(4)
+                                    : (thresholdScaling.deontological * 0.5).toFixed(4)
+                                  }
+                                </span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <span className="text-xs text-gray-500 w-6">Low</span>
+                                <input
+                                  type="range"
+                                  min="0"
+                                  max="1"
+                                  step="0.01"
+                                  value={thresholdScaling.deontological}
+                                  onChange={(e) => updateThresholdScaling('deontological', parseFloat(e.target.value))}
+                                  className="flex-1 h-2 bg-blue-100 rounded-lg appearance-none cursor-pointer"
+                                  disabled={thresholdScaling.isUpdating}
+                                />
+                                <span className="text-xs text-gray-500 w-6 text-right">High</span>
+                              </div>
+                            </div>
+                            
+                            {/* Consequentialist Threshold Slider */}
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-sm">
+                                <span className="font-medium text-green-700">Consequentialist</span>
+                                <span className="font-mono text-xs">
+                                  {thresholdScaling.scalingType === 'exponential'
+                                    ? ((Math.exp(6 * thresholdScaling.consequentialist) - 1) / (Math.exp(6) - 1) * 0.5).toFixed(4)
+                                    : (thresholdScaling.consequentialist * 0.5).toFixed(4)
+                                  }
+                                </span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <span className="text-xs text-gray-500 w-6">Low</span>
+                                <input
+                                  type="range"
+                                  min="0"
+                                  max="1"
+                                  step="0.01"
+                                  value={thresholdScaling.consequentialist}
+                                  onChange={(e) => updateThresholdScaling('consequentialist', parseFloat(e.target.value))}
+                                  className="flex-1 h-2 bg-green-100 rounded-lg appearance-none cursor-pointer"
+                                  disabled={thresholdScaling.isUpdating}
+                                />
+                                <span className="text-xs text-gray-500 w-6 text-right">High</span>
+                              </div>
+                            </div>
+                            
+                            {thresholdScaling.isUpdating && (
+                              <div className="text-blue-600 text-xs flex items-center">
+                                <svg className="animate-spin -ml-1 mr-2 h-3 w-3 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Updating...
+                              </div>
+                            )}
+                            {thresholdScaling.error && (
+                              <div className="text-red-500 text-xs">
+                                Error: {thresholdScaling.error}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>

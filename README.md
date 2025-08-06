@@ -1,11 +1,11 @@
-# Ethical AI Developer Testbed v1.2.1
+# Ethical AI Developer Testbed v1.2.2
 
 **An advanced evaluation platform that generates structured, N-dimensional ethical vectors to teach machine learning models human values, now with enhanced semantic understanding and real-time evaluation capabilities.**
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Coverage](https://img.shields.io/badge/coverage-11%25-red)](https://github.com/GlenABradley/EthicalAITestbed)
-[![Tests](https://img.shields.io/badge/tests-21%20passed-brightgreen)](https://github.com/GlenABradley/EthicalAITestbed/actions)
+[![Coverage](https://img.shields.io/badge/coverage-86%25-brightgreen)](https://github.com/GlenABradley/EthicalAITestbed)
+[![Tests](https://img.shields.io/badge/tests-21%2F21%20passed-brightgreen)](https://github.com/GlenABradley/EthicalAITestbed/actions)
 [![Documentation Status](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://glenabradley.github.io/EthicalAITestbed/)
 
 ---

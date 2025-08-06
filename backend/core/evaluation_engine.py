@@ -39,11 +39,11 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as ConcurrentTimeoutError
 
 # Import our optimization modules
-from backend.core.embedding_service import EmbeddingService, global_embedding_service
-from backend.utils.caching_manager import CacheManager, global_cache_manager
+from core.embedding_service import EmbeddingService, global_embedding_service
+from utils.caching_manager import CacheManager, global_cache_manager
 
 # Import original components (we'll gradually replace these)
-from backend.ethical_engine import (
+from ethical_engine import (
     EthicalParameters, EthicalEvaluation, EthicalSpan,
     DynamicScalingResult, LearningLayer
 )
@@ -354,42 +354,61 @@ class OptimizedEvaluationEngine:
         """
         Create text spans for analysis using optimized algorithms.
         
-        For Novice Developers:
-        Instead of analyzing every single word (slow), we intelligently group
-        words into "spans" (phrases) that make sense together. Think of it like
-        reading in phrases instead of letter-by-letter.
-        
-        Optimizations:
-        - Skip very short words (a, the, is) unless they're critical
-        - Group related words together
-        - Use smarter boundaries (punctuation, natural breaks)
+        This implementation creates spans for each token in the input text,
+        ensuring that we always have spans to work with for ethical evaluation.
         """
         spans = []
         current_pos = 0
         
-        # Simple but effective span creation
-        for i, token in enumerate(tokens):
+        # Simple token-based span creation
+        for token in tokens:
+            if not token.strip():
+                continue
+                
+            # Find the token in the text starting from current_pos
             start = text.find(token, current_pos)
+            if start == -1:
+                # If we can't find the token, skip it
+                continue
+                
             end = start + len(token)
             
-            # Create span for meaningful tokens (skip tiny words unless critical)
-            if len(token) > 2 or token.lower() in ['no', 'not', 'yes']:
-                span = EthicalSpan(
-                    start=start,
-                    end=end,
-                    text=token,
-                    virtue_score=0.0,
-                    deontological_score=0.0,
-                    consequentialist_score=0.0,
-                    virtue_violation=False,
-                    deontological_violation=False,
-                    consequentialist_violation=False,
-                    is_minimal=True
-                )
-                spans.append(span)
+            # Create a span for this token
+            span = EthicalSpan(
+                start=start,
+                end=end,
+                text=token,
+                context=token,  # Simple context - just the token itself
+                virtue_score=0.0,
+                deontological_score=0.0,
+                consequentialist_score=0.0,
+                virtue_violation=False,
+                deontological_violation=False,
+                consequentialist_violation=False,
+                is_minimal=True
+            )
+            spans.append(span)
             
+            # Update current position to avoid searching the same text again
             current_pos = end
         
+        # If we still don't have any spans, create a single span for the entire text
+        if not spans and text.strip():
+            span = EthicalSpan(
+                start=0,
+                end=len(text),
+                text=text,
+                context=text,
+                virtue_score=0.0,
+                deontological_score=0.0,
+                consequentialist_score=0.0,
+                virtue_violation=False,
+                deontological_violation=False,
+                consequentialist_violation=False,
+                is_minimal=True
+            )
+            spans.append(span)
+            
         return spans
     
     def _compute_span_scores(self, span: EthicalSpan, context_embedding: np.ndarray) -> EthicalSpan:
@@ -398,38 +417,63 @@ class OptimizedEvaluationEngine:
         
         For Novice Developers:
         This is where we grade each phrase on our three ethical scales.
-        We use the mathematical representation (embedding) to compute how
-        "ethical" or "unethical" each phrase appears to be.
+        We use a simple heuristic approach to detect potential ethical issues.
         
         Score Meaning:
         - 0.0 = Very ethical
         - 0.5 = Neutral
         - 1.0 = Very unethical
         """
-        # Use simplified scoring for performance (can be enhanced later)
-        # In a real implementation, this would use the ethical vectors from the original engine
-        
-        # Placeholder scoring (replace with actual ethical vector computation)
-        virtue_score = np.random.random() * 0.3  # Bias toward ethical
-        deontological_score = np.random.random() * 0.3
-        consequentialist_score = np.random.random() * 0.3
-        
-        # Apply thresholds from parameters
-        virtue_threshold = self.parameters.virtue_threshold
-        deontological_threshold = self.parameters.deontological_threshold
-        consequentialist_threshold = self.parameters.consequentialist_threshold
-        
-        # Update span with computed scores
-        span.virtue_score = virtue_score
-        span.deontological_score = deontological_score
-        span.consequentialist_score = consequentialist_score
-        
-        # Determine violations
-        span.virtue_violation = virtue_score > virtue_threshold
-        span.deontological_violation = deontological_score > deontological_threshold
-        span.consequentialist_violation = consequentialist_score > consequentialist_threshold
-        
-        return span
+        try:
+            # Simple heuristic: look for potentially problematic terms
+            problematic_terms = [
+                'harm', 'danger', 'dangerous', 'illegal', 'unethical', 'wrong',
+                'steal', 'cheat', 'lie', 'hurt', 'kill', 'attack', 'threat',
+                'hate', 'discriminate', 'bias', 'unfair', 'exploit', 'abuse'
+            ]
+            
+            # Convert text to lowercase for case-insensitive matching
+            text_lower = span.text.lower()
+            
+            # Calculate base scores (0.0-1.0)
+            virtue_score = 0.5  # Neutral by default
+            deontological_score = 0.5
+            consequentialist_score = 0.5
+            
+            # Check for problematic terms
+            for term in problematic_terms:
+                if term in text_lower:
+                    # Increase scores if problematic term is found
+                    virtue_score = min(1.0, virtue_score + 0.3)
+                    deontological_score = min(1.0, deontological_score + 0.3)
+                    consequentialist_score = min(1.0, consequentialist_score + 0.3)
+            
+            # Check for negation (e.g., "not harmful")
+            if 'not ' in text_lower or 'no ' in text_lower:
+                # Lower scores if the term is negated
+                virtue_score = max(0.0, virtue_score - 0.2)
+                deontological_score = max(0.0, deontological_score - 0.2)
+                consequentialist_score = max(0.0, consequentialist_score - 0.2)
+            
+            # Update span with calculated scores
+            span.virtue_score = round(virtue_score, 2)
+            span.deontological_score = round(deontological_score, 2)
+            span.consequentialist_score = round(consequentialist_score, 2)
+            
+            # Set violation flags based on thresholds (0.7 threshold for violation)
+            span.virtue_violation = virtue_score > 0.7
+            span.deontological_violation = deontological_score > 0.7
+            span.consequentialist_violation = consequentialist_score > 0.7
+            
+            return span
+            
+        except Exception as e:
+            logger.error(f"Error computing scores for span: {e}")
+            # Return neutral scores on error
+            span.virtue_score = 0.5
+            span.deontological_score = 0.5
+            span.consequentialist_score = 0.5
+            return span
     
     async def _apply_v1_features_async(self, 
                                      text: str, 

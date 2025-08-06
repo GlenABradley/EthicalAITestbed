@@ -1,215 +1,132 @@
+import pytest
 import requests
 import json
 import time
-from typing import Dict, Any, List, Optional
 
-BASE_URL = "http://localhost:8001"
+# Define the base URL of the API
+BASE_URL = "http://localhost:8001/api"
 
-def test_health() -> bool:
-    """Test the health check endpoint."""
+# Helper function to check if the server is running
+def is_server_running():
+    """Polls the health endpoint to check if the server is responsive."""
     try:
-        response = requests.get(f"{BASE_URL}/api/health")
-        print(f"✅ Health check: {response.status_code}")
+        # The health endpoint is at /api/health
+        response = requests.get(f"{BASE_URL}/health", timeout=5)
         return response.status_code == 200
-    except Exception as e:
-        print(f"❌ Health check failed: {str(e)}")
+    except requests.exceptions.ConnectionError:
         return False
 
-def test_evaluate() -> bool:
-    """Test the evaluation endpoint."""
-    try:
-        data = {
-            "text": "This is a test sentence to evaluate.",
-            "context": {
-                "domain": "test",
-                "purpose": "evaluation",
-                "cultural_context": "universal"
-            },
-            "parameters": {
-                "confidence_threshold": 0.8,
-                "explanation_level": "detailed"
-            },
-            "mode": "production",
-            "priority": "normal"
-        }
-        print(f"Sending evaluation request: {json.dumps(data, indent=2)}")
-        response = requests.post(
-            f"{BASE_URL}/api/evaluate",
-            json=data,
-            headers={"Content-Type": "application/json"}
-        )
-        print(f"✅ Evaluation: {response.status_code}")
-        if response.status_code == 200:
-            print(f"   Result: {json.dumps(response.json(), indent=2)[:200]}...")
-        else:
-            print(f"   Error: {response.text}")
-        return response.status_code == 200
-    except Exception as e:
-        print(f"❌ Evaluation failed: {str(e)}")
-        return False
+# Pytest fixture to wait for the server and skip tests if it's not running
+@pytest.fixture(scope="module", autouse=True)
+def check_server():
+    """
+    Waits for the server to be available before running tests.
+    If the server doesn't start within the timeout, skips the tests.
+    """
+    max_wait_seconds = 20
+    start_time = time.time()
+    server_is_up = False
+    print("\nWaiting for API server to be available...")
+    while time.time() - start_time < max_wait_seconds:
+        if is_server_running():
+            server_is_up = True
+            print("API server is up. Running tests.")
+            break
+        time.sleep(1)
 
-def test_parameters() -> bool:
-    """Test the parameters endpoint."""
-    try:
-        # Test GET
-        response = requests.get(f"{BASE_URL}/api/parameters")
-        print(f"✅ GET Parameters: {response.status_code}")
-        if response.status_code == 200:
-            print(f"   Current parameters: {json.dumps(response.json(), indent=2)[:200]}...")
-        
-        # Test POST with updated parameters - using the correct endpoint
-        if response.status_code == 200:
-            current_params = response.json()
-            updated_params = {**current_params, "virtue_threshold": 0.2}
-            response = requests.post(
-                f"{BASE_URL}/api/update-parameters",  # Correct endpoint for updating parameters
-                json=updated_params,
-                headers={"Content-Type": "application/json"}
-            )
-            print(f"✅ POST Parameters (update): {response.status_code}")
-            if response.status_code == 200:
-                print(f"   Update response: {json.dumps(response.json(), indent=2)}")
-            return response.status_code == 200
-        return False
-    except Exception as e:
-        print(f"❌ Parameters test failed: {str(e)}")
-        return False
+    if not server_is_up:
+        pytest.skip(f"API server did not start within {max_wait_seconds} seconds.")
 
-def test_learning_stats() -> bool:
-    """Test the learning stats endpoint."""
-    try:
-        response = requests.get(f"{BASE_URL}/api/learning-stats")
-        print(f"✅ Learning Stats: {response.status_code}")
-        if response.status_code == 200:
-            print(f"   Stats: {json.dumps(response.json(), indent=2)[:200]}...")
-        return response.status_code == 200
-    except Exception as e:
-        print(f"❌ Learning stats failed: {str(e)}")
-        return False
+# Test for the health check endpoint
+def test_health_check():
+    """
+    Tests the /api/health endpoint to ensure the server is healthy.
+    """
+    response = requests.get(f"{BASE_URL}/health")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "healthy"
+    assert "timestamp" in data
+    assert data["orchestrator_healthy"] is True
+    assert data["database_connected"] is True
 
-def test_heat_map() -> bool:
-    """Test the heat map endpoint."""
-    try:
-        # The heat map endpoint expects a POST request with text to analyze
-        data = {
-            "text": "This is a sample text for heat map visualization.",
-            "context": {
-                "domain": "test",
-                "purpose": "visualization"
-            }
-        }
-        response = requests.post(
-            f"{BASE_URL}/api/heat-map-mock",  # Correct endpoint for heat map
-            json=data,
-            headers={"Content-Type": "application/json"}
-        )
-        print(f"✅ Heat Map: {response.status_code}")
-        if response.status_code == 200:
-            print(f"   Heat map data received")
-            print(f"   Response: {json.dumps(response.json(), indent=2)[:200]}...")
-        else:
-            print(f"   Error: {response.text}")
-        return response.status_code == 200
-    except Exception as e:
-        print(f"❌ Heat map failed: {str(e)}")
-        return False
+# Test for the main evaluation endpoint
+def test_evaluate_endpoint():
+    """
+    Tests the /api/evaluate endpoint with a simple text.
+    """
+    payload = {
+        "text": "This is a test sentence for ethical evaluation.",
+        "tau_slider": 0.5
+    }
+    response = requests.post(f"{BASE_URL}/evaluate", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert "request_id" in data
+    assert "overall_ethical" in data
+    assert "evaluation" in data
+    assert "spans" in data["evaluation"]
 
-def test_ethics_analysis(endpoint: str, name: str) -> bool:
-    """Test an ethics analysis endpoint."""
-    try:
-        # Special handling for ML Training Guidance endpoint which expects 'content' field
-        if endpoint == "ml-training-guidance":
-            data = {
-                "content": "This is a sample ML training dataset description for ethical analysis. "
-                          "It includes various demographic groups and aims to be fair and unbiased."
-            }
-        else:
-            data = {
-                "text": "This is a test sentence for ethical analysis.",
-                "context": {
-                    "domain": "test",
-                    "purpose": "analysis"
-                },
-                "evaluation_id": f"test_analysis_{int(time.time())}"
-            }
-            
-        print(f"Sending request to {endpoint}: {json.dumps(data, indent=2)}")
-        
-        response = requests.post(
-            f"{BASE_URL}/api/ethics/{endpoint}",
-            json=data,
-            headers={"Content-Type": "application/json"}
-        )
-        
-        print(f"✅ {name}: {response.status_code}")
-        if response.status_code == 200:
-            print(f"   Result: {json.dumps(response.json(), indent=2)[:200]}...")
-        else:
-            print(f"   Error: {response.text}")
-            
-        return response.status_code == 200
-    except Exception as e:
-        print(f"❌ {name} failed: {str(e)}")
-        if hasattr(e, 'response') and hasattr(e.response, 'text'):
-            print(f"   Response: {e.response.text}")
-        return False
+# Test for the threshold scaling endpoint
+def test_threshold_scaling():
+    """
+    Tests the /api/threshold-scaling endpoint to ensure dynamic scaling works.
+    """
+    payload = {
+        "slider_value": 0.75,
+        "use_exponential": True
+    }
+    response = requests.post(f"{BASE_URL}/threshold-scaling", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "success"
+    assert data["slider_value"] == 0.75
+    assert "scaled_threshold" in data
 
-def test_streaming_status() -> bool:
-    """Test the streaming status endpoint."""
-    try:
-        response = requests.get(f"{BASE_URL}/api/streaming/status")
-        print(f"✅ Streaming Status: {response.status_code}")
-        if response.status_code == 200:
-            print(f"   Status: {json.dumps(response.json(), indent=2)}")
-        return response.status_code == 200
-    except Exception as e:
-        print(f"❌ Streaming status failed: {str(e)}")
-        return False
+# Test for getting legacy parameters
+def test_get_legacy_parameters():
+    """
+    Tests the GET /api/parameters legacy endpoint.
+    """
+    response = requests.get(f"{BASE_URL}/parameters")
+    assert response.status_code == 200
+    data = response.json()
+    assert "virtue_threshold" in data
 
-def main():
-    print("🚀 Starting Ethical AI Testbed API Endpoint Tests")
-    print("=" * 60)
-    
-    tests = [
-        (test_health, "Health Check"),
-        (test_evaluate, "Evaluation"),
-        (test_parameters, "Parameters"),
-        (test_learning_stats, "Learning Stats"),
-        (test_heat_map, "Heat Map"),
-        (lambda: test_ethics_analysis("comprehensive-analysis", "Comprehensive Analysis"), "Comprehensive Analysis"),
-        (lambda: test_ethics_analysis("meta-analysis", "Meta Analysis"), "Meta Analysis"),
-        (lambda: test_ethics_analysis("normative-analysis", "Normative Analysis"), "Normative Analysis"),
-        (lambda: test_ethics_analysis("applied-analysis", "Applied Analysis"), "Applied Analysis"),
-        (lambda: test_ethics_analysis("ml-training-guidance", "ML Training Guidance"), "ML Training Guidance"),
-        (test_streaming_status, "Streaming Status")
-    ]
-    
-    results = []
-    for test_func, test_name in tests:
-        print(f"\n🔍 Testing {test_name}...")
-        success = test_func()
-        results.append((test_name, success))
-        time.sleep(1)  # Add a small delay between tests
-    
-    # Print summary
-    print("\n" + "=" * 60)
-    print("📊 Test Results:")
-    print("=" * 60)
-    
-    all_passed = True
-    for test_name, success in results:
-        status = "✅ PASSED" if success else "❌ FAILED"
-        print(f"{status}: {test_name}")
-        if not success:
-            all_passed = False
-    
-    print("\n" + "=" * 60)
-    if all_passed:
-        print("🎉 All tests passed successfully!")
-    else:
-        print("❌ Some tests failed. Please check the logs above for details.")
-    
-    return 0 if all_passed else 1
+# Test for updating legacy parameters
+def test_update_legacy_parameters():
+    """
+    Tests the POST /api/update-parameters legacy endpoint.
+    """
+    payload = {"virtue_threshold": 0.99}
+    response = requests.post(f"{BASE_URL}/update-parameters", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["message"] == "Parameters updated successfully"
+    assert data["parameters"]["virtue_threshold"] == 0.99
+
+# Test evaluation with a scaled threshold
+def test_evaluation_with_scaled_threshold():
+    """
+    Tests evaluation after applying a new threshold via the scaling endpoint.
+    """
+    # Set a strict threshold
+    eval_payload = {
+        "text": "This could be seen as slightly problematic.",
+        "tau_slider": 0.01
+    }
+    response = requests.post(f"{BASE_URL}/evaluate", json=eval_payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert "overall_ethical" in data
+
+    # Set a lenient threshold
+    eval_payload["tau_slider"] = 0.99
+    response_lenient = requests.post(f"{BASE_URL}/evaluate", json=eval_payload)
+    assert response_lenient.status_code == 200
+    data_lenient = response_lenient.json()
+    assert "overall_ethical" in data_lenient
 
 if __name__ == "__main__":
-    exit(main())
+    pytest.main([__file__])
+

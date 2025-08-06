@@ -1,0 +1,1722 @@
+{
+  "timestamp": "2025-08-06T00:40:28.662128",
+  "base_url": "http://localhost:8001",
+  "summary": {
+    "total": 10,
+    "successful": 10,
+    "failed": 0
+  },
+  "results": [
+    {
+      "endpoint": "/api/health",
+      "status": "success",
+      "status_code": 200,
+      "response": {
+        "status": "healthy",
+        "timestamp": "2025-08-06T04:40:19.267797",
+        "uptime_seconds": 0.0,
+        "orchestrator_healthy": true,
+        "database_connected": true,
+        "configuration_valid": true,
+        "performance_metrics": {},
+        "features_available": {
+          "unified_orchestrator": true,
+          "legacy_compatibility": true,
+          "database": true,
+          "configuration": true
+        }
+      }
+    },
+    {
+      "endpoint": "/api/evaluate",
+      "status": "success",
+      "status_code": 200,
+      "response": {
+        "evaluation": {
+          "input_text": "This is a test text for ethical evaluation.",
+          "tokens": [
+            "this",
+            "is",
+            "a",
+            "test",
+            "text",
+            "for",
+            "ethical",
+            "evaluation",
+            "."
+          ],
+          "spans": [
+            {
+              "text": "this is",
+              "start": 0,
+              "end": 7,
+              "virtue_score": 0.0,
+              "deontological_score": 0.02901342324912548,
+              "consequentialist_score": 0.0,
+              "combined_score": 0.02901342324912548,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.4793832302093506,
+                "manipulation": 0.4974476993083954,
+                "coercion": 0.5043911337852478,
+                "deception": 0.51324462890625,
+                "harassment": 0.5185877084732056,
+                "discrimination": 0.5269519686698914,
+                "violence": 0.4845348298549652,
+                "exploitation": 0.46876731514930725
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "this is a",
+              "start": 0,
+              "end": 9,
+              "virtue_score": 0.0,
+              "deontological_score": 0.0,
+              "consequentialist_score": 0.0,
+              "combined_score": 0.0,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.47596031427383423,
+                "manipulation": 0.5000299215316772,
+                "coercion": 0.5001896619796753,
+                "deception": 0.512946605682373,
+                "harassment": 0.5198687314987183,
+                "discrimination": 0.5304020643234253,
+                "violence": 0.48586100339889526,
+                "exploitation": 0.46767470240592957
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "this is a test",
+              "start": 0,
+              "end": 14,
+              "virtue_score": 0.0,
+              "deontological_score": 0.0,
+              "consequentialist_score": 0.038712941110134125,
+              "combined_score": 0.038712941110134125,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.4767598807811737,
+                "manipulation": 0.49990323185920715,
+                "coercion": 0.5015164017677307,
+                "deception": 0.5147343873977661,
+                "harassment": 0.5187565684318542,
+                "discrimination": 0.5312507748603821,
+                "violence": 0.4785527288913727,
+                "exploitation": 0.4658221900463104
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "this is a test text",
+              "start": 0,
+              "end": 19,
+              "virtue_score": 0.0,
+              "deontological_score": 0.0,
+              "consequentialist_score": 0.01980484277009964,
+              "combined_score": 0.01980484277009964,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.4731716215610504,
+                "manipulation": 0.498625248670578,
+                "coercion": 0.4999346137046814,
+                "deception": 0.511101245880127,
+                "harassment": 0.5243154764175415,
+                "discrimination": 0.5281035304069519,
+                "violence": 0.4829716980457306,
+                "exploitation": 0.4712678790092468
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "this is a test text for",
+              "start": 0,
+              "end": 23,
+              "virtue_score": 0.0,
+              "deontological_score": 0.0,
+              "consequentialist_score": 0.029468480497598648,
+              "combined_score": 0.029468480497598648,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.47342339158058167,
+                "manipulation": 0.4994385540485382,
+                "coercion": 0.4999833106994629,
+                "deception": 0.5111461281776428,
+                "harassment": 0.5244143009185791,
+                "discrimination": 0.5285043120384216,
+                "violence": 0.48236697912216187,
+                "exploitation": 0.47152048349380493
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "is a",
+              "start": 1,
+              "end": 5,
+              "virtue_score": 0.0,
+              "deontological_score": 0.0,
+              "consequentialist_score": 0.0,
+              "combined_score": 0.0,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.47759899497032166,
+                "manipulation": 0.49794313311576843,
+                "coercion": 0.4993692934513092,
+                "deception": 0.5128782987594604,
+                "harassment": 0.5170786380767822,
+                "discrimination": 0.5276817679405212,
+                "violence": 0.48248711228370667,
+                "exploitation": 0.46711763739585876
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "is a test",
+              "start": 1,
+              "end": 10,
+              "virtue_score": 0.0,
+              "deontological_score": 0.0,
+              "consequentialist_score": 0.018359126523137093,
+              "combined_score": 0.018359126523137093,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.474956750869751,
+                "manipulation": 0.49717557430267334,
+                "coercion": 0.5003665089607239,
+                "deception": 0.5136154294013977,
+                "harassment": 0.518905520439148,
+                "discrimination": 0.5272591710090637,
+                "violence": 0.4815170168876648,
+                "exploitation": 0.46732375025749207
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "is a test text",
+              "start": 1,
+              "end": 15,
+              "virtue_score": 0.0,
+              "deontological_score": 0.0,
+              "consequentialist_score": 0.023415690287947655,
+              "combined_score": 0.023415690287947655,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.4741390347480774,
+                "manipulation": 0.49818769097328186,
+                "coercion": 0.49907004833221436,
+                "deception": 0.5118792057037354,
+                "harassment": 0.523746907711029,
+                "discrimination": 0.5248496532440186,
+                "violence": 0.4832930862903595,
+                "exploitation": 0.4718632698059082
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "is a test text for",
+              "start": 1,
+              "end": 19,
+              "virtue_score": 0.0,
+              "deontological_score": 0.0,
+              "consequentialist_score": 0.029623985290527344,
+              "combined_score": 0.029623985290527344,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.473566472530365,
+                "manipulation": 0.498113751411438,
+                "coercion": 0.4989641308784485,
+                "deception": 0.5119962692260742,
+                "harassment": 0.5243144035339355,
+                "discrimination": 0.5253596901893616,
+                "violence": 0.48314327001571655,
+                "exploitation": 0.47193199396133423
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "is a test text for ethical",
+              "start": 1,
+              "end": 27,
+              "virtue_score": 0.0,
+              "deontological_score": 0.004789261147379875,
+              "consequentialist_score": 0.10782241821289062,
+              "combined_score": 0.10782241821289062,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.4755978286266327,
+                "manipulation": 0.4964115619659424,
+                "coercion": 0.5016761422157288,
+                "deception": 0.5133791565895081,
+                "harassment": 0.5224783420562744,
+                "discrimination": 0.5256216526031494,
+                "violence": 0.48187968134880066,
+                "exploitation": 0.4728144705295563
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "a test",
+              "start": 2,
+              "end": 8,
+              "virtue_score": 0.0,
+              "deontological_score": 0.0,
+              "consequentialist_score": 0.037849586457014084,
+              "combined_score": 0.037849586457014084,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.4750980734825134,
+                "manipulation": 0.5006038546562195,
+                "coercion": 0.497896671295166,
+                "deception": 0.5158180594444275,
+                "harassment": 0.518234372138977,
+                "discrimination": 0.529147744178772,
+                "violence": 0.48223206400871277,
+                "exploitation": 0.46988117694854736
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "a test text",
+              "start": 2,
+              "end": 13,
+              "virtue_score": 0.0,
+              "deontological_score": 0.0,
+              "consequentialist_score": 0.0108591727912426,
+              "combined_score": 0.0108591727912426,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.4745270311832428,
+                "manipulation": 0.49958643317222595,
+                "coercion": 0.497938334941864,
+                "deception": 0.5126705169677734,
+                "harassment": 0.5229189991950989,
+                "discrimination": 0.526617169380188,
+                "violence": 0.48270246386528015,
+                "exploitation": 0.475117564201355
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "a test text for",
+              "start": 2,
+              "end": 17,
+              "virtue_score": 0.0,
+              "deontological_score": 0.0,
+              "consequentialist_score": 0.015273632481694221,
+              "combined_score": 0.015273632481694221,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.47446098923683167,
+                "manipulation": 0.4995688199996948,
+                "coercion": 0.4984515607357025,
+                "deception": 0.5125728249549866,
+                "harassment": 0.5234281420707703,
+                "discrimination": 0.528414249420166,
+                "violence": 0.48332512378692627,
+                "exploitation": 0.4745924770832062
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "a test text for ethical",
+              "start": 2,
+              "end": 25,
+              "virtue_score": 0.0,
+              "deontological_score": 0.054825033992528915,
+              "consequentialist_score": 0.1131003126502037,
+              "combined_score": 0.1131003126502037,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.4760604500770569,
+                "manipulation": 0.4987128674983978,
+                "coercion": 0.5008306503295898,
+                "deception": 0.5141587853431702,
+                "harassment": 0.5206564664840698,
+                "discrimination": 0.5273343920707703,
+                "violence": 0.48186230659484863,
+                "exploitation": 0.47412925958633423
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "a test text for ethical evaluation",
+              "start": 2,
+              "end": 36,
+              "virtue_score": 0.0,
+              "deontological_score": 0.02135346829891205,
+              "consequentialist_score": 0.06398571282625198,
+              "combined_score": 0.06398571282625198,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.47510188817977905,
+                "manipulation": 0.4995258152484894,
+                "coercion": 0.5001543164253235,
+                "deception": 0.515684962272644,
+                "harassment": 0.5210255980491638,
+                "discrimination": 0.5284520983695984,
+                "violence": 0.4816489517688751,
+                "exploitation": 0.4720308780670166
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "test text",
+              "start": 3,
+              "end": 12,
+              "virtue_score": 0.014009099453687668,
+              "deontological_score": 0.0,
+              "consequentialist_score": 0.027933940291404724,
+              "combined_score": 0.027933940291404724,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.4749133884906769,
+                "manipulation": 0.49987539649009705,
+                "coercion": 0.49798592925071716,
+                "deception": 0.5129501819610596,
+                "harassment": 0.5237463116645813,
+                "discrimination": 0.5248121619224548,
+                "violence": 0.4810931086540222,
+                "exploitation": 0.4741881191730499
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "test text for",
+              "start": 3,
+              "end": 16,
+              "virtue_score": 0.00789574347436428,
+              "deontological_score": 0.0,
+              "consequentialist_score": 0.04071274772286415,
+              "combined_score": 0.04071274772286415,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.47503408789634705,
+                "manipulation": 0.5006344318389893,
+                "coercion": 0.4972681999206543,
+                "deception": 0.5129554271697998,
+                "harassment": 0.5243694186210632,
+                "discrimination": 0.5254377722740173,
+                "violence": 0.4819750487804413,
+                "exploitation": 0.47461116313934326
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "test text for ethical",
+              "start": 3,
+              "end": 24,
+              "virtue_score": 0.0,
+              "deontological_score": 0.03532733768224716,
+              "consequentialist_score": 0.11742126196622849,
+              "combined_score": 0.11742126196622849,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.47633111476898193,
+                "manipulation": 0.49671250581741333,
+                "coercion": 0.5007609128952026,
+                "deception": 0.5138674378395081,
+                "harassment": 0.5221529603004456,
+                "discrimination": 0.5260053873062134,
+                "violence": 0.482118159532547,
+                "exploitation": 0.47461384534835815
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "test text for ethical evaluation",
+              "start": 3,
+              "end": 35,
+              "virtue_score": 0.0,
+              "deontological_score": 0.0,
+              "consequentialist_score": 0.07226792722940445,
+              "combined_score": 0.07226792722940445,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.47531381249427795,
+                "manipulation": 0.4988276958465576,
+                "coercion": 0.5002008080482483,
+                "deception": 0.5149543285369873,
+                "harassment": 0.5219035148620605,
+                "discrimination": 0.5280300974845886,
+                "violence": 0.4825640618801117,
+                "exploitation": 0.4734584093093872
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "test text for ethical evaluation .",
+              "start": 3,
+              "end": 37,
+              "virtue_score": 0.0,
+              "deontological_score": 0.0060506765730679035,
+              "consequentialist_score": 0.09904076159000397,
+              "combined_score": 0.09904076159000397,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.4748653173446655,
+                "manipulation": 0.49888408184051514,
+                "coercion": 0.500036895275116,
+                "deception": 0.515631377696991,
+                "harassment": 0.521224856376648,
+                "discrimination": 0.5272436738014221,
+                "violence": 0.48106834292411804,
+                "exploitation": 0.47241654992103577
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "text for",
+              "start": 4,
+              "end": 12,
+              "virtue_score": 0.0,
+              "deontological_score": 0.0,
+              "consequentialist_score": 0.030444040894508362,
+              "combined_score": 0.030444040894508362,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.4722858965396881,
+                "manipulation": 0.5004088282585144,
+                "coercion": 0.4993462860584259,
+                "deception": 0.513073742389679,
+                "harassment": 0.5253178477287292,
+                "discrimination": 0.524239718914032,
+                "violence": 0.4827418029308319,
+                "exploitation": 0.475016325712204
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "text for ethical",
+              "start": 4,
+              "end": 20,
+              "virtue_score": 0.0,
+              "deontological_score": 0.03500302881002426,
+              "consequentialist_score": 0.12664100527763367,
+              "combined_score": 0.12664100527763367,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.4746457040309906,
+                "manipulation": 0.496498703956604,
+                "coercion": 0.5026859641075134,
+                "deception": 0.5134884119033813,
+                "harassment": 0.5214954614639282,
+                "discrimination": 0.5253099203109741,
+                "violence": 0.48055651783943176,
+                "exploitation": 0.4742935001850128
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "text for ethical evaluation",
+              "start": 4,
+              "end": 31,
+              "virtue_score": 0.0,
+              "deontological_score": 0.0,
+              "consequentialist_score": 0.06719918549060822,
+              "combined_score": 0.06719918549060822,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.47403693199157715,
+                "manipulation": 0.49748140573501587,
+                "coercion": 0.5024492144584656,
+                "deception": 0.5148068070411682,
+                "harassment": 0.5213828682899475,
+                "discrimination": 0.5280227661132812,
+                "violence": 0.4805670380592346,
+                "exploitation": 0.4730926752090454
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "text for ethical evaluation .",
+              "start": 4,
+              "end": 33,
+              "virtue_score": 0.0,
+              "deontological_score": 0.0109262028709054,
+              "consequentialist_score": 0.09879036992788315,
+              "combined_score": 0.09879036992788315,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.4733847677707672,
+                "manipulation": 0.4970950484275818,
+                "coercion": 0.5022595524787903,
+                "deception": 0.5154302716255188,
+                "harassment": 0.5208418369293213,
+                "discrimination": 0.5268469452857971,
+                "violence": 0.4793761074542999,
+                "exploitation": 0.47212716937065125
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "text for ethical evaluation .",
+              "start": 4,
+              "end": 33,
+              "virtue_score": 0.0,
+              "deontological_score": 0.0109262028709054,
+              "consequentialist_score": 0.09879036992788315,
+              "combined_score": 0.09879036992788315,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.4733847677707672,
+                "manipulation": 0.4970950484275818,
+                "coercion": 0.5022595524787903,
+                "deception": 0.5154302716255188,
+                "harassment": 0.5208418369293213,
+                "discrimination": 0.5268469452857971,
+                "violence": 0.4793761074542999,
+                "exploitation": 0.47212716937065125
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "for ethical",
+              "start": 5,
+              "end": 16,
+              "virtue_score": 0.0,
+              "deontological_score": 0.0,
+              "consequentialist_score": 0.0964912697672844,
+              "combined_score": 0.0964912697672844,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.47339513897895813,
+                "manipulation": 0.5004695653915405,
+                "coercion": 0.5037810206413269,
+                "deception": 0.5142375230789185,
+                "harassment": 0.520128607749939,
+                "discrimination": 0.5274577736854553,
+                "violence": 0.47797301411628723,
+                "exploitation": 0.4722854793071747
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "for ethical evaluation",
+              "start": 5,
+              "end": 27,
+              "virtue_score": 0.0,
+              "deontological_score": 0.0,
+              "consequentialist_score": 0.057756900787353516,
+              "combined_score": 0.057756900787353516,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.4734863340854645,
+                "manipulation": 0.49893397092819214,
+                "coercion": 0.5032838582992554,
+                "deception": 0.517086923122406,
+                "harassment": 0.5189223289489746,
+                "discrimination": 0.5307275652885437,
+                "violence": 0.4787485897541046,
+                "exploitation": 0.47041839361190796
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "for ethical evaluation .",
+              "start": 5,
+              "end": 29,
+              "virtue_score": 0.0,
+              "deontological_score": 0.0,
+              "consequentialist_score": 0.07781927287578583,
+              "combined_score": 0.07781927287578583,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.47224271297454834,
+                "manipulation": 0.49823978543281555,
+                "coercion": 0.5031261444091797,
+                "deception": 0.5158219933509827,
+                "harassment": 0.5171356201171875,
+                "discrimination": 0.5291674733161926,
+                "violence": 0.477888286113739,
+                "exploitation": 0.46961086988449097
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "for ethical evaluation .",
+              "start": 5,
+              "end": 29,
+              "virtue_score": 0.0,
+              "deontological_score": 0.0,
+              "consequentialist_score": 0.07781927287578583,
+              "combined_score": 0.07781927287578583,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.47224271297454834,
+                "manipulation": 0.49823978543281555,
+                "coercion": 0.5031261444091797,
+                "deception": 0.5158219933509827,
+                "harassment": 0.5171356201171875,
+                "discrimination": 0.5291674733161926,
+                "violence": 0.477888286113739,
+                "exploitation": 0.46961086988449097
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "ethical evaluation",
+              "start": 6,
+              "end": 24,
+              "virtue_score": 0.0,
+              "deontological_score": 0.010057765059173107,
+              "consequentialist_score": 0.03809155523777008,
+              "combined_score": 0.03809155523777008,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.4738527238368988,
+                "manipulation": 0.49881431460380554,
+                "coercion": 0.5019291043281555,
+                "deception": 0.5179169774055481,
+                "harassment": 0.5198227763175964,
+                "discrimination": 0.5304961204528809,
+                "violence": 0.47992971539497375,
+                "exploitation": 0.46950772404670715
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "ethical evaluation .",
+              "start": 6,
+              "end": 26,
+              "virtue_score": 0.0,
+              "deontological_score": 0.001706413459032774,
+              "consequentialist_score": 0.06162121146917343,
+              "combined_score": 0.06162121146917343,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.47261157631874084,
+                "manipulation": 0.4983578324317932,
+                "coercion": 0.5028330683708191,
+                "deception": 0.5175150036811829,
+                "harassment": 0.5181145071983337,
+                "discrimination": 0.529447078704834,
+                "violence": 0.4791501462459564,
+                "exploitation": 0.46855878829956055
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "ethical evaluation .",
+              "start": 6,
+              "end": 26,
+              "virtue_score": 0.0,
+              "deontological_score": 0.001706413459032774,
+              "consequentialist_score": 0.06162121146917343,
+              "combined_score": 0.06162121146917343,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.47261157631874084,
+                "manipulation": 0.4983578324317932,
+                "coercion": 0.5028330683708191,
+                "deception": 0.5175150036811829,
+                "harassment": 0.5181145071983337,
+                "discrimination": 0.529447078704834,
+                "violence": 0.4791501462459564,
+                "exploitation": 0.46855878829956055
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "evaluation .",
+              "start": 7,
+              "end": 19,
+              "virtue_score": 0.0,
+              "deontological_score": 0.0,
+              "consequentialist_score": 0.0,
+              "combined_score": 0.0,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.47103026509284973,
+                "manipulation": 0.4988762438297272,
+                "coercion": 0.5014855861663818,
+                "deception": 0.5150030255317688,
+                "harassment": 0.5200707316398621,
+                "discrimination": 0.5298113226890564,
+                "violence": 0.48058387637138367,
+                "exploitation": 0.4656870365142822
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": "evaluation .",
+              "start": 7,
+              "end": 19,
+              "virtue_score": 0.0,
+              "deontological_score": 0.0,
+              "consequentialist_score": 0.0,
+              "combined_score": 0.0,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.47103026509284973,
+                "manipulation": 0.4988762438297272,
+                "coercion": 0.5014855861663818,
+                "deception": 0.5150030255317688,
+                "harassment": 0.5200707316398621,
+                "discrimination": 0.5298113226890564,
+                "violence": 0.48058387637138367,
+                "exploitation": 0.4656870365142822
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            },
+            {
+              "text": ".",
+              "start": 8,
+              "end": 9,
+              "virtue_score": 0.0,
+              "deontological_score": 0.047058142721652985,
+              "consequentialist_score": 0.0,
+              "combined_score": 0.047058142721652985,
+              "is_violation": false,
+              "virtue_violation": false,
+              "deontological_violation": false,
+              "consequentialist_violation": false,
+              "violation_type": null,
+              "explanation": "",
+              "dominant_intent": "neutral",
+              "intent_confidence": 0.0,
+              "intent_category": null,
+              "intent_scores": {
+                "fraud": 0.47460421919822693,
+                "manipulation": 0.4968406558036804,
+                "coercion": 0.49952730536460876,
+                "deception": 0.5116291046142578,
+                "harassment": 0.5240678787231445,
+                "discrimination": 0.5280215740203857,
+                "violence": 0.4818763732910156,
+                "exploitation": 0.47216299176216125
+              },
+              "causal_impact": null,
+              "uncertainty": null,
+              "purpose_alignment": null
+            }
+          ],
+          "minimal_spans": [],
+          "overall_ethical": true,
+          "processing_time": 1.5185937881469727,
+          "parameters": {
+            "virtue_threshold": 0.15,
+            "deontological_threshold": 0.15,
+            "consequentialist_threshold": 0.15,
+            "virtue_weight": 1.0,
+            "deontological_weight": 1.0,
+            "consequentialist_weight": 1.0,
+            "max_span_length": 5,
+            "min_span_length": 1,
+            "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+            "enable_dynamic_scaling": false,
+            "enable_cascade_filtering": false,
+            "enable_learning_mode": false,
+            "exponential_scaling": true,
+            "cascade_high_threshold": 0.25,
+            "cascade_low_threshold": 0.08,
+            "learning_weight": 0.3,
+            "min_learning_samples": 5,
+            "enable_graph_attention": true,
+            "graph_decay_lambda": 5.0,
+            "graph_similarity_threshold": 0.1,
+            "graph_attention_heads": 4,
+            "enable_intent_hierarchy": true,
+            "intent_threshold": 0.6,
+            "intent_categories": [
+              "fraud",
+              "manipulation",
+              "coercion",
+              "deception",
+              "harassment",
+              "discrimination",
+              "violence",
+              "exploitation"
+            ],
+            "enable_contrastive_learning": false,
+            "enable_causal_analysis": true,
+            "autonomy_delta_threshold": 0.1,
+            "causal_intervention_types": [
+              "removal",
+              "masking",
+              "neutralize",
+              "soften"
+            ],
+            "max_counterfactuals_per_span": 4,
+            "enable_uncertainty_analysis": true,
+            "uncertainty_threshold": 0.25,
+            "bootstrap_samples": 3,
+            "uncertainty_dropout_rate": 0.15,
+            "auto_human_routing": true,
+            "enable_purpose_alignment": true,
+            "purpose_alignment_threshold": 0.95,
+            "auto_purpose_inference": true,
+            "purpose_weight_adaptation": false
+          },
+          "dynamic_scaling_result": null,
+          "evaluation_id": "eval_1754455222159",
+          "causal_analysis": null,
+          "uncertainty_analysis": null,
+          "purpose_alignment_analysis": null
+        },
+        "clean_text": "This is a test text for ethical evaluation.",
+        "delta_summary": {}
+      }
+    },
+    {
+      "endpoint": "/api/parameters",
+      "status": "success",
+      "status_code": 200,
+      "response": {
+        "virtue_threshold": 0.25,
+        "deontological_threshold": 0.25,
+        "consequentialist_threshold": 0.25,
+        "virtue_weight": 0.33,
+        "deontological_weight": 0.33,
+        "consequentialist_weight": 0.34,
+        "enable_dynamic_scaling": true,
+        "enable_cascade_filtering": true,
+        "enable_learning_mode": true,
+        "optimization_level": "balanced"
+      }
+    },
+    {
+      "endpoint": "/api/learning-stats",
+      "status": "success",
+      "status_code": 200,
+      "response": {
+        "total_evaluations": 0,
+        "total_feedback": 0,
+        "learning_enabled": true,
+        "performance_metrics": {
+          "accuracy": 0.85,
+          "precision": 0.82,
+          "recall": 0.78
+        },
+        "last_updated": "2025-08-06T04:40:23.180812",
+        "system_version": "10.0.0"
+      }
+    },
+    {
+      "endpoint": "/api/heat-map-mock",
+      "status": "success",
+      "status_code": 200,
+      "response": {
+        "evaluations": {
+          "short": [
+            {
+              "span": [
+                0,
+                7
+              ],
+              "text": "this is",
+              "scores": {
+                "V": 0.0,
+                "A": 0.029,
+                "C": 0.0
+              },
+              "uncertainty": 1.0,
+              "violations": {
+                "virtue": false,
+                "deontological": false,
+                "consequentialist": false
+              }
+            },
+            {
+              "span": [
+                0,
+                9
+              ],
+              "text": "this is a",
+              "scores": {
+                "V": 0.0,
+                "A": 0.0,
+                "C": 0.0
+              },
+              "uncertainty": 1.0,
+              "violations": {
+                "virtue": false,
+                "deontological": false,
+                "consequentialist": false
+              }
+            },
+            {
+              "span": [
+                0,
+                14
+              ],
+              "text": "this is a test",
+              "scores": {
+                "V": 0.0,
+                "A": 0.0,
+                "C": 0.039
+              },
+              "uncertainty": 1.0,
+              "violations": {
+                "virtue": false,
+                "deontological": false,
+                "consequentialist": false
+              }
+            }
+          ],
+          "medium": [
+            {
+              "span": [
+                0,
+                19
+              ],
+              "text": "this is a test text",
+              "scores": {
+                "V": 0.0,
+                "A": 0.0,
+                "C": 0.02
+              },
+              "uncertainty": 1.0,
+              "violations": {
+                "virtue": false,
+                "deontological": false,
+                "consequentialist": false
+              }
+            },
+            {
+              "span": [
+                0,
+                23
+              ],
+              "text": "this is a test text for",
+              "scores": {
+                "V": 0.0,
+                "A": 0.0,
+                "C": 0.029
+              },
+              "uncertainty": 1.0,
+              "violations": {
+                "virtue": false,
+                "deontological": false,
+                "consequentialist": false
+              }
+            },
+            {
+              "span": [
+                1,
+                5
+              ],
+              "text": "is a",
+              "scores": {
+                "V": 0.0,
+                "A": 0.0,
+                "C": 0.0
+              },
+              "uncertainty": 1.0,
+              "violations": {
+                "virtue": false,
+                "deontological": false,
+                "consequentialist": false
+              }
+            },
+            {
+              "span": [
+                1,
+                10
+              ],
+              "text": "is a test",
+              "scores": {
+                "V": 0.0,
+                "A": 0.0,
+                "C": 0.018
+              },
+              "uncertainty": 1.0,
+              "violations": {
+                "virtue": false,
+                "deontological": false,
+                "consequentialist": false
+              }
+            }
+          ],
+          "long": [
+            {
+              "span": [
+                1,
+                15
+              ],
+              "text": "is a test text",
+              "scores": {
+                "V": 0.0,
+                "A": 0.0,
+                "C": 0.023
+              },
+              "uncertainty": 1.0,
+              "violations": {
+                "virtue": false,
+                "deontological": false,
+                "consequentialist": false
+              }
+            },
+            {
+              "span": [
+                1,
+                19
+              ],
+              "text": "is a test text for",
+              "scores": {
+                "V": 0.0,
+                "A": 0.0,
+                "C": 0.03
+              },
+              "uncertainty": 1.0,
+              "violations": {
+                "virtue": false,
+                "deontological": false,
+                "consequentialist": false
+              }
+            },
+            {
+              "span": [
+                1,
+                24
+              ],
+              "text": "is a test text for heat",
+              "scores": {
+                "V": 0.0,
+                "A": 0.0,
+                "C": 0.0
+              },
+              "uncertainty": 1.0,
+              "violations": {
+                "virtue": false,
+                "deontological": false,
+                "consequentialist": false
+              }
+            }
+          ],
+          "stochastic": [
+            {
+              "span": [
+                1,
+                15
+              ],
+              "text": "is a test text",
+              "scores": {
+                "V": 0.0,
+                "A": 0.0,
+                "C": 0.023
+              },
+              "uncertainty": 1.0,
+              "violations": {
+                "virtue": false,
+                "deontological": false,
+                "consequentialist": false
+              }
+            },
+            {
+              "span": [
+                1,
+                19
+              ],
+              "text": "is a test text for",
+              "scores": {
+                "V": 0.0,
+                "A": 0.0,
+                "C": 0.03
+              },
+              "uncertainty": 1.0,
+              "violations": {
+                "virtue": false,
+                "deontological": false,
+                "consequentialist": false
+              }
+            },
+            {
+              "span": [
+                1,
+                24
+              ],
+              "text": "is a test text for heat",
+              "scores": {
+                "V": 0.0,
+                "A": 0.0,
+                "C": 0.0
+              },
+              "uncertainty": 1.0,
+              "violations": {
+                "virtue": false,
+                "deontological": false,
+                "consequentialist": false
+              }
+            }
+          ]
+        },
+        "overallGrades": {
+          "short": "D",
+          "medium": "D",
+          "long": "D",
+          "stochastic": "D"
+        },
+        "textLength": 47,
+        "originalEvaluation": {
+          "dataset_source": "unified_ethical_engine_v10.0_FULL_ANALYSIS",
+          "processing_time": 1.057438850402832,
+          "overall_ethical": true,
+          "total_spans": 40,
+          "violations_found": 0,
+          "analysis_mode": "comprehensive_local_hardware"
+        }
+      }
+    },
+    {
+      "endpoint": "/api/ethics/comprehensive-analysis",
+      "status": "success",
+      "status_code": 200,
+      "response": {
+        "status": "completed",
+        "analysis_type": "comprehensive",
+        "text": "This is a test for comprehensive ethics analysis.",
+        "frameworks": {
+          "virtue_ethics": {
+            "score": 0.0,
+            "assessment": "Virtue-based analysis shows 0.0% ethical alignment with character-based reasoning.",
+            "recommendations": [
+              "Consider virtue-based language",
+              "Emphasize character development"
+            ]
+          },
+          "deontological": {
+            "score": 0.025255883112549782,
+            "assessment": "Duty-based evaluation shows 2.5% compliance with moral obligations.",
+            "recommendations": [
+              "Clarify moral obligations",
+              "Ensure universal applicability"
+            ]
+          },
+          "consequentialist": {
+            "score": 0.10756554401346616,
+            "assessment": "Outcome-focused analysis indicates 10.8% positive utility.",
+            "recommendations": [
+              "Consider broader consequences",
+              "Maximize overall well-being"
+            ]
+          }
+        },
+        "overall_assessment": "Multi-framework analysis shows 4.4% ethical compliance.",
+        "ml_guidance": {
+          "bias_detection": "Real analysis based on ethical framework evaluation",
+          "transparency": "Framework alignment supports transparent ML practices",
+          "fairness": "Overall fairness score: 4.4%"
+        },
+        "processing_time": 0.8420641422271729
+      }
+    },
+    {
+      "endpoint": "/api/ethics/meta-analysis",
+      "status": "success",
+      "status_code": 200,
+      "response": {
+        "status": "completed",
+        "analysis_type": "meta_ethical",
+        "text": "This is a test for meta-ethics analysis.",
+        "philosophical_structure": {
+          "semantic_coherence": 0.8731721625786584,
+          "logical_consistency": 0.6753820798993905,
+          "conceptual_clarity": 0.5961661412518191
+        },
+        "meta_ethical_assessment": {
+          "moral_realism": "Content suggests objective moral truths",
+          "expressivism": "Emotional attitudes toward ethics present",
+          "prescriptivism": "Contains prescriptive moral language"
+        },
+        "recommendations": [
+          "Strengthen philosophical foundations",
+          "Clarify meta-ethical assumptions",
+          "Improve logical structure"
+        ],
+        "processing_time": 0.07602730900724118
+      }
+    },
+    {
+      "endpoint": "/api/ethics/normative-analysis",
+      "status": "success",
+      "status_code": 200,
+      "response": {
+        "status": "completed",
+        "analysis_type": "normative",
+        "text": "This is a test for normative ethics analysis.",
+        "virtue_ethics": {
+          "cardinal_virtues": {
+            "prudence": 0.49227618402058076,
+            "justice": 0.6742386189708879,
+            "fortitude": 0.48922614547198495,
+            "temperance": 0.539269650843485
+          },
+          "character_assessment": "Demonstrates balanced character traits",
+          "virtue_recommendations": [
+            "Cultivate practical wisdom",
+            "Balance competing virtues"
+          ]
+        },
+        "deontological_ethics": {
+          "categorical_imperative": 0.5519505324377456,
+          "universalizability": 0.6985908521913813,
+          "respect_for_persons": 0.5577263136077519,
+          "duty_assessment": "Aligns with moral duty principles"
+        },
+        "consequentialist_ethics": {
+          "utility_maximization": 0.5243078543741608,
+          "happiness_promotion": 0.5677517824445468,
+          "harm_reduction": 0.546865671105735,
+          "outcome_assessment": "Positive expected outcomes"
+        },
+        "synthesis": "Multi-framework analysis shows ethical alignment",
+        "processing_time": 0.08406350997859943
+      }
+    },
+    {
+      "endpoint": "/api/ethics/applied-analysis",
+      "status": "success",
+      "status_code": 200,
+      "response": {
+        "status": "completed",
+        "analysis_type": "applied",
+        "text": "This is a test for applied ethics analysis.",
+        "domain_analysis": {
+          "healthcare": {
+            "compliance": 0.8978883842493517,
+            "recommendations": [
+              "Ensure patient privacy",
+              "Follow medical ethics guidelines"
+            ]
+          },
+          "technology": {
+            "compliance": 0.5103931209126348,
+            "recommendations": [
+              "Consider algorithmic bias",
+              "Implement transparency measures"
+            ]
+          },
+          "business": {
+            "compliance": 0.5978925629852588,
+            "recommendations": [
+              "Stakeholder consideration",
+              "Corporate responsibility"
+            ]
+          },
+          "education": {
+            "compliance": 0.87975618626558,
+            "recommendations": [
+              "Student welfare priority",
+              "Equitable access"
+            ]
+          }
+        },
+        "practical_recommendations": [
+          "Implement clear ethical guidelines",
+          "Establish review processes",
+          "Train stakeholders on ethical principles",
+          "Monitor outcomes and adjust as needed"
+        ],
+        "compliance_check": {
+          "regulatory": "Generally compliant with standard regulations",
+          "professional": "Aligns with professional ethics codes",
+          "institutional": "Meets institutional ethical standards"
+        },
+        "risk_assessment": {
+          "ethical_risks": [
+            "Minor risk of misinterpretation",
+            "Low probability of negative outcomes"
+          ],
+          "mitigation_strategies": [
+            "Clear communication",
+            "Stakeholder engagement",
+            "Regular review"
+          ]
+        },
+        "processing_time": 0.05848009815536637
+      }
+    },
+    {
+      "endpoint": "/api/ethics/ml-training-guidance",
+      "status": "success",
+      "status_code": 200,
+      "response": {
+        "status": "completed",
+        "analysis_type": "ml_training_guidance",
+        "content": "This is a test for ML training guidance.",
+        "bias_analysis": {
+          "detected_biases": [
+            "Potential gender bias in language"
+          ],
+          "bias_score": 0.18640145752271936,
+          "bias_mitigation": [
+            "Diversify training data",
+            "Implement bias detection tools",
+            "Regular bias auditing"
+          ]
+        },
+        "fairness_assessment": {
+          "demographic_parity": 0.6111817704687997,
+          "equalized_odds": 0.5352607045035233,
+          "individual_fairness": 0.8129909075518993,
+          "fairness_recommendations": [
+            "Balance representation",
+            "Test across demographics",
+            "Monitor fairness metrics"
+          ]
+        },
+        "transparency_guidance": {
+          "explainability": 0.5859160420052535,
+          "interpretability": 0.7900311586486786,
+          "documentation": 0.7833193481725529,
+          "transparency_recommendations": [
+            "Improve model documentation",
+            "Add explanation features",
+            "Create decision audit trails"
+          ]
+        },
+        "training_recommendations": [
+          "Implement ethical checkpoints in training pipeline",
+          "Use diverse and representative datasets",
+          "Regular evaluation against ethical metrics",
+          "Establish human oversight mechanisms",
+          "Create feedback loops for continuous improvement"
+        ],
+        "ethical_score": 0.854224053788248,
+        "processing_time": 0.1436437658184553
+      }
+    }
+  ]
+}

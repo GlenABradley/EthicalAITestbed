@@ -52,9 +52,13 @@ Engineering Excellence: Modern distributed systems patterns
 
 import asyncio
 import logging
+import logging.handlers
 import math
+import os
 import random
+import sys
 import time
+import traceback
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -65,6 +69,20 @@ from typing import Dict, List, Optional, Any, Union, Tuple
 # ═══════════════════════════════════════════════
 # We use the latest FastAPI patterns with proper async context management,
 # dependency injection, and comprehensive middleware stack
+import sys
+from pathlib import Path
+
+# 🎓 PROFESSOR'S NOTE: Resolving module import errors
+# We add the backend directory to the Python path to ensure that modules
+# like 'unified_ethical_orchestrator' can be found, which is crucial for
+# running the server correctly from the project's root directory.
+sys.path.append(str(Path(__file__).parent.resolve()))
+
+# Configure MongoDB logging to reduce noise
+import logging
+logging.getLogger('pymongo').setLevel(logging.ERROR)
+logging.getLogger('urllib3').setLevel(logging.ERROR)
+
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Request, status, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -103,15 +121,38 @@ except ImportError:
     logging.warning("Legacy components not available")
 
 # Configure sophisticated logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler('ethical_ai_server.log')
-    ]
+log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
+os.makedirs(log_dir, exist_ok=True)
+
+# Create formatter
+formatter = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
 )
+
+# Create console handler with debug level
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.DEBUG)
+console_handler.setFormatter(formatter)
+
+# Create file handler with debug level
+log_file = os.path.join(log_dir, 'detailed_server.log')
+file_handler = logging.handlers.RotatingFileHandler(
+    log_file, maxBytes=10*1024*1024, backupCount=5
+)
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(formatter)
+
+# Configure root logger
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.DEBUG)
+root_logger.addHandler(console_handler)
+root_logger.addHandler(file_handler)
+
+# Get logger for this module
 logger = logging.getLogger(__name__)
+logger.info("Detailed logging configured. Log file: %s", log_file)
+
 # Global instance of ethical engine to avoid reinitialization
 _global_ethical_engine = None
 
@@ -152,6 +193,11 @@ class ThresholdScalingRequest(BaseModel):
     This model defines the structure for threshold scaling requests.
     It's used to dynamically adjust the sensitivity of the ethical evaluation.
     """
+    threshold_type: str = Field(
+        ...,
+        description="Type of threshold to update ('virtue', 'deontological', or 'consequentialist')",
+        example="virtue"
+    )
     slider_value: float = Field(
         ...,
         ge=0.0,
@@ -225,6 +271,14 @@ class EvaluationRequest(BaseModel):
         description="Processing priority (critical, high, normal, background)",
         example="normal"
     )
+
+    tau_slider: Optional[float] = Field(
+        None,
+        ge=0.0,
+        le=1.0,
+        description="Threshold scaling slider value from frontend (0.0 to 1.0)",
+        example=0.5
+    )
     
     @validator('text')
     def validate_text_content(cls, v):
@@ -250,81 +304,13 @@ class EvaluationRequest(BaseModel):
         return v
 
 class EvaluationResponse(BaseModel):
-    """
-    🎓 EVALUATION RESPONSE MODEL:
-    ═════════════════════════════════
-    
-    This model defines the structure for ethical evaluation responses.
-    It provides comprehensive information about the evaluation results
-    while maintaining backward compatibility with existing clients.
-    """
-    
-    # Core evaluation results
-    request_id: str = Field(description="Unique identifier for this evaluation request")
-    overall_ethical: bool = Field(description="Overall ethical assessment (true = ethical, false = unethical)")
-    confidence_score: float = Field(ge=0.0, le=1.0, description="Confidence in the evaluation (0.0 to 1.0)")
-    
-    # Processing metadata
-    processing_time: float = Field(description="Time taken to process the evaluation (seconds)")
-    timestamp: datetime = Field(description="When the evaluation was completed")
-    version: str = Field(description="System version that performed the evaluation")
-    
-    # Detailed analysis results
-    analysis_results: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="Detailed analysis from multiple ethical frameworks"
-    )
-    
-    # Evaluation details for frontend compatibility
-    evaluation: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="Detailed evaluation results including spans and violations"
-    )
-    
-    # Clean text and delta information
-    clean_text: str = Field(default="", description="Text after ethical processing")
-    delta_summary: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="Summary of changes made to the text"
-    )
-    
-    # Findings and recommendations
-    violations: List[Dict[str, Any]] = Field(
-        default_factory=list,
-        description="List of identified ethical violations"
-    )
-    
-    recommendations: List[str] = Field(
-        default_factory=list,
-        description="Recommendations for improving ethical compliance"
-    )
-    
-    warnings: List[str] = Field(
-        default_factory=list,
-        description="Warnings about potential ethical concerns"
-    )
-    
-    # Knowledge integration
-    citations: List[str] = Field(
-        default_factory=list,
-        description="Academic and philosophical citations supporting the evaluation"
-    )
-    
-    # Explanation and transparency
-    explanation: str = Field(
-        description="Human-readable explanation of the evaluation results",
-        example="The text demonstrates strong ethical compliance across all frameworks..."
-    )
-    
-    # Performance and optimization info
-    cache_hit: bool = Field(description="Whether the result was retrieved from cache")
-    optimization_used: bool = Field(description="Whether performance optimizations were applied")
-    
+    """Defines the structure for ethical evaluation responses, directly mirroring the EthicalEvaluation class."""
+    evaluation: EthicalEvaluation = Field(description="The detailed ethical evaluation results.")
+    clean_text: str = Field(description="The processed, ethically compliant text.")
+    delta_summary: Dict[str, int] = Field(description="A summary of the changes made to the text.")
+
     class Config:
-        """Pydantic configuration for JSON serialization."""
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
+        arbitrary_types_allowed = True
 
 class SystemHealthResponse(BaseModel):
     """System health and status information."""
@@ -392,33 +378,106 @@ async def lifespan(app: FastAPI):
         logger.info("✅ Configuration system initialized")
         
         # 🗄️ PHASE 2: Database Initialization
-        logger.info("🗄️ Initializing database connections...")
-        mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
-        client = AsyncIOMotorClient(mongo_url)
-        db = client[os.environ.get('DB_NAME', 'ethical_ai_testbed')]
+        logger.info("🗄️ Initializing MongoDB connections...")
+        max_retries = 3
+        retry_delay = 2  # seconds
         
-        # Test database connection
-        await db.command("ping")
-        app.state.db = db
-        app.state.db_client = client
-        logger.info("✅ Database connection established")
+        mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
+        db_name = os.environ.get('DB_NAME', 'ethical_ai_testbed')
+        
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"Attempt {attempt + 1}/{max_retries} to connect to MongoDB...")
+                
+                # Configure connection with timeout and retry settings
+                client = AsyncIOMotorClient(
+                    mongo_url,
+                    serverSelectionTimeoutMS=5000,  # 5 second timeout
+                    connectTimeoutMS=10000,         # 10 second connect timeout
+                    socketTimeoutMS=30000,          # 30 second socket timeout
+                    maxPoolSize=50,                 # Maximum number of connections
+                    minPoolSize=5,                  # Minimum number of connections
+                    retryWrites=True,               # Enable retryable writes
+                    retryReads=True                 # Enable retryable reads
+                )
+                
+                # Get database reference
+                db = client[db_name]
+                
+                # Test the connection with a ping
+                await db.command('ping')
+                
+                # Store the database connection in app state
+                app.state.db = db
+                app.state.db_client = client
+                
+                # Verify the database is accessible
+                db_info = await db.command('dbstats')
+                logger.info(f"✅ Successfully connected to MongoDB: {db_name}")
+                logger.debug(f"Database stats: {db_info}")
+                break
+                
+            except Exception as e:
+                logger.warning(f"MongoDB connection attempt {attempt + 1} failed: {str(e)}")
+                if attempt == max_retries - 1:
+                    logger.error("❌ All MongoDB connection attempts failed. Starting in degraded mode without database.")
+                    # Fall back to in-memory storage
+                    app.state.db = None
+                    app.state.db_client = None
+                    logger.warning("⚠️ Running in degraded mode without database persistence")
+                else:
+                    logger.info(f"Retrying in {retry_delay} seconds...")
+                    await asyncio.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
         
         # 🏛️ PHASE 3: Orchestrator Initialization
         logger.info("🏛️ Initializing unified orchestrator...")
         
-        # Convert unified config to orchestrator config format
-        from dataclasses import asdict
-        orchestrator_config = {
-            "ethical_frameworks": asdict(config.ethical_frameworks),
-            "knowledge_sources": asdict(config.knowledge_sources),
-            "performance_limits": asdict(config.performance),
-            "cache_settings": {"enabled": config.performance.enable_caching},
-            "monitoring_config": {"log_level": "INFO"}
-        }
-        
-        orchestrator = await initialize_unified_system(orchestrator_config)
-        app.state.orchestrator = orchestrator
-        logger.info("✅ Unified orchestrator initialized")
+        try:
+            # Convert unified config to orchestrator config format
+            from dataclasses import asdict
+            orchestrator_config = {
+                "ethical_frameworks": asdict(config.ethical_frameworks),
+                "knowledge_sources": asdict(config.knowledge_sources),
+                "performance_limits": asdict(config.performance),
+                "cache_settings": {
+                    "enabled": config.performance.enable_caching,
+                    "use_in_memory": app.state.db is None  # Use in-memory cache if no DB
+                },
+                "monitoring_config": {"log_level": "INFO"},
+                "database_available": app.state.db is not None
+            }
+            
+            # Initialize the orchestrator
+            orchestrator = await initialize_unified_system(orchestrator_config)
+            app.state.orchestrator = orchestrator
+            
+            # If we have a database, ensure collections exist
+            if app.state.db is not None:
+                try:
+                    # Create required collections if they don't exist
+                    collections = await app.state.db.list_collection_names()
+                    required_collections = ['evaluations', 'knowledge_graph', 'system_metrics']
+                    
+                    for collection in required_collections:
+                        if collection not in collections:
+                            await app.state.db.create_collection(collection)
+                            logger.info(f"Created collection: {collection}")
+                except Exception as e:
+                    logger.warning(f"Failed to initialize database collections: {e}")
+            
+            logger.info("✅ Unified orchestrator initialized")
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to initialize orchestrator: {e}")
+            # Try to continue with a minimal orchestrator if possible
+            try:
+                from ethical_engine import EthicalEvaluator
+                app.state.orchestrator = EthicalEvaluator()
+                logger.warning("⚠️ Fallback to basic ethical evaluator")
+            except Exception as fallback_error:
+                logger.error(f"❌ Critical: Could not initialize fallback evaluator: {fallback_error}")
+                raise RuntimeError("Failed to initialize any evaluation component")
         
         # 🎯 PHASE 4: Legacy Component Support
         if LEGACY_COMPONENTS_AVAILABLE:
@@ -525,13 +584,31 @@ def create_ethical_ai_app() -> FastAPI:
     
     # 🔒 CORS Configuration
     # Allow frontend integration while maintaining security
+    origins = [
+        "http://localhost:3000",  # Default React dev server
+        "http://127.0.0.1:3000",  # Alternative localhost
+        "http://localhost:8000",   # Local API server
+        "http://127.0.0.1:8000",   # Alternative API server
+    ]
+    
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # Configure appropriately for production
+        allow_origins=origins,
         allow_credentials=True,
-        allow_methods=["*"],
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allow_headers=["*"],
+        expose_headers=["*"],
+        max_age=600,  # Cache preflight requests for 10 minutes
     )
+    
+    # Add CORS headers to all responses
+    @app.middleware("http")
+    async def add_cors_headers(request: Request, call_next):
+        response = await call_next(request)
+        if request.method == "OPTIONS":
+            response.headers["Access-Control-Allow-Origin"] = request.headers.get("Origin", "*")
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+        return response
     
     # ⚡ Compression Middleware
     # Improve performance with response compression
@@ -586,43 +663,77 @@ async def perform_health_check(app_instance=None) -> Dict[str, Any]:
     }
     
     try:
-        # Check orchestrator health
+        # Check orchestrator health with fallback for missing methods
         if hasattr(app_instance.state, 'orchestrator'):
-            orchestrator_metrics = app_instance.state.orchestrator.get_system_metrics()
-            health_data["orchestrator_healthy"] = orchestrator_metrics["system_info"]["is_healthy"]
-            health_data["performance_metrics"] = orchestrator_metrics["performance"]
-            health_data["uptime_seconds"] = orchestrator_metrics["system_info"]["uptime_seconds"]
+            try:
+                # Check if orchestrator has the get_system_metrics method
+                if hasattr(app_instance.state.orchestrator, 'get_system_metrics'):
+                    orchestrator_metrics = app_instance.state.orchestrator.get_system_metrics()
+                    if isinstance(orchestrator_metrics, dict):
+                        health_data["orchestrator_healthy"] = orchestrator_metrics.get("system_info", {}).get("is_healthy", True)
+                        health_data["performance_metrics"] = orchestrator_metrics.get("performance", {})
+                        health_data["uptime_seconds"] = orchestrator_metrics.get("system_info", {}).get("uptime_seconds", 0.0)
+                    else:
+                        logger.warning("Unexpected return type from get_system_metrics()")
+                        health_data["orchestrator_healthy"] = True  # Assume healthy if we can't determine
+                else:
+                    # Basic health check for orchestrator without metrics
+                    health_data["orchestrator_healthy"] = True
+                    logger.debug("Orchestrator doesn't have get_system_metrics, using basic health check")
+            except Exception as e:
+                logger.error(f"Error checking orchestrator health: {e}")
+                health_data["orchestrator_healthy"] = False
+        else:
+            health_data["orchestrator_healthy"] = False
         
-        # Check database connection
-        if hasattr(app_instance.state, 'db'):
+        # Check database connection with retry
+        if hasattr(app_instance.state, 'db') and app_instance.state.db is not None:
             try:
                 await app_instance.state.db.command("ping")
                 health_data["database_connected"] = True
-            except Exception:
+            except Exception as e:
+                logger.warning(f"Database ping failed: {e}")
                 health_data["database_connected"] = False
                 health_data["status"] = "degraded"
-        
-        # Check configuration
-        if hasattr(app_instance.state, 'config'):
-            is_valid, _ = app_instance.state.config.validate()
-            health_data["configuration_valid"] = is_valid
-            if not is_valid:
-                health_data["status"] = "degraded"
-        
-        # Check feature availability
-        health_data["features_available"] = {
-            "unified_orchestrator": hasattr(app_instance.state, 'orchestrator'),
-            "legacy_compatibility": hasattr(app_instance.state, 'legacy_evaluator'),
-            "database": hasattr(app_instance.state, 'db'),
-            "configuration": hasattr(app_instance.state, 'config')
-        }
-        
-        # Determine overall status
-        if not health_data["orchestrator_healthy"] or not health_data["database_connected"]:
+        else:
+            health_data["database_connected"] = False
             health_data["status"] = "degraded"
         
+        # Check configuration if available
+        if hasattr(app_instance.state, 'config') and app_instance.state.config is not None:
+            try:
+                if hasattr(app_instance.state.config, 'validate'):
+                    is_valid, _ = app_instance.state.config.validate()
+                    health_data["configuration_valid"] = is_valid
+                    if not is_valid:
+                        health_data["status"] = "degraded"
+                else:
+                    health_data["configuration_valid"] = True  # Assume valid if no validate method
+            except Exception as e:
+                logger.error(f"Error validating config: {e}")
+                health_data["configuration_valid"] = False
+                health_data["status"] = "degraded"
+        
+        # Enhanced feature availability check
+        health_data["features_available"] = {
+            "unified_orchestrator": hasattr(app_instance.state, 'orchestrator') and app_instance.state.orchestrator is not None,
+            "legacy_compatibility": hasattr(app_instance.state, 'legacy_evaluator') and app_instance.state.legacy_evaluator is not None,
+            "database": hasattr(app_instance.state, 'db') and app_instance.state.db is not None,
+            "configuration": hasattr(app_instance.state, 'config') and app_instance.state.config is not None
+        }
+        
+        # Determine overall status with more nuanced conditions
+        if health_data["status"] != "error":  # Only downgrade if not already in error state
+            if not health_data["orchestrator_healthy"] or not health_data["database_connected"]:
+                health_data["status"] = "degraded"
+            
+            # If we have a healthy orchestrator but no database, we can still operate in degraded mode
+            if health_data["orchestrator_healthy"] and not health_data["database_connected"]:
+                health_data["status"] = "degraded"
+                health_data["message"] = "Operating in degraded mode without database"
+                
     except Exception as e:
-        logger.error(f"Health check error: {e}")
+        logger.error(f"Health check error: {e}", exc_info=True)
         health_data["status"] = "error"
         health_data["error"] = str(e)
     
@@ -648,22 +759,75 @@ async def health_check():
     - Debugging and troubleshooting
     
     Returns detailed information about:
-    - Overall system status
-    - Component health status
-    - Performance metrics
+    - Overall system status (healthy, degraded, error)
+    - Component health status (orchestrator, database, config)
+    - Performance metrics (if available)
     - Feature availability
     - Configuration validity
+    - Uptime and system information
+    
+    Response Codes:
+    - 200: System is healthy or degraded but operational
+    - 503: System is in an error state and may not be fully functional
     """
-    
     try:
+        # Get detailed health information
         health_data = await perform_health_check()
-        return SystemHealthResponse(**health_data)
-    
+        
+        # Prepare the response
+        response = {
+            "status": health_data["status"],
+            "timestamp": health_data["timestamp"],
+            "uptime_seconds": health_data.get("uptime_seconds", 0.0),
+            "orchestrator_healthy": health_data["orchestrator_healthy"],
+            "database_connected": health_data["database_connected"],
+            "configuration_valid": health_data["configuration_valid"],
+            "performance_metrics": health_data.get("performance_metrics", {}),
+            "features_available": health_data.get("features_available", {})
+        }
+        
+        # Add any additional context or messages
+        if "message" in health_data:
+            response["message"] = health_data["message"]
+            
+        # If there was an error, include it in the response
+        if health_data["status"] == "error":
+            response["error"] = health_data.get("error", "Unknown error")
+            
+        # For degraded state, include details about what's degraded
+        if health_data["status"] == "degraded":
+            issues = []
+            if not health_data["orchestrator_healthy"]:
+                issues.append("orchestrator_unhealthy")
+            if not health_data["database_connected"]:
+                issues.append("database_disconnected")
+            if not health_data["configuration_valid"]:
+                issues.append("invalid_configuration")
+            response["degraded_components"] = issues
+        
+        # Return appropriate status code based on health
+        if health_data["status"] == "error":
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=response
+            )
+            
+        return response
+        
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 503 from above)
+        raise
+        
     except Exception as e:
-        logger.error(f"Health check failed: {e}")
+        # Catch any other unexpected errors
+        logger.critical(f"Critical error in health check: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Health check failed: {str(e)}"
+            detail={
+                "status": "error",
+                "error": "Internal server error during health check",
+                "details": str(e)
+            }
         )
 
 @app.post("/api/evaluate", response_model=EvaluationResponse, tags=["Ethical Evaluation"])
@@ -673,68 +837,60 @@ async def evaluate_text(
     orchestrator=Depends(get_orchestrator),
     db=Depends(get_database)
 ):
-    """
-    🎯 **Ethical Text Evaluation**
-    
-    Performs comprehensive ethical evaluation of text content using our
-    unified multi-framework analysis system.
-    
-    ## Evaluation Process
-    
-    1. **Input Validation**: Ensures request is properly formatted and safe
-    2. **Context Analysis**: Analyzes domain, cultural context, and intent
-    3. **Multi-Framework Evaluation**:
-        - **Meta-Ethics**: Logical structure and semantic coherence
-        - **Normative Ethics**: Virtue, deontological, and consequentialist analysis
-        - **Applied Ethics**: Domain-specific rules and cultural considerations
-    4. **Knowledge Integration**: Relevant philosophical and academic knowledge
-    5. **Result Synthesis**: Unified conclusion with confidence scoring
-    6. **Response Generation**: Comprehensive explanation and recommendations
-    
-    ## Supported Contexts
-    
-    - **Medical**: Healthcare-specific ethical guidelines
-    - **Legal**: Legal and regulatory compliance
-    - **Educational**: Academic and pedagogical considerations
-    - **General**: Universal ethical principles
-    
-    ## Example Usage
-    
-    ```json
-    {
-        "text": "We should help those in need when possible.",
-        "context": {
-            "domain": "general",
-            "cultural_context": "western"
-        },
-        "mode": "production",
-        "priority": "normal"
-    }
-    ```
-    """
-    
-    evaluation_start = time.time()
+    # Set up request-specific logger with request ID
     request_id = str(uuid.uuid4())
+    logger = logging.getLogger(f"api.evaluate.{request_id[:8]}")
+    
+    logger.info("\n" + "="*80)
+    logger.info("🔍 EVALUATION REQUEST RECEIVED")
+    logger.info("="*80)
+    logger.info(f"📝 Request ID: {request_id}")
+    logger.info(f"📏 Text length: {len(request.text)} characters")
+    logger.info(f"🔧 Context: {json.dumps(request.context, default=str)}")
+    logger.info(f"⚙️  Parameters: {json.dumps(request.parameters, default=str)}")
+    logger.info(f"🏷️  Mode: {request.mode}")
+    logger.info(f"🔝 Priority: {request.priority}")
+    logger.info(f"🎚️  Tau Slider: {getattr(request, 'tau_slider', 'Not provided')}")
+    logger.info("-"*40)
+    # Log request headers if available
+    try:
+        headers = {k: v for k, v in request.scope.get('headers', [])}
+        logger.info(f"🌐 Request Headers: {json.dumps(headers, default=str, ensure_ascii=False)}")
+    except Exception as e:
+        logger.warning(f"⚠️ Could not log request headers: {str(e)}")
+    
+    logger.info("="*80 + "\n")
+    
+    # Start timing the evaluation
+    evaluation_start = time.time()
     
     try:
-        logger.info(f"🎯 Starting evaluation for request {request_id}")
+        logger.info("🎯 Starting ethical evaluation...")
         
-        # Extract and process tau_slider and scaling_type from parameters
+        # Extract and process tau_slider and scaling_type
         parameters = request.parameters or {}
-        tau_slider = parameters.pop('tau_slider', None)
+        tau_slider = getattr(request, 'tau_slider', None)
         scaling_type = parameters.pop('scaling_type', 'exponential')
+        
+        logger.info(f"🔧 Processing parameters - Tau Slider: {tau_slider}, Scaling Type: {scaling_type}")
+        logger.debug(f"📦 Raw parameters: {parameters}")
         
         # Apply threshold scaling if tau_slider is provided
         if tau_slider is not None:
             try:
+                logger.info(f"🎚️ Processing tau_slider value: {tau_slider} with {scaling_type} scaling")
+                
                 # Get the ethical engine instance
                 ethical_engine = get_ethical_engine()
+                logger.info("✅ Successfully retrieved ethical engine instance")
                 
                 # Calculate the threshold based on scaling type
                 if scaling_type == 'exponential':
                     threshold = (math.exp(6 * tau_slider) - 1) / (math.exp(6) - 1) * 0.5
+                    logger.debug(f"📈 Applied exponential scaling formula: (e^(6*{tau_slider})-1)/(e^6-1)*0.5 = {threshold:.4f}")
                 else:
                     threshold = tau_slider * 0.5
+                    logger.debug(f"📏 Applied linear scaling: {tau_slider} * 0.5 = {threshold:.4f}")
                 
                 # Update the evaluator's parameters
                 params = {
@@ -744,271 +900,259 @@ async def evaluate_text(
                     'enable_dynamic_scaling': True,
                     'exponential_scaling': scaling_type == 'exponential'
                 }
-                ethical_engine.update_parameters(params)
                 
-                logger.info(f"Applied threshold scaling - Slider: {tau_slider}, "
+                logger.info(f"🔄 Updating ethical engine parameters: {json.dumps(params, indent=2)}")
+                ethical_engine.update_parameters(params)
+                logger.info("✅ Successfully updated ethical engine parameters")
+                
+                logger.info(f"🎯 Applied threshold scaling - Slider: {tau_slider}, "
                           f"Type: {scaling_type}, Threshold: {threshold:.4f}")
                 
             except Exception as e:
-                logger.error(f"Failed to apply threshold scaling: {str(e)}")
+                logger.error(f"❌ Failed to apply threshold scaling: {str(e)}")
+                logger.error(f"Stack trace: {traceback.format_exc()}")
                 # Continue with default thresholds if scaling fails
         
+        # If tau_slider was used, update the main parameters dict with the new thresholds
+        if tau_slider is not None:
+            params = {
+                'virtue_threshold': threshold,
+                'deontological_threshold': threshold,
+                'consequentialist_threshold': threshold,
+            }
+            logger.info(f"🔄 Updating main parameters with threshold values: {params}")
+            parameters.update(params)
+            logger.debug(f"📋 Updated parameters: {parameters}")
+
         # Create evaluation context with processed parameters
-        # Build metadata with all parameters and settings
-        metadata = {
-            "mode": request.mode,
-            "priority": request.priority,
-            **request.context,
-            "tau_slider": tau_slider,
-            "scaling_type": scaling_type,
-            # Include parameters in metadata
-            **parameters
+        logger.info("🏗️  Building evaluation context...")
+        
+        # Create a UnifiedEthicalContext instance
+        from unified_ethical_orchestrator import UnifiedEthicalContext, ProcessingPriority, EthicalAIMode
+        
+        # Convert priority string to enum
+        priority_map = {
+            "critical": ProcessingPriority.CRITICAL,
+            "high": ProcessingPriority.HIGH,
+            "normal": ProcessingPriority.NORMAL,
+            "background": ProcessingPriority.BACKGROUND
         }
         
-        # Add client_info if it exists in the request
-        if hasattr(request, 'client_info') and request.client_info:
-            metadata["client_info"] = request.client_info
-            
-        # Create context with required parameters
-        context = UnifiedEthicalContext(
-            request_id=request_id,
+        # Convert mode string to enum
+        mode_map = {
+            "development": EthicalAIMode.DEVELOPMENT,
+            "production": EthicalAIMode.PRODUCTION,
+            "research": EthicalAIMode.RESEARCH,
+            "educational": EthicalAIMode.EDUCATIONAL
+        }
+        
+        # Create the unified context with individual attributes
+        unified_context = UnifiedEthicalContext(
+            mode=mode_map.get(request.mode.lower(), EthicalAIMode.PRODUCTION),
+            priority=priority_map.get(request.priority.lower(), ProcessingPriority.NORMAL),
             domain=request.context.get("domain", "general"),
-            cultural_context=request.context.get("cultural_context", "western"),
-            metadata=metadata
+            cultural_context=request.context.get("cultural_context", "universal"),
+            philosophical_emphasis=request.context.get("philosophical_emphasis", 
+                                                     ["virtue", "deontological", "consequentialist"]),
+            confidence_threshold=parameters.get("confidence_threshold", 0.7),
+            explanation_level=parameters.get("explanation_level", "standard"),
+            parameters={
+                **parameters,
+                "content": request.text,
+                "tau_slider": tau_slider,
+                "scaling_type": scaling_type,
+                "mode": request.mode
+            }
         )
         
-        # Set text content in metadata since UnifiedEthicalContext doesn't have a text parameter
-        metadata["text"] = request.text
+        # Add metadata
+        unified_context.metadata.update({
+            "source": request.context.get("source", "api"),
+            "evaluation_id": str(uuid.uuid4()),
+            "evaluation_timestamp": datetime.utcnow().isoformat(),
+            "request_timestamp": datetime.utcnow().isoformat(),
+            "evaluation_mode": request.mode,
+            "evaluation_priority": request.priority,
+            **{k: v for k, v in request.context.items() if k not in ["domain", "cultural_context", "philosophical_emphasis"]}
+        })
         
-        logger.info(f"Processing evaluation with tau_slider={tau_slider}, scaling_type={scaling_type}")
+        logger.info(f"✅ Built evaluation context with {len(request.text)} characters of content")
         
-        # Perform unified evaluation
-        result = await orchestrator.evaluate_content(request.text, context)
+        # Call the orchestrator's evaluate_content method
+        logger.info("🚀 Starting ethical evaluation...")
         
-        # Extract detailed evaluation data for frontend compatibility
-        evaluation_details = {}
-        clean_text = request.text
-        delta_summary = {}
+        # Ensure parameters have default thresholds
+        if 'deontological_threshold' not in parameters:
+            parameters['deontological_threshold'] = 0.25
+        if 'consequentialist_threshold' not in parameters:
+            parameters['consequentialist_threshold'] = 0.25
         
-        # FULL POWER ETHICAL ANALYSIS - NO COMPROMISES FOR LOCAL HARDWARE
-        core_eval = None
-        
+        logger.debug("Context created successfully")
+        logger.debug("Context metadata keys: %s", list(unified_context.metadata.keys()))
+        logger.debug("Context parameters: %s", unified_context.parameters)
+        logger.debug("-"*40 + "\n")
+
+        # Perform unified evaluation with detailed logging
+        logger.info(f"🔄 Starting evaluation for text: {request.text[:100]}...")
         try:
-            logger.info("🚀 Initializing FULL ethical analysis engine for local hardware")
+            logger.debug("Calling orchestrator.evaluate_text with:")
+            logger.debug(f"- Text length: {len(request.text)} characters")
+            logger.debug(f"- Context type: {type(unified_context)}")
+            logger.debug(f"- Tau slider: {tau_slider}")
             
-            # Use the same evaluator instance that was updated by threshold scaling
-            ethical_engine = get_ethical_engine()
+            # Handle both UnifiedEthicalOrchestrator and EthicalEvaluator instances
+            if hasattr(orchestrator, 'evaluate_content'):
+                # UnifiedEthicalOrchestrator interface
+                evaluation_result = await orchestrator.evaluate_content(
+                    content=request.text,
+                    context=unified_context,
+                    tau_slider=tau_slider
+                )
+            elif hasattr(orchestrator, 'evaluate_text'):
+                # Fallback to EthicalEvaluator interface
+                evaluation_result = orchestrator.evaluate_text(
+                    text=request.text,
+                    _skip_uncertainty_analysis=False
+                )
+            else:
+                raise AttributeError("Orchestrator has neither evaluate_content nor evaluate_text method")
             
-            logger.info(f"🧠 Running comprehensive ethical analysis on {len(request.text)} characters")
-            logger.info(f"📊 Using thresholds - Virtue: {getattr(ethical_engine, 'virtue_threshold', 'default')}, "
-                      f"Deontological: {getattr(ethical_engine, 'deontological_threshold', 'default')}, "
-                      f"Consequentialist: {getattr(ethical_engine, 'consequentialist_threshold', 'default')}")
+            if evaluation_result is None:
+                raise ValueError("Evaluation returned None")
+                
+            logger.info(f"✅ Orchestrator evaluation completed. Result type: {type(evaluation_result)}")
             
-            # Run ethical evaluation with current thresholds
-            core_eval = ethical_engine.evaluate_text(request.text)
+            # Log detailed result information
+            if hasattr(evaluation_result, '__dict__'):
+                logger.debug(f"Result attributes: {', '.join(evaluation_result.__dict__.keys())}")
+                if hasattr(evaluation_result, 'spans'):
+                    logger.info(f"Found {len(evaluation_result.spans)} spans in evaluation result")
+                if hasattr(evaluation_result, 'minimal_spans'):
+                    logger.info(f"Found {len(evaluation_result.minimal_spans)} minimal spans in evaluation result")
+                    
+            result = evaluation_result  # For backward compatibility
             
-            logger.info(f"✅ Full ethical analysis complete with {len(getattr(core_eval, 'spans', []))} spans")
-            logger.info(f"⚡ Processing time: {getattr(core_eval, 'processing_time', 0):.3f}s")
+            # Log the first few spans for verification
+            if hasattr(result, 'spans') and result.spans:
+                for i, span in enumerate(result.spans[:3]):
+                    span_text = getattr(span, 'text', str(span))[:50]
+                    is_violation = getattr(span, 'is_violation', False)
+                    logger.debug(f"Span {i}: {span_text}... (violation: {is_violation})")
+        except Exception as e:
+            logger.error(f"❌ Orchestrator evaluation failed: {str(e)}", exc_info=True)
+            raise
+
+        core_eval = None
+
+        # Get the current parameters from the ethical engine
+        ethical_engine = get_ethical_engine()
+        current_params = {}
+        try:
+            if ethical_engine and hasattr(ethical_engine, 'parameters'):
+                current_params = ethical_engine.parameters.dict()
+                logger.info(f"✅ Loaded parameters from ethical engine: {json.dumps(current_params, default=str, indent=2)}")
+            else:
+                logger.warning("⚠️ Ethical engine or parameters not available, using default parameters")
+        except Exception as e:
+            logger.error(f"❌ Failed to get parameters from ethical engine: {str(e)}")
+            current_params = {}
+        
+        # Construct the full evaluation response with all required fields
+        # First, try to get the evaluation from the result if it's already an EthicalEvaluation
+        if hasattr(result, 'evaluation') and isinstance(result.evaluation, EthicalEvaluation):
+            ethical_eval = result.evaluation
+        else:
+            # If not, create a new EthicalEvaluation from the result
+            evaluation_details = {
+                "input_text": request.text,
+                "tokens": getattr(result, 'tokens', []),
+                "spans": getattr(result, 'spans', []),
+                "minimal_spans": getattr(result, 'minimal_spans', []),
+                "overall_ethical": getattr(result, 'overall_ethical', True),
+                "processing_time": getattr(result, 'processing_time', time.time() - evaluation_start),
+                "parameters": current_params,  # Use current parameters from the engine
+                "evaluation_metadata": getattr(result, 'evaluation_metadata', {}),
+                "dynamic_scaling_result": getattr(result, 'dynamic_scaling_result', None),
+                "causal_analysis": getattr(result, 'causal_analysis', None),
+                "uncertainty_analysis": getattr(result, 'uncertainty_analysis', None),
+                "purpose_alignment": getattr(result, 'purpose_alignment', None),
+                "violation_count": len([s for s in getattr(result, 'spans', []) if getattr(s, 'is_violation', False)]),
+                "minimal_violation_count": len([s for s in getattr(result, 'minimal_spans', []) if getattr(s, 'is_violation', False)])
+            }
+            
+            # Log the evaluation details for debugging
+            logger.info(f"Evaluation details: {json.dumps(evaluation_details, default=str, indent=2)}")
+            
+            # Create the EthicalEvaluation object
+            ethical_eval = EthicalEvaluation(**evaluation_details)
+        
+        # Create a proper EthicalEvaluation object
+        try:
+            ethical_eval = EthicalEvaluation(**evaluation_details)
+            
+            # Prepare the response
+            response = EvaluationResponse(
+                evaluation=ethical_eval,
+                clean_text=getattr(result, 'clean_text', request.text),
+                delta_summary=getattr(result, 'delta_summary', {})
+            )
+            
+            logger.info(f"✅ Successfully created evaluation response with {len(evaluation_details.get('spans', []))} spans")
             
         except Exception as e:
-            logger.error(f"❌ Full ethical analysis failed: {e}")
-            logger.info("🔄 Attempting direct engine initialization as backup")
-            
-            try:
-                from ethical_engine import EthicalEvaluator
-                # Use the global evaluator instance that has the updated thresholds
-                direct_engine = get_ethical_engine()
-                core_eval = direct_engine.evaluate_text(request.text)
-                logger.info(f"✅ Direct engine analysis complete with {len(getattr(core_eval, 'spans', []))} spans")
-            except Exception as e2:
-                logger.error(f"❌ Direct engine also failed: {e2}")
-                core_eval = None
+            logger.error(f"❌ Failed to create EthicalEvaluation: {str(e)}")
+            logger.error(f"Evaluation details: {json.dumps(evaluation_details, default=str, indent=2)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to create evaluation response: {str(e)}"
+            )
         
-        # If we have FULL ethical evaluation with comprehensive spans
-        if core_eval and hasattr(core_eval, 'spans') and core_eval.spans:
-            logger.info("🎯 Processing FULL evaluation results with comprehensive span analysis")
-            
-            # Convert comprehensive spans to frontend-compatible format
-            spans = []
-            minimal_spans = []
-            
-            for span in core_eval.spans:
-                span_data = {
-                    "text": span.text,
-                    "start": span.start,
-                    "end": span.end,
-                    "virtue_score": span.virtue_score,
-                    "deontological_score": span.deontological_score,
-                    "consequentialist_score": span.consequentialist_score,
-                    "virtue_violation": span.virtue_violation,
-                    "deontological_violation": span.deontological_violation,
-                    "consequentialist_violation": span.consequentialist_violation,
-                    "any_violation": span.any_violation
-                }
-                spans.append(span_data)
-                
-                # Add to minimal spans if it has violations
-                if span.any_violation:
-                    minimal_spans.append(span_data)
-            
-            evaluation_details = {
-                "overall_ethical": core_eval.overall_ethical,
-                "processing_time": getattr(core_eval, 'processing_time', result.processing_time),
-                "minimal_violation_count": len(minimal_spans),
-                "spans": spans,
-                "minimal_spans": minimal_spans,
-                "evaluation_id": result.request_id
-            }
-            
-            clean_text = getattr(core_eval, 'clean_text', request.text)
-            delta_summary = {
-                "original_length": len(request.text),
-                "clean_length": len(clean_text),
-                "changes_made": len(minimal_spans) > 0
-            }
-            
-            logger.info(f"🏆 Full evaluation processed: {len(spans)} spans, {len(minimal_spans)} violations")
+        # Store the evaluation result in the background
+        background_tasks.add_task(store_evaluation_result, request, response, request_id)
         
-        # Fallback: create comprehensive mock for unsupported cases
-        if not evaluation_details:
-            logger.info("Creating mock detailed evaluation structure for frontend compatibility")
-            
-            # Create mock spans for demonstration
-            mock_spans = []
-            text = request.text
-            words = text.split()
-            
-            # Create mock spans for interesting content
-            if len(words) > 0:
-                for i, word in enumerate(words[:min(10, len(words))]):  # Limit to first 10 words
-                    start_pos = text.find(word, i * 10)  # Approximate position
-                    if start_pos >= 0:
-                        mock_span = {
-                            "text": word,
-                            "start": start_pos,
-                            "end": start_pos + len(word),
-                            "virtue_score": 0.8 + (i % 3) * 0.05,  # Vary scores
-                            "deontological_score": 0.7 + (i % 4) * 0.08,
-                            "consequentialist_score": 0.6 + (i % 5) * 0.1,
-                            "virtue_violation": False,
-                            "deontological_violation": False,
-                            "consequentialist_violation": False,
-                            "any_violation": False
-                        }
-                        mock_spans.append(mock_span)
-            
-            # Create evaluation details
-            evaluation_details = {
-                "overall_ethical": result.overall_ethical,
-                "processing_time": result.processing_time,
-                "minimal_violation_count": 0,
-                "spans": mock_spans,
-                "minimal_spans": [],  # No violations in mock data
-                "evaluation_id": result.request_id
-            }
-            
-            delta_summary = {
-                "original_length": len(request.text),
-                "clean_length": len(request.text),
-                "changes_made": False
-            }
-            
-            logger.info(f"Created mock evaluation with {len(mock_spans)} spans for frontend display")
-        
-        # Create response
-        response = EvaluationResponse(
-            request_id=result.request_id,
-            overall_ethical=result.overall_ethical,
-            confidence_score=result.confidence_score,
-            processing_time=result.processing_time,
-            timestamp=result.timestamp,
-            version=result.version,
-            evaluation=evaluation_details,
-            clean_text=clean_text,
-            delta_summary=delta_summary,
-            analysis_results={
-                "meta_ethical": result.meta_ethical_analysis,
-                "normative": result.normative_analysis,
-                "applied": result.applied_analysis
-            },
-            violations=result.ethical_violations,
-            recommendations=result.recommendations,
-            warnings=result.warnings,
-            citations=result.citations,
-            explanation=result.explanation,
-            cache_hit=result.cache_hit,
-            optimization_used=result.optimization_used
-        )
-        
-        # Store evaluation in database (background task)
-        background_tasks.add_task(store_evaluation_result, db, request, result)
-        
-        logger.info(f"✅ Evaluation completed for request {request_id} in {result.processing_time:.3f}s")
-        
+        logger.info(f"✅ Evaluation completed successfully for request {request_id}")
         return response
         
     except Exception as e:
-        processing_time = time.time() - evaluation_start
-        logger.error(f"❌ Evaluation failed for request {request_id}: {e}")
-        
-        # Return graceful degradation response
-        return EvaluationResponse(
-            request_id=request_id,
-            overall_ethical=False,  # Conservative approach
-            confidence_score=0.0,
-            processing_time=processing_time,
-            timestamp=datetime.utcnow(),
-            version="10.0.0",
-            evaluation={
-                "overall_ethical": False,
-                "processing_time": processing_time,
-                "minimal_violation_count": 0,
-                "spans": [],
-                "minimal_spans": [],
-                "evaluation_id": request_id
-            },
-            clean_text=request.text if hasattr(request, 'text') else "",
-            delta_summary={
-                "original_length": len(request.text) if hasattr(request, 'text') else 0,
-                "clean_length": len(request.text) if hasattr(request, 'text') else 0,
-                "changes_made": False
-            },
-            explanation=f"Evaluation failed due to system error: {str(e)}",
-            warnings=[f"System error occurred: {str(e)}"],
-            cache_hit=False,
-            optimization_used=False
+        logger.error(f"❌ Evaluation failed for request {request_id}: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Evaluation failed: {str(e)}"
         )
 
-async def store_evaluation_result(db, request: EvaluationRequest, result: UnifiedEthicalResult):
+async def store_evaluation_result(request: EvaluationRequest, response: EvaluationResponse, request_id: str):
     """
-    🗄️ **Store Evaluation Result**
+    🗄️ Store evaluation results in the database (runs in background).
     
-    Stores evaluation results in the database for analytics, auditing,
-    and continuous improvement of the ethical AI system.
+    This function is designed to run as a background task to avoid blocking
+    the main request/response cycle. It handles all database operations
+    asynchronously.
     """
-    
     try:
-        evaluation_record = {
-            "request_id": result.request_id,
+        # Get database instance
+        db = await get_database()
+        
+        # Prepare evaluation document
+        evaluation_doc = {
+            "request_id": request_id,
+            "timestamp": datetime.utcnow(),
             "input_text": request.text,
-            "context": request.context,
-            "parameters": request.parameters,
-            "result": {
-                "overall_ethical": result.overall_ethical,
-                "confidence_score": result.confidence_score,
-                "violations": result.ethical_violations,
-                "recommendations": result.recommendations,
-                "processing_time": result.processing_time
-            },
-            "timestamp": result.timestamp,
-            "version": result.version
+            "context": request.context or {},
+            "parameters": request.parameters or {},
+            "evaluation": response.evaluation.dict() if hasattr(response.evaluation, 'dict') else {},
+            "clean_text": response.clean_text,
+            "delta_summary": response.delta_summary,
+            "processing_time": response.evaluation.processing_time if hasattr(response.evaluation, 'processing_time') else None,
+            "is_ethical": response.evaluation.overall_ethical if hasattr(response.evaluation, 'overall_ethical') else True
         }
         
-        await db.evaluations.insert_one(evaluation_record)
-        logger.debug(f"Stored evaluation result: {result.request_id}")
+        # Insert into database
+        result = await db["evaluations"].insert_one(evaluation_doc)
+        logger.info(f"📥 Stored evaluation result with ID: {result.inserted_id}")
         
     except Exception as e:
-        logger.error(f"Failed to store evaluation result: {e}")
+        logger.error(f"❌ Failed to store evaluation result: {str(e)}", exc_info=True)
+        # Don't raise the exception as this is a background task
 
 # 🎓 PROFESSOR'S EXPLANATION: Backward Compatibility Endpoints
 # ══════════════════════════════════════════════════════════════
@@ -1018,10 +1162,8 @@ async def store_evaluation_result(db, request: EvaluationRequest, result: Unifie
 @app.get("/api/parameters", tags=["Legacy Compatibility"])
 async def get_parameters():
     """Get current evaluation parameters (legacy compatibility)."""
-    
     try:
         config = app.state.config
-        
         # Convert unified config to legacy parameter format
         legacy_params = {
             "virtue_threshold": 0.25,
@@ -1035,9 +1177,7 @@ async def get_parameters():
             "enable_learning_mode": True,
             "optimization_level": config.performance.optimization_level
         }
-        
         return legacy_params
-        
     except Exception as e:
         logger.error(f"Failed to get parameters: {e}")
         raise HTTPException(
@@ -1084,30 +1224,38 @@ async def update_parameters(params: Dict[str, Any], evaluator: EthicalEvaluator 
     "/api/threshold-scaling",
     response_model=ThresholdScalingResponse,
     tags=["Evaluation"],
-    summary="Adjust evaluation thresholds using a slider value",
+    summary="Adjust evaluation thresholds using slider values",
     description="""
     Dynamically adjust the sensitivity thresholds for ethical evaluation
-    using a normalized slider value (0.0 to 1.0).
+    using normalized slider values (0.0 to 1.0) for each ethical perspective.
     
     - Lower values make the evaluation more strict (more violations detected)
     - Higher values make it more lenient (fewer violations detected)
-    
-    Uses exponential scaling by default for better control in the critical 0.0-0.2 range.
+    - Uses exponential scaling by default for better control in the critical 0.0-0.2 range.
     """
 )
 async def update_threshold_scaling(
     request: ThresholdScalingRequest,
     evaluator: EthicalEvaluator = Depends(get_ethical_engine)
 ):
-    """Update evaluation thresholds based on a normalized slider value."""
+    """Update a specific evaluation threshold based on a normalized slider value."""
     try:
+        threshold_type = request.threshold_type
         slider_value = request.slider_value
         use_exponential = request.use_exponential
         
+        # Validate threshold type
+        valid_thresholds = ['virtue', 'deontological', 'consequentialist']
+        if threshold_type not in valid_thresholds:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid threshold type. Must be one of: {', '.join(valid_thresholds)}"
+            )
+        
         # Log the threshold scaling request
         logger.info(
-            f"Threshold scaling requested - Slider: {slider_value:.2f}, "
-            f"Exponential: {use_exponential}"
+            f"Threshold scaling requested - Type: {threshold_type}, "
+            f"Slider: {slider_value:.2f}, Exponential: {use_exponential}"
         )
         
         # Calculate the new threshold based on scaling type
@@ -1122,23 +1270,29 @@ async def update_threshold_scaling(
             scaling_type = "linear"
             formula = f"{slider_value:.2f} * 0.5"
         
-        # Create parameters to update
-        params = {
-            'virtue_threshold': threshold,
-            'deontological_threshold': threshold,
-            'consequentialist_threshold': threshold,
+        # Get current parameters to preserve other threshold values
+        current_params = evaluator.get_parameters()
+        
+        # Update only the specified threshold
+        param_name = f"{threshold_type}_threshold"
+        updated_params = {
+            **current_params,
+            param_name: threshold,
             'enable_dynamic_scaling': True,
             'exponential_scaling': use_exponential
         }
         
         # Update the evaluator's parameters
-        evaluator.update_parameters(params)
+        evaluator.update_parameters(updated_params)
         
         # Log the successful update
         logger.info(
-            f"Threshold scaling applied - New threshold: {threshold:.4f}, "
+            f"Threshold scaling applied - {threshold_type.capitalize()}: {threshold:.4f}, "
             f"Type: {scaling_type}"
         )
+        
+        # Get the updated parameters for the response
+        updated_params = evaluator.get_parameters()
         
         # Return detailed response
         return {
@@ -1148,11 +1302,11 @@ async def update_threshold_scaling(
             "scaling_type": scaling_type,
             "formula": formula,
             "updated_parameters": {
-                "virtue_threshold": threshold,
-                "deontological_threshold": threshold,
-                "consequentialist_threshold": threshold,
-                "enable_dynamic_scaling": True,
-                "exponential_scaling": use_exponential
+                "virtue_threshold": updated_params.get('virtue_threshold'),
+                "deontological_threshold": updated_params.get('deontological_threshold'),
+                "consequentialist_threshold": updated_params.get('consequentialist_threshold'),
+                "enable_dynamic_scaling": updated_params.get('enable_dynamic_scaling', True),
+                "exponential_scaling": updated_params.get('exponential_scaling', use_exponential)
             }
         }
         
@@ -1163,6 +1317,103 @@ async def update_threshold_scaling(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=error_msg
         )
+
+
+class UpdateAllThresholdsRequest(BaseModel):
+    """Request model for updating all threshold values at once."""
+    virtue_threshold: float = Field(..., ge=0.0, le=1.0, description="Virtue threshold slider value (0.0 to 1.0)")
+    deontological_threshold: float = Field(..., ge=0.0, le=1.0, description="Deontological threshold slider value (0.0 to 1.0)")
+    consequentialist_threshold: float = Field(..., ge=0.0, le=1.0, description="Consequentialist threshold slider value (0.0 to 1.0)")
+    use_exponential: bool = Field(default=True, description="Whether to use exponential scaling")
+
+
+@app.post(
+    "/api/evaluate/update-thresholds",
+    response_model=Dict[str, Any],
+    tags=["Evaluation"],
+    summary="Update all ethical evaluation thresholds at once",
+    description="""
+    Update all three ethical evaluation thresholds (virtue, deontological, consequentialist)
+    in a single API call. This is more efficient than updating them individually.
+    """
+)
+async def update_all_thresholds(
+    request: UpdateAllThresholdsRequest,
+    evaluator: EthicalEvaluator = Depends(get_ethical_engine)
+):
+    """Update all three ethical evaluation thresholds at once."""
+    try:
+        # Log the threshold update request
+        logger.info(
+            f"Updating all thresholds - Virtue: {request.virtue_threshold:.2f}, "
+            f"Deontological: {request.deontological_threshold:.2f}, "
+            f"Consequentialist: {request.consequentialist_threshold:.2f}, "
+            f"Exponential: {request.use_exponential}"
+        )
+        
+        # Create a mapping of threshold types to their values
+        threshold_updates = {
+            'virtue': request.virtue_threshold,
+            'deontological': request.deontological_threshold,
+            'consequentialist': request.consequentialist_threshold
+        }
+        
+        updated_params = {}
+        response_data = {
+            'status': 'success',
+            'updated_thresholds': {},
+            'scaling_type': 'exponential' if request.use_exponential else 'linear',
+            'formula': 'exponential' if request.use_exponential else 'linear'
+        }
+        
+        # Process each threshold
+        for threshold_type, slider_value in threshold_updates.items():
+            # Calculate the actual threshold value
+            if request.use_exponential:
+                threshold = (math.exp(6 * slider_value) - 1) / (math.exp(6) - 1) * 0.5
+            else:
+                threshold = slider_value * 0.5
+            
+            # Add to the parameters to update
+            param_name = f"{threshold_type}_threshold"
+            updated_params[param_name] = threshold
+            response_data['updated_thresholds'][threshold_type] = {
+                'slider_value': slider_value,
+                'scaled_threshold': threshold
+            }
+        
+        # Add common parameters
+        updated_params.update({
+            'enable_dynamic_scaling': True,
+            'exponential_scaling': request.use_exponential
+        })
+        
+        # Update the evaluator with all new parameters
+        evaluator.update_parameters(updated_params)
+        
+        # Also update the unified config if available
+        try:
+            config = app.state.config
+            if hasattr(config, 'ethical_frameworks'):
+                for threshold_type in threshold_updates.keys():
+                    param_name = f"{threshold_type}_threshold"
+                    setattr(config.ethical_frameworks, f"{threshold_type}_weight", updated_params[param_name])
+        except Exception as config_error:
+            logger.warning(f"Could not update unified config: {config_error}")
+        
+        # Add the final updated parameters to the response
+        response_data['updated_parameters'] = updated_params
+        return response_data
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating all thresholds: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update thresholds: {str(e)}"
+        )
+
 
 @app.get("/api/learning-stats", tags=["Legacy Compatibility"])
 async def get_learning_stats():
