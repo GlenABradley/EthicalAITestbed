@@ -1,4 +1,4 @@
-# Ethical AI Developer Testbed v1.2.2
+# Ethical AI Developer Testbed v1.2.3
 
 **An advanced evaluation platform that generates structured, N-dimensional ethical vectors for AI alignment, featuring adaptive threshold learning and real-time ethical assessment capabilities.**
 
@@ -16,7 +16,10 @@ The fundamental challenge in creating safe, human-aligned AI is a data problem. 
 
 This project solves this problem by providing a **machine for generating structured ethical data**. By processing text, it produces high-resolution, N-dimensional vectors that represent the text's ethical content across multiple philosophical frameworks. This provides the precise kind of labeled data needed to align AI models with human values through fine-tuning or reinforcement learning (RLAIF).
 
-### Key Achievements (v1.2.2)
+### Key Achievements (v1.2.3)
+- **ML Data Preparation Interface**: Upload and process text for ML training with ethical vectors
+- **Model Constitution Page**: Access to the embedding statement for model alignment
+- **Alignment Workspace UI**: Dedicated workspace for AI alignment solution components
 - **Adaptive Threshold Learning**: Perceptron-based optimization of ethical boundaries
 - **67% accuracy** in violation prediction with intent hierarchy normalization
 - **95% test success rate** across 40+ comprehensive tests
@@ -355,7 +358,24 @@ EthicalAITestbed/
 
 ## Version History
 
-### v1.2.2 (Current)
+### v1.2.3 (Current)
+- **New Alignment Workspace Tab**: Unified interface for accessing AI alignment components
+- **ML Data Preparation Interface**: Upload and process text files through ethical evaluation pipeline
+  - Process files into ML-ready training data with ethical vector tagging
+  - Generate intent vectors for each input text
+  - Export processed data in JSONL format for ML model training
+  - Backend API and frontend integration for complete workflow
+- **Model Constitution Page**: Access to the embedding statement for model alignment
+  - Information about autonomy-maximizing embeddings
+  - Documentation on how the model constitution works
+  - Download capabilities for reference implementation
+- **Backend Architectural Improvements**: Dependency injection and error handling
+  - Improved FastAPI response models
+  - Reduced circular dependencies
+  - Better component isolation
+- **UI/UX Enhancements**: Cross-browser compatibility improvements
+
+### v1.2.2
 - Complete adaptive threshold learning system
 - Frontend integration with new UI paradigm
 - Orthonormalized feature extraction

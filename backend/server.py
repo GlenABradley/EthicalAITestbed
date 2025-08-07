@@ -1,28 +1,27 @@
 """
-🏛️ UNIFIED ETHICAL AI SERVER - WORLD-CLASS REFACTORED ARCHITECTURE 🏛️
-═══════════════════════════════════════════════════════════════════════════════════
+UNIFIED ETHICAL AI SERVER - MODERN ARCHITECTURE
+===============================================
 
-🎓 PROFESSOR'S COMPREHENSIVE LECTURE: Modern API Architecture
-══════════════════════════════════════════════════════════════════════════════
+Modern API Architecture Overview
+===============================
 
-Welcome to the masterpiece of ethical AI server architecture! This refactored server
-represents the culmination of modern software engineering principles:
+This server implements modern software engineering principles in an ethical AI framework:
 
-📚 **ARCHITECTURAL FOUNDATIONS**:
+**ARCHITECTURAL FOUNDATIONS**:
    - **Clean Architecture** (Robert C. Martin): Dependency inversion and separation of concerns
    - **Hexagonal Architecture** (Alistair Cockburn): Ports and adapters pattern
    - **Domain-Driven Design** (Eric Evans): Rich domain models and bounded contexts
    - **SOLID Principles**: Single responsibility, open-closed, Liskov substitution, interface segregation, dependency inversion
 
-🔬 **DESIGN PATTERNS IMPLEMENTED**:
+**DESIGN PATTERNS IMPLEMENTED**:
    - **Facade Pattern**: Simplified API interface hiding complex subsystem interactions
    - **Strategy Pattern**: Multiple evaluation strategies based on context
    - **Observer Pattern**: Event-driven configuration and monitoring updates
    - **Command Pattern**: Request processing with full audit trail
    - **Circuit Breaker**: Resilience against cascading failures
 
-🏗️ **SYSTEM ARCHITECTURE FLOW**:
-═══════════════════════════════════════════════════════════════════════════════════
+**SYSTEM ARCHITECTURE FLOW**:
+===============================================
 
 ┌─────────────────────────────────────────────────────────────────┐
 │                        CLIENT REQUESTS                          │
@@ -71,6 +70,7 @@ from typing import Dict, List, Optional, Any, Union, Tuple
 # dependency injection, and comprehensive middleware stack
 import sys
 from pathlib import Path
+import ml_data_endpoints
 
 # 🎓 PROFESSOR'S NOTE: Resolving module import errors
 # We add the backend directory to the Python path to ensure that modules
@@ -181,25 +181,19 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 # 🎓 PROFESSOR'S EXPLANATION: Pydantic Models
-# ════════════════════════════════════════════════════════════════════════════════════
-# These models define our API contracts with comprehensive validation,
-# documentation, and type safety. They represent the "interface" layer
-# in our hexagonal architecture.
-
 class ThresholdScalingRequest(BaseModel):
-    """🎓 THRESHOLD SCALING REQUEST MODEL:
-    ═══════════════════════════════════
+    """THRESHOLD SCALING REQUEST MODEL:
     
     This model defines the structure for threshold scaling requests.
     It's used to dynamically adjust the sensitivity of the ethical evaluation.
     """
     threshold_type: str = Field(
-        ...,
+        ..., 
         description="Type of threshold to update ('virtue', 'deontological', or 'consequentialist')",
         example="virtue"
     )
     slider_value: float = Field(
-        ...,
+        ..., 
         ge=0.0,
         le=1.0,
         description="Slider value between 0.0 and 1.0 to scale the threshold",
@@ -213,8 +207,7 @@ class ThresholdScalingRequest(BaseModel):
 
 
 class ThresholdScalingResponse(BaseModel):
-    """🎓 THRESHOLD SCALING RESPONSE MODEL:
-    ════════════════════════════════════
+    """THRESHOLD SCALING RESPONSE MODEL:
     
     This model defines the response structure for threshold scaling operations.
     It provides detailed information about the applied scaling.
@@ -225,15 +218,14 @@ class ThresholdScalingResponse(BaseModel):
     scaling_type: str = Field(..., description="Type of scaling applied (exponential/linear)")
     formula: str = Field(..., description="Mathematical formula used for scaling")
     updated_parameters: Dict[str, float] = Field(
-        ...,
+        ..., 
         description="Updated parameter values that were affected by this scaling"
     )
 
 
 class EvaluationRequest(BaseModel):
     """
-    🎓 EVALUATION REQUEST MODEL:
-    ════════════════════════════════
+    EVALUATION REQUEST MODEL:
     
     This model defines the structure for ethical evaluation requests.
     It includes comprehensive validation and defaults to ensure
@@ -336,8 +328,8 @@ class SystemHealthResponse(BaseModel):
         description="Availability status of system features"
     )
 
-# 🎓 PROFESSOR'S EXPLANATION: Application Lifespan Management
-# ═══════════════════════════════════════════════════════════════
+# Application Lifespan Management
+# ===============================================
 # This async context manager handles the complete lifecycle of our
 # application, ensuring proper initialization and cleanup following
 # modern FastAPI patterns.
@@ -345,8 +337,7 @@ class SystemHealthResponse(BaseModel):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
-    🎓 APPLICATION LIFESPAN MANAGEMENT:
-    ═══════════════════════════════════════
+    APPLICATION LIFESPAN MANAGEMENT:
     
     This function manages the complete lifecycle of our ethical AI server
     application, ensuring proper initialization and cleanup of all components.
@@ -366,19 +357,19 @@ async def lifespan(app: FastAPI):
     5. Final system status logging
     """
     
-    logger.info("🚀 Starting Unified Ethical AI Server...")
+    logger.info("Starting Unified Ethical AI Server...")
     
     try:
-        # 🔧 PHASE 1: Configuration Initialization
-        logger.info("📋 Initializing configuration system...")
+        # PHASE 1: Configuration Initialization
+        logger.info("Initializing configuration system...")
         config = await initialize_configuration_system(
             environment=os.getenv('ETHICAL_AI_MODE', 'development')
         )
         app.state.config = config
-        logger.info("✅ Configuration system initialized")
+        logger.info("Configuration system initialized")
         
-        # 🗄️ PHASE 2: Database Initialization
-        logger.info("🗄️ Initializing MongoDB connections...")
+        # PHASE 2: Database Initialization
+        logger.info("Initializing MongoDB connections...")
         max_retries = 3
         retry_delay = 2  # seconds
         
@@ -413,25 +404,25 @@ async def lifespan(app: FastAPI):
                 
                 # Verify the database is accessible
                 db_info = await db.command('dbstats')
-                logger.info(f"✅ Successfully connected to MongoDB: {db_name}")
+                logger.info(f"Successfully connected to MongoDB: {db_name}")
                 logger.debug(f"Database stats: {db_info}")
                 break
                 
             except Exception as e:
                 logger.warning(f"MongoDB connection attempt {attempt + 1} failed: {str(e)}")
                 if attempt == max_retries - 1:
-                    logger.error("❌ All MongoDB connection attempts failed. Starting in degraded mode without database.")
+                    logger.error("All MongoDB connection attempts failed. Starting in degraded mode without database.")
                     # Fall back to in-memory storage
                     app.state.db = None
                     app.state.db_client = None
-                    logger.warning("⚠️ Running in degraded mode without database persistence")
+                    logger.warning("Running in degraded mode without database persistence")
                 else:
                     logger.info(f"Retrying in {retry_delay} seconds...")
                     await asyncio.sleep(retry_delay)
                     retry_delay *= 2  # Exponential backoff
         
-        # 🏛️ PHASE 3: Orchestrator Initialization
-        logger.info("🏛️ Initializing unified orchestrator...")
+        # PHASE 3: Orchestrator Initialization
+        logger.info("Initializing unified orchestrator...")
         
         try:
             # Convert unified config to orchestrator config format
@@ -466,72 +457,71 @@ async def lifespan(app: FastAPI):
                 except Exception as e:
                     logger.warning(f"Failed to initialize database collections: {e}")
             
-            logger.info("✅ Unified orchestrator initialized")
+            logger.info("Unified orchestrator initialized")
             
         except Exception as e:
-            logger.error(f"❌ Failed to initialize orchestrator: {e}")
+            logger.error(f"Failed to initialize orchestrator: {e}")
             # Try to continue with a minimal orchestrator if possible
             try:
                 from ethical_engine import EthicalEvaluator
                 app.state.orchestrator = EthicalEvaluator()
-                logger.warning("⚠️ Fallback to basic ethical evaluator")
+                logger.warning("Fallback to basic ethical evaluator")
             except Exception as fallback_error:
-                logger.error(f"❌ Critical: Could not initialize fallback evaluator: {fallback_error}")
+                logger.error(f"Critical: Could not initialize fallback evaluator: {fallback_error}")
                 raise RuntimeError("Failed to initialize any evaluation component")
         
-        # 🎯 PHASE 4: Legacy Component Support
+        # PHASE 4: Legacy Component Support
         if LEGACY_COMPONENTS_AVAILABLE:
-            logger.info("🔄 Initializing legacy component support...")
+            logger.info("Initializing legacy component support...")
             legacy_evaluator = EthicalEvaluator()
             app.state.legacy_evaluator = legacy_evaluator
-            logger.info("✅ Legacy component support initialized")
+            logger.info("Legacy component support initialized")
         
-        # 🏥 PHASE 5: System Health Check
-        logger.info("🏥 Performing initial system health check...")
+        # PHASE 5: System Health Check
+        logger.info("Performing initial system health check...")
         health_status = await perform_health_check(app)
         if health_status["status"] != "healthy":
             logger.warning(f"System health check shows: {health_status['status']}")
         else:
-            logger.info("✅ System health check passed")
+            logger.info("System health check passed")
         
-        logger.info("🎉 Unified Ethical AI Server started successfully!")
+        logger.info("Unified Ethical AI Server started successfully!")
         
         # Yield control to the application
         yield
         
     except Exception as e:
-        logger.error(f"❌ Server startup failed: {e}")
+        logger.error(f"Server startup failed: {e}")
         raise
     
     finally:
-        # 🛑 SHUTDOWN PHASE
-        logger.info("🛑 Shutting down Unified Ethical AI Server...")
+        # SHUTDOWN PHASE
+        logger.info("Shutting down Unified Ethical AI Server...")
         
         try:
             # Shutdown orchestrator
             if hasattr(app.state, 'orchestrator'):
                 await app.state.orchestrator.shutdown()
-                logger.info("✅ Orchestrator shutdown complete")
+                logger.info("Orchestrator shutdown complete")
             
             # Close database connections
             if hasattr(app.state, 'db_client'):
                 app.state.db_client.close()
-                logger.info("✅ Database connections closed")
+                logger.info("Database connections closed")
             
         except Exception as e:
-            logger.error(f"❌ Shutdown error: {e}")
+            logger.error(f"Shutdown error: {e}")
         
-        logger.info("✅ Unified Ethical AI Server shutdown complete")
+        logger.info("Unified Ethical AI Server shutdown complete")
 
-# 🎓 PROFESSOR'S EXPLANATION: FastAPI Application Creation
-# ═══════════════════════════════════════════════════════════
+# FastAPI Application Creation
+# ===============================================
 # We create our FastAPI application with comprehensive middleware,
 # documentation, and modern configuration following best practices.
 
 def create_ethical_ai_app() -> FastAPI:
     """
-    🎓 APPLICATION FACTORY PATTERN:
-    ═══════════════════════════════════════
+    APPLICATION FACTORY PATTERN:
     
     This factory function creates and configures our FastAPI application
     with all necessary middleware, documentation, and settings.
@@ -554,7 +544,7 @@ def create_ethical_ai_app() -> FastAPI:
     app = FastAPI(
         title="Unified Ethical AI Developer Testbed",
         description="""
-        🏛️ **World-Class Ethical AI Evaluation Platform** 🏛️
+        **World-Class Ethical AI Evaluation Platform**
         
         A comprehensive ethical AI evaluation system that embodies 2400+ years of 
         philosophical wisdom combined with cutting-edge engineering practices.
@@ -582,7 +572,7 @@ def create_ethical_ai_app() -> FastAPI:
         redoc_url="/api/redoc"
     )
     
-    # 🔒 CORS Configuration
+    # CORS Configuration
     # Allow frontend integration while maintaining security
     origins = [
         "http://localhost:3000",  # Default React dev server
@@ -610,7 +600,7 @@ def create_ethical_ai_app() -> FastAPI:
             response.headers["Access-Control-Allow-Credentials"] = "true"
         return response
     
-    # ⚡ Compression Middleware
+    # Compression Middleware
     # Improve performance with response compression
     app.add_middleware(GZipMiddleware, minimum_size=1000)
     
@@ -619,11 +609,10 @@ def create_ethical_ai_app() -> FastAPI:
 # Create the FastAPI application
 app = create_ethical_ai_app()
 
-# 🎓 PROFESSOR'S EXPLANATION: Dependency Injection
-# ════════════════════════════════════════════════════
-# FastAPI's dependency injection system allows us to cleanly separate
-# concerns and inject the appropriate components into our endpoints.
+# Include ML data preparation endpoints
+app.include_router(ml_data_endpoints.router)
 
+# Dependency Injection
 async def get_orchestrator():
     """Dependency injection for the unified orchestrator."""
     return app.state.orchestrator
@@ -638,8 +627,7 @@ async def get_config():
 
 async def perform_health_check(app_instance=None) -> Dict[str, Any]:
     """
-    🎓 COMPREHENSIVE HEALTH CHECK:
-    ═════════════════════════════════════
+    COMPREHENSIVE HEALTH CHECK:
     
     Performs a comprehensive health check of all system components,
     returning detailed status information for monitoring and debugging.
@@ -739,15 +727,15 @@ async def perform_health_check(app_instance=None) -> Dict[str, Any]:
     
     return health_data
 
-# 🎓 PROFESSOR'S EXPLANATION: API Endpoints
-# ═════════════════════════════════════════════
+# API Endpoints
+# ===============================================
 # Our API endpoints follow RESTful principles with comprehensive
 # documentation, validation, and error handling.
 
 @app.get("/api/health", response_model=SystemHealthResponse, tags=["System"])
 async def health_check():
     """
-    🏥 **System Health Check**
+    **System Health Check**
     
     Provides comprehensive health and status information for the entire
     Ethical AI system, including all components and performance metrics.
@@ -842,22 +830,22 @@ async def evaluate_text(
     logger = logging.getLogger(f"api.evaluate.{request_id[:8]}")
     
     logger.info("\n" + "="*80)
-    logger.info("🔍 EVALUATION REQUEST RECEIVED")
+    logger.info("EVALUATION REQUEST RECEIVED")
     logger.info("="*80)
-    logger.info(f"📝 Request ID: {request_id}")
-    logger.info(f"📏 Text length: {len(request.text)} characters")
-    logger.info(f"🔧 Context: {json.dumps(request.context, default=str)}")
-    logger.info(f"⚙️  Parameters: {json.dumps(request.parameters, default=str)}")
-    logger.info(f"🏷️  Mode: {request.mode}")
-    logger.info(f"🔝 Priority: {request.priority}")
-    logger.info(f"🎚️  Tau Slider: {getattr(request, 'tau_slider', 'Not provided')}")
+    logger.info(f"Request ID: {request_id}")
+    logger.info(f"Text length: {len(request.text)} characters")
+    logger.info(f"Context: {json.dumps(request.context, default=str)}")
+    logger.info(f"Parameters: {json.dumps(request.parameters, default=str)}")
+    logger.info(f"Mode: {request.mode}")
+    logger.info(f"Priority: {request.priority}")
+    logger.info(f"Tau Slider: {getattr(request, 'tau_slider', 'Not provided')}")
     logger.info("-"*40)
     # Log request headers if available
     try:
         headers = {k: v for k, v in request.scope.get('headers', [])}
-        logger.info(f"🌐 Request Headers: {json.dumps(headers, default=str, ensure_ascii=False)}")
+        logger.info(f"Request Headers: {json.dumps(headers, default=str, ensure_ascii=False)}")
     except Exception as e:
-        logger.warning(f"⚠️ Could not log request headers: {str(e)}")
+        logger.warning(f"Could not log request headers: {str(e)}")
     
     logger.info("="*80 + "\n")
     
@@ -865,32 +853,32 @@ async def evaluate_text(
     evaluation_start = time.time()
     
     try:
-        logger.info("🎯 Starting ethical evaluation...")
+        logger.info("Starting ethical evaluation...")
         
         # Extract and process tau_slider and scaling_type
         parameters = request.parameters or {}
         tau_slider = getattr(request, 'tau_slider', None)
         scaling_type = parameters.pop('scaling_type', 'exponential')
         
-        logger.info(f"🔧 Processing parameters - Tau Slider: {tau_slider}, Scaling Type: {scaling_type}")
-        logger.debug(f"📦 Raw parameters: {parameters}")
+        logger.info(f"Processing parameters - Tau Slider: {tau_slider}, Scaling Type: {scaling_type}")
+        logger.debug(f"Raw parameters: {parameters}")
         
         # Apply threshold scaling if tau_slider is provided
         if tau_slider is not None:
             try:
-                logger.info(f"🎚️ Processing tau_slider value: {tau_slider} with {scaling_type} scaling")
+                logger.info(f"Processing tau_slider value: {tau_slider} with {scaling_type} scaling")
                 
                 # Get the ethical engine instance
                 ethical_engine = get_ethical_engine()
-                logger.info("✅ Successfully retrieved ethical engine instance")
+                logger.info("Successfully retrieved ethical engine instance")
                 
                 # Calculate the threshold based on scaling type
                 if scaling_type == 'exponential':
                     threshold = (math.exp(6 * tau_slider) - 1) / (math.exp(6) - 1) * 0.5
-                    logger.debug(f"📈 Applied exponential scaling formula: (e^(6*{tau_slider})-1)/(e^6-1)*0.5 = {threshold:.4f}")
+                    logger.debug(f"Applied exponential scaling formula: (e^(6*{tau_slider})-1)/(e^6-1)*0.5 = {threshold:.4f}")
                 else:
                     threshold = tau_slider * 0.5
-                    logger.debug(f"📏 Applied linear scaling: {tau_slider} * 0.5 = {threshold:.4f}")
+                    logger.debug(f"Applied linear scaling: {tau_slider} * 0.5 = {threshold:.4f}")
                 
                 # Update the evaluator's parameters
                 params = {
@@ -901,15 +889,14 @@ async def evaluate_text(
                     'exponential_scaling': scaling_type == 'exponential'
                 }
                 
-                logger.info(f"🔄 Updating ethical engine parameters: {json.dumps(params, indent=2)}")
+                logger.info(f"Updating ethical engine parameters: {json.dumps(params, default=str, indent=2)}")
                 ethical_engine.update_parameters(params)
-                logger.info("✅ Successfully updated ethical engine parameters")
+                logger.info("Successfully updated ethical engine parameters")
                 
-                logger.info(f"🎯 Applied threshold scaling - Slider: {tau_slider}, "
-                          f"Type: {scaling_type}, Threshold: {threshold:.4f}")
+                logger.info(f"Applied threshold scaling - Slider: {tau_slider}, Type: {scaling_type}, Threshold: {threshold:.4f}")
                 
             except Exception as e:
-                logger.error(f"❌ Failed to apply threshold scaling: {str(e)}")
+                logger.error(f"Failed to apply threshold scaling: {str(e)}")
                 logger.error(f"Stack trace: {traceback.format_exc()}")
                 # Continue with default thresholds if scaling fails
         
@@ -920,12 +907,12 @@ async def evaluate_text(
                 'deontological_threshold': threshold,
                 'consequentialist_threshold': threshold,
             }
-            logger.info(f"🔄 Updating main parameters with threshold values: {params}")
+            logger.info(f"Updating main parameters with threshold values: {params}")
             parameters.update(params)
-            logger.debug(f"📋 Updated parameters: {parameters}")
+            logger.debug(f"Updated parameters: {parameters}")
 
         # Create evaluation context with processed parameters
-        logger.info("🏗️  Building evaluation context...")
+        logger.info("Building evaluation context...")
         
         # Create a UnifiedEthicalContext instance
         from unified_ethical_orchestrator import UnifiedEthicalContext, ProcessingPriority, EthicalAIMode
@@ -976,10 +963,10 @@ async def evaluate_text(
             **{k: v for k, v in request.context.items() if k not in ["domain", "cultural_context", "philosophical_emphasis"]}
         })
         
-        logger.info(f"✅ Built evaluation context with {len(request.text)} characters of content")
+        logger.info(f"Built evaluation context with {len(request.text)} characters of content")
         
         # Call the orchestrator's evaluate_content method
-        logger.info("🚀 Starting ethical evaluation...")
+        logger.info("Starting ethical evaluation...")
         
         # Ensure parameters have default thresholds
         if 'deontological_threshold' not in parameters:
@@ -993,7 +980,7 @@ async def evaluate_text(
         logger.debug("-"*40 + "\n")
 
         # Perform unified evaluation with detailed logging
-        logger.info(f"🔄 Starting evaluation for text: {request.text[:100]}...")
+        logger.info(f"Starting evaluation for text: {request.text[:100]}...")
         try:
             logger.debug("Calling orchestrator.evaluate_text with:")
             logger.debug(f"- Text length: {len(request.text)} characters")
@@ -1020,7 +1007,7 @@ async def evaluate_text(
             if evaluation_result is None:
                 raise ValueError("Evaluation returned None")
                 
-            logger.info(f"✅ Orchestrator evaluation completed. Result type: {type(evaluation_result)}")
+            logger.info(f"Orchestrator evaluation completed. Result type: {type(evaluation_result)}")
             
             # Log detailed result information
             if hasattr(evaluation_result, '__dict__'):
@@ -1039,7 +1026,7 @@ async def evaluate_text(
                     is_violation = getattr(span, 'is_violation', False)
                     logger.debug(f"Span {i}: {span_text}... (violation: {is_violation})")
         except Exception as e:
-            logger.error(f"❌ Orchestrator evaluation failed: {str(e)}", exc_info=True)
+            logger.error(f"Orchestrator evaluation failed: {str(e)}", exc_info=True)
             raise
 
         core_eval = None
@@ -1050,11 +1037,11 @@ async def evaluate_text(
         try:
             if ethical_engine and hasattr(ethical_engine, 'parameters'):
                 current_params = ethical_engine.parameters.dict()
-                logger.info(f"✅ Loaded parameters from ethical engine: {json.dumps(current_params, default=str, indent=2)}")
+                logger.info(f"Loaded parameters from ethical engine: {json.dumps(current_params, default=str, indent=2)}")
             else:
-                logger.warning("⚠️ Ethical engine or parameters not available, using default parameters")
+                logger.warning("Ethical engine or parameters not available, using default parameters")
         except Exception as e:
-            logger.error(f"❌ Failed to get parameters from ethical engine: {str(e)}")
+            logger.error(f"Failed to get parameters from ethical engine: {str(e)}")
             current_params = {}
         
         # Construct the full evaluation response with all required fields
@@ -1097,10 +1084,10 @@ async def evaluate_text(
                 delta_summary=getattr(result, 'delta_summary', {})
             )
             
-            logger.info(f"✅ Successfully created evaluation response with {len(evaluation_details.get('spans', []))} spans")
+            logger.info(f"Successfully created evaluation response with {len(evaluation_details.get('spans', []))} spans")
             
         except Exception as e:
-            logger.error(f"❌ Failed to create EthicalEvaluation: {str(e)}")
+            logger.error(f"Failed to create EthicalEvaluation: {str(e)}")
             logger.error(f"Evaluation details: {json.dumps(evaluation_details, default=str, indent=2)}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -1110,11 +1097,11 @@ async def evaluate_text(
         # Store the evaluation result in the background
         background_tasks.add_task(store_evaluation_result, request, response, request_id)
         
-        logger.info(f"✅ Evaluation completed successfully for request {request_id}")
+        logger.info(f"Evaluation completed successfully for request {request_id}")
         return response
         
     except Exception as e:
-        logger.error(f"❌ Evaluation failed for request {request_id}: {str(e)}", exc_info=True)
+        logger.error(f"Evaluation failed for request {request_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Evaluation failed: {str(e)}"
@@ -1122,7 +1109,7 @@ async def evaluate_text(
 
 async def store_evaluation_result(request: EvaluationRequest, response: EvaluationResponse, request_id: str):
     """
-    🗄️ Store evaluation results in the database (runs in background).
+    Store evaluation results in the database (runs in background).
     
     This function is designed to run as a background task to avoid blocking
     the main request/response cycle. It handles all database operations
@@ -1154,8 +1141,8 @@ async def store_evaluation_result(request: EvaluationRequest, response: Evaluati
         logger.error(f"❌ Failed to store evaluation result: {str(e)}", exc_info=True)
         # Don't raise the exception as this is a background task
 
-# 🎓 PROFESSOR'S EXPLANATION: Backward Compatibility Endpoints
-# ══════════════════════════════════════════════════════════════
+# Backward Compatibility Endpoints
+# ===============================================
 # These endpoints maintain compatibility with existing integrations
 # while gradually migrating clients to the new unified API.
 
@@ -1441,7 +1428,7 @@ async def get_learning_stats():
             detail=f"Failed to get learning stats: {str(e)}"
         )
 
-# 🎯 Heat-map endpoints for visualization compatibility
+# Heat-map endpoints for visualization compatibility
 @app.post("/api/heat-map-mock", tags=["Visualization"])
 async def get_heat_map_mock(request: Dict[str, Any]):
     """Generate REAL heat-map data from ethical analysis for UI visualization."""
@@ -1548,8 +1535,8 @@ async def get_heat_map_mock(request: Dict[str, Any]):
             }
         }
 
-# 🧠 ML ETHICS ASSISTANT ENDPOINTS
-# ═══════════════════════════════════════════════════════════════════════════════════
+# ML ETHICS ASSISTANT ENDPOINTS
+# ===============================================
 
 @app.post("/api/ethics/comprehensive-analysis", tags=["ML Ethics Assistant"])
 async def comprehensive_ethics_analysis(request: Dict[str, Any]):
@@ -1814,8 +1801,8 @@ async def streaming_status():
     }
 
 if __name__ == "__main__":
-    # 🎓 PROFESSOR'S NOTE: Development Server
-    # ═══════════════════════════════════════════
+    # Development Server
+    # ===============================================
     # This section is only used for development. In production,
     # we use a proper ASGI server like Uvicorn or Gunicorn.
     

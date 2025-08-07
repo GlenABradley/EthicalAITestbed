@@ -5,8 +5,8 @@ import EthicalChart from './components/EthicalChart';
 import MLTrainingAssistant from './components/MLTrainingAssistant';
 import RealTimeStreamingInterface from './components/RealTimeStreamingInterface';
 import AdaptiveThresholdInterface from './components/AdaptiveThresholdInterface';
-import MLDataPreparation from './components/MLDataPreparation.jsx';
-import ModelConstitution from './components/ModelConstitution.jsx';
+import MLDataPreparation from './components/MLDataPreparation';
+import ModelConstitution from './components/ModelConstitution';
 
 // Backend API endpoint from environment variables
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
@@ -437,7 +437,7 @@ function App() {
             </button>
           </nav>
         </div>
-      </div>
+
         {/* Tab Content */}
         <div className="max-w-6xl mx-auto">
           {activeTab === 'evaluate' && (
@@ -960,54 +960,54 @@ function App() {
           )}
 
           {activeTab === 'alignment' && (
-            <div className="space-y-8 w-full">
-              {/* Section Title */}
-              <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                <h2 className="text-2xl font-bold text-purple-800">AI Alignment Solution</h2>
-                <p className="text-gray-700">
-                  This workspace provides access to the core components of the AI alignment solution (90% complete):
-                  data labeling with ethical vectors (50%) and model constitution via embedding statement (40%).
-                </p>
+            <div className="space-y-8">
+            {/* Section Title */}
+            <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+              <h2 className="text-2xl font-bold text-purple-800">AI Alignment Solution</h2>
+              <p className="text-gray-700">
+                This workspace provides access to the core components of the AI alignment solution (90% complete):
+                data labeling with ethical vectors (50%) and model constitution via embedding statement (40%).
+              </p>
+            </div>
+            
+            {/* Tab Navigation for Alignment Components */}
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              <div className="flex border-b">
+                <button
+                  onClick={() => setActiveResultTab('ml-data')}
+                  className={`flex-1 px-4 py-3 text-center font-medium ${
+                    activeResultTab === 'ml-data'
+                      ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-600'
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-purple-50'
+                  }`}
+                >
+                  ML Data Preparation
+                </button>
+                <button
+                  onClick={() => setActiveResultTab('constitution')}
+                  className={`flex-1 px-4 py-3 text-center font-medium ${
+                    activeResultTab === 'constitution'
+                      ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-600'
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-purple-50'
+                  }`}
+                >
+                  Model Constitution
+                </button>
               </div>
               
-              {/* Tab Navigation for Alignment Components */}
-              <div className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="flex border-b">
-                  <button
-                    onClick={() => setActiveResultTab('ml-data')}
-                    className={`flex-1 px-4 py-3 text-center font-medium ${
-                      activeResultTab === 'ml-data'
-                        ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-600'
-                        : 'text-gray-600 hover:text-gray-800 hover:bg-purple-50'
-                    }`}
-                  >
-                    ML Data Preparation
-                  </button>
-                  <button
-                    onClick={() => setActiveResultTab('constitution')}
-                    className={`flex-1 px-4 py-3 text-center font-medium ${
-                      activeResultTab === 'constitution'
-                        ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-600'
-                        : 'text-gray-600 hover:text-gray-800 hover:bg-purple-50'
-                    }`}
-                  >
-                    Model Constitution
-                  </button>
-                </div>
+              {/* Component Content */}
+              <div className="p-6">
+                {activeResultTab === 'ml-data' && (
+                  <MLDataPreparation backendUrl={BACKEND_URL} />
+                )}
                 
-                {/* Component Content */}
-                <div className="p-6">
-                  {activeResultTab === 'ml-data' && (
-                    <MLDataPreparation backendUrl={BACKEND_URL} />
-                  )}
-                  
-                  {activeResultTab === 'constitution' && (
-                    <ModelConstitution />
-                  )}
-                </div>
+                {activeResultTab === 'constitution' && (
+                  <ModelConstitution />
+                )}
               </div>
             </div>
-          )}
+          </div>
+        )}
       </div>
     </div>
   );

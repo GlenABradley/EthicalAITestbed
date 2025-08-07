@@ -5,8 +5,8 @@ import EthicalChart from './components/EthicalChart';
 import MLTrainingAssistant from './components/MLTrainingAssistant';
 import RealTimeStreamingInterface from './components/RealTimeStreamingInterface';
 import AdaptiveThresholdInterface from './components/AdaptiveThresholdInterface';
-import MLDataPreparation from './components/MLDataPreparation.jsx';
-import ModelConstitution from './components/ModelConstitution.jsx';
+import MLDataPreparation from './components/MLDataPreparation';
+import ModelConstitution from './components/ModelConstitution';
 
 // Backend API endpoint from environment variables
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
@@ -437,7 +437,7 @@ function App() {
             </button>
           </nav>
         </div>
-      </div>
+
         {/* Tab Content */}
         <div className="max-w-6xl mx-auto">
           {activeTab === 'evaluate' && (
