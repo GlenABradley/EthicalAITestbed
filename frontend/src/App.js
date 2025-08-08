@@ -7,6 +7,7 @@ import RealTimeStreamingInterface from './components/RealTimeStreamingInterface'
 import AdaptiveThresholdInterface from './components/AdaptiveThresholdInterface';
 import MLDataPreparation from './components/MLDataPreparation.jsx';
 import ModelConstitution from './components/ModelConstitution.jsx';
+import MonotonicClassifierInterface from './components/MonotonicClassifierInterface';
 
 // Backend API endpoint from environment variables
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
@@ -366,81 +367,62 @@ function App() {
           </p>
         </header>
 
-        {/* Tab Navigation */}
-        <div className="flex justify-center mb-8">
-          <nav className="flex space-x-2 bg-white p-2 rounded-lg shadow">
-            <button
-              onClick={() => handleTabSwitch('evaluate')}
-              data-tab="evaluate"
-              className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                activeTab === 'evaluate'
-                  ? 'bg-blue-500 text-white'
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              Evaluate Text
-            </button>
-            <button
-              onClick={() => handleTabSwitch('heatmap')}
-              data-tab="heatmap"
-              className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                activeTab === 'heatmap'
-                  ? 'bg-blue-500 text-white'
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              📊 Heat-Map
-            </button>
-            <button
-              onClick={() => handleTabSwitch('ml-assistant')}
-              data-tab="ml-assistant"
-              className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                activeTab === 'ml-assistant'
-                  ? 'bg-purple-500 text-white'
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              🧠 ML Ethics Assistant
-            </button>
-            <button
-              onClick={() => handleTabSwitch('streaming')}
-              data-tab="streaming"
-              className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                activeTab === 'streaming'
-                  ? 'bg-green-500 text-white'
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              🚀 Real-Time Streaming
-            </button>
-            <button
-              onClick={() => handleTabSwitch('adaptive')}
-              data-tab="adaptive"
-              className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                activeTab === 'adaptive'
-                  ? 'bg-blue-500 text-white'
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              🧠 Adaptive Thresholds
-            </button>
-            <button
-              onClick={() => handleTabSwitch('alignment')}
-              data-tab="alignment"
-              className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                activeTab === 'alignment'
-                  ? 'bg-purple-600 text-white'
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              🔄 Alignment Solution
-            </button>
-          </nav>
+      {/* Tab Navigation */}
+      <div className="bg-gray-100 px-4 py-2 border-b-2 border-gray-300">
+        <div className="flex flex-wrap items-center -mx-2">
+          <button
+            onClick={() => handleTabSwitch('evaluate')}
+            className={`px-3 py-2 rounded-md text-sm font-medium mx-1 ${activeTab === 'evaluate' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-200'}`}
+          >
+            📊 Evaluate Text
+          </button>
+          <button
+            onClick={() => handleTabSwitch('monotonic')}
+            className={`px-3 py-2 rounded-md text-sm font-medium mx-1 ${activeTab === 'monotonic' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-200'}`}
+          >
+            ⚖️ Monotonic Classifier
+          </button>
+          <button
+            onClick={() => handleTabSwitch('adaptive')}
+            className={`px-3 py-2 rounded-md text-sm font-medium mx-1 ${activeTab === 'adaptive' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-200'}`}
+          >
+            🧠 Adaptive Thresholds
+          </button>
+          <button
+            onClick={() => handleTabSwitch('ml-assistant')}
+            className={`px-3 py-2 rounded-md text-sm font-medium mx-1 ${activeTab === 'ml-assistant' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-200'}`}
+          >
+            🤖 ML Training Assistant
+          </button>
+          <button
+            onClick={() => handleTabSwitch('streaming')}
+            className={`px-3 py-2 rounded-md text-sm font-medium mx-1 ${activeTab === 'streaming' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-200'}`}
+          >
+            🔄 Streaming Analysis
+          </button>
+          <button
+            onClick={() => handleTabSwitch('heatmap')}
+            className={`px-3 py-2 rounded-md text-sm font-medium mx-1 ${activeTab === 'heatmap' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-200'}`}
+          >
+            🔥 Heat-Map
+          </button>
+          <button
+            onClick={() => handleTabSwitch('alignment')}
+            className={`px-3 py-2 rounded-md text-sm font-medium mx-1 ${activeTab === 'alignment' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-200'}`}
+          >
+            🧩 Alignment Solution
+          </button>
         </div>
       </div>
-        {/* Tab Content */}
-        <div className="max-w-6xl mx-auto">
-          {activeTab === 'evaluate' && (
+      </div>
+      
+      {/* Tab Content */}
+      <div className="max-w-6xl mx-auto">
+        {activeTab === 'monotonic' && (
+          <MonotonicClassifierInterface inputText={inputText} />
+        )}
+
+        {activeTab === 'evaluate' && (
             <div className="space-y-6">
               {/* Input Section */}
               <div className="bg-white p-6 rounded-lg shadow">

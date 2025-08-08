@@ -71,6 +71,7 @@ from typing import Dict, List, Optional, Any, Union, Tuple
 import sys
 from pathlib import Path
 import ml_data_endpoints
+from routes import monotonic_routes
 
 # 🎓 PROFESSOR'S NOTE: Resolving module import errors
 # We add the backend directory to the Python path to ensure that modules
@@ -611,6 +612,9 @@ app = create_ethical_ai_app()
 
 # Include ML data preparation endpoints
 app.include_router(ml_data_endpoints.router)
+
+# Include Monotonic Classifier endpoints
+app.include_router(monotonic_routes.router)
 
 # Dependency Injection
 async def get_orchestrator():

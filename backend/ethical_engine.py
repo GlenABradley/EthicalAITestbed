@@ -51,6 +51,9 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 import logging
 
+# Import the span selector for optimal context analysis
+from .span_selector import DifferenceSetSpanSelector
+
 # v1.1 Graph attention imports
 try:
     import torch_geometric.nn as pyg_nn
@@ -1323,10 +1326,10 @@ class EthicalSpan(BaseModel):
     text: str = Field(..., description="The text content of the span")
     start: int = Field(..., ge=0, description="Start character offset of the span")
     end: int = Field(..., ge=0, description="End character offset of the span")
-    virtue_score: float = Field(..., ge=0.0, le=1.0, description="Virtue ethics score (0-1)")
-    deontological_score: float = Field(..., ge=0.0, le=1.0, description="Deontological ethics score (0-1)")
-    consequentialist_score: float = Field(..., ge=0.0, le=1.0, description="Consequentialist ethics score (0-1)")
-    combined_score: float = Field(..., ge=0.0, le=1.0, description="Combined ethical score (0-1)")
+    virtue_score: float = Field(..., description="Virtue ethics score (negative=unethical, positive=ethical)")
+    deontological_score: float = Field(..., description="Deontological ethics score (negative=unethical, positive=ethical)")
+    consequentialist_score: float = Field(..., description="Consequentialist ethics score (negative=unethical, positive=ethical)")
+    combined_score: float = Field(..., description="Combined ethical score (negative=unethical, positive=ethical)")
     is_violation: bool = Field(..., description="Whether this span represents an ethical violation")
     virtue_violation: bool = Field(False, description="Whether this span violates virtue ethics")
     deontological_violation: bool = Field(False, description="Whether this span violates deontological ethics")
@@ -1962,6 +1965,13 @@ class EthicalEvaluator:
             decay_lambda=self.parameters.graph_decay_lambda
         )
         
+        # Initialize optimal span selector using modular difference sets
+        # Default window size of 31 (good balance for ethical analysis)
+        self.span_selector = DifferenceSetSpanSelector(
+            window_size=31,  # Medium context window
+            symmetric=True    # Use both forward and backward context
+        )
+        
         # Embedding cache for efficiency
         self.embedding_cache = {}
         
@@ -2058,12 +2068,31 @@ class EthicalEvaluator:
         
         start_time = time.time()
         
+        # Try fast cascade evaluation first
+        if self.parameters.enable_cascade_filtering:
+            is_ethical, ambiguity = self.fast_cascade_evaluation(text)
+            if is_ethical is True:  # Only skip detailed analysis if definitively ethical
+                logger.info("Fast cascade evaluation determined text is ethical. Skipping detailed analysis.")
+                # Create minimal evaluation with just a single span
+                tokens = self.tokenize(text)
+                span = self.evaluate_span(tokens, 0, len(tokens), adjusted_thresholds=None)
+                
+                return EthicalEvaluation(
+                    input_text=text,
+                    tokens=tokens,
+                    spans=[span],  # Just the one full-text span
+                    minimal_spans=[],  # No violations
+                    overall_ethical=True,
+                    processing_time=time.time() - start_time,
+                    parameters=self.parameters
+                )
+        
         # Tokenize the input text
         tokens = self.tokenize(text)
         
         # Initialize result containers
         spans = []
-        minimal_spans = []
+        violation_spans = []
         
         # Get current threshold values
         current_thresholds = {
@@ -2072,15 +2101,41 @@ class EthicalEvaluator:
             'consequentialist_threshold': self.parameters.consequentialist_threshold
         }
         
-        # Evaluate all possible spans
-        for i in range(len(tokens)):
-            for j in range(i + 1, min(i + self.parameters.max_span_length + 1, len(tokens) + 1)):
-                span = self.evaluate_span(tokens, i, j, adjusted_thresholds=current_thresholds)
-                spans.append(span)
+        # Optimized span analysis using modular difference sets (Singer sets/Golomb rulers)
+        # This provides maximal pairwise coverage with minimal comparisons
+        
+        logger.info(f"Using DifferenceSetSpanSelector with window_size={self.span_selector.window_size}, "
+                  f"symmetric={self.span_selector.symmetric}")
+        
+        # Generate spans using the optimal difference set approach
+        selected_spans = self.span_selector.generate_spans(len(tokens))
+        
+        logger.info(f"Generated {len(selected_spans)} spans using modular difference set approach")
+        logger.info(f"Coverage ratio: {len(selected_spans) / (len(tokens) ** 2):.6f} (spans/tokens²)")
+        
+        # Evaluate all selected spans
+        for start_idx, end_idx in selected_spans:
+            # Ensure indices are within bounds
+            if start_idx < 0 or end_idx >= len(tokens):
+                continue
                 
-                # If it's a violation, add to minimal spans
-                if span.is_violation:
-                    minimal_spans.append(span)
+            # Evaluate this span
+            span = self.evaluate_span(tokens, start_idx, end_idx, adjusted_thresholds=current_thresholds)
+            spans.append(span)
+            
+            # Track violations
+            if span.is_violation:
+                violation_spans.append(span)
+                
+        logger.info(f"Found {len(violation_spans)}/{len(spans)} spans with violations using difference set approach")
+        
+        # Future enhancement (commented out for now):
+        # Recursive minimal-span drill-down for ambiguous violations could be added here
+        
+        # Find minimal spans from the collected violation spans
+        minimal_spans = self.find_minimal_spans(violation_spans) if violation_spans else []
+        
+        logger.info(f"Hierarchical analysis complete. Found {len(spans)} spans total, {len(violation_spans)} with violations, {len(minimal_spans)} minimal violation spans")
         
         # Create the evaluation result
         evaluation = EthicalEvaluation(
@@ -2270,19 +2325,22 @@ class EthicalEvaluator:
             'consequentialist_threshold': adjusted_thresholds.get('consequentialist_threshold', current_parameters['consequentialist_threshold'])
         }
         
-        # Compute scores for each perspective (s_P(i,j) = x_{i:j} · p_P) and ensure non-negative
-        # Clamp scores to [0, 1] range to prevent negative values that would fail Pydantic validation
-        virtue_score = max(0.0, min(1.0, self.compute_perspective_score(span_embedding, self.p_v) * self.parameters.virtue_weight))
-        deontological_score = max(0.0, min(1.0, self.compute_perspective_score(span_embedding, self.p_d) * self.parameters.deontological_weight))
-        consequentialist_score = max(0.0, min(1.0, self.compute_perspective_score(span_embedding, self.p_c) * self.parameters.consequentialist_weight))
+        # Compute scores for each perspective (s_P(i,j) = x_{i:j} · p_P)
+        # Allow negative values for the new mathematical framework
+        # Negative values indicate unethical content, positive values indicate ethical content
+        virtue_score = self.compute_perspective_score(span_embedding, self.p_v) * self.parameters.virtue_weight
+        deontological_score = self.compute_perspective_score(span_embedding, self.p_d) * self.parameters.deontological_weight
+        consequentialist_score = self.compute_perspective_score(span_embedding, self.p_c) * self.parameters.consequentialist_weight
         
-        # Apply thresholds to determine violations (I_P(i,j) = 1 if s_P(i,j) > τ_P)
-        virtue_violation = virtue_score > thresholds['virtue_threshold']
-        deontological_violation = deontological_score > thresholds['deontological_threshold']
-        consequentialist_violation = consequentialist_score > thresholds['consequentialist_threshold']
+        # Apply thresholds to determine violations (I_P(i,j) = 1 if s_P(i,j) < 0)
+        # In the refactored math, negative values are unethical and positive values are ethical
+        virtue_violation = virtue_score < 0
+        deontological_violation = deontological_score < 0
+        consequentialist_violation = consequentialist_score < 0
         
-        # Combined score as maximum of individual scores (OR logic for violations)
-        combined_score = max(virtue_score, deontological_score, consequentialist_score)
+        # Combined score as minimum of individual scores (most negative score wins for violations)
+        # In the new math framework, the lowest (most negative) score indicates the most severe ethical violation
+        combined_score = min(virtue_score, deontological_score, consequentialist_score)
         
         # v1.1 UPGRADE: Add intent hierarchy classification
         intent_scores = {}
